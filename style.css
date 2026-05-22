@@ -32,7 +32,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .page { max-width: 480px; margin: 0 auto; padding: 0 16px calc(100px + env(safe-area-inset-bottom)); }
 
 /* ── Header ── */
-.topbar { position: sticky; top: 0; z-index: 10; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.topbar { position: sticky; top: 0; z-index: 10; background: var(--bg2); border-bottom: 1px solid var(--border); padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 12px; }
 .topbar h1 { flex: 1; font-size: 17px; font-weight: 700; color: var(--text); }
 .topbar .back { color: var(--accent); font-size: 15px; text-decoration: none; display: flex; align-items: center; gap: 4px; }
 .topbar .back::before { content: '‹'; font-size: 20px; line-height: 1; }
@@ -138,7 +138,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .badge-rx.ministeriale { background:#7C3AED20; color:#7C3AED; }
 
 /* ── Patient header ── */
-.patient-header { background: var(--bg2); padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid var(--border); }
+.patient-header { background: var(--bg2); padding: calc(14px + env(safe-area-inset-top)) 16px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 3px solid var(--border); }
 .patient-header .emoji { font-size: 34px; }
 .patient-header .info { flex: 1; }
 .patient-header .pname { font-size: 20px; font-weight: 800; }
