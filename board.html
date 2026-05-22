@@ -31,6 +31,14 @@
         transform: rotate(90deg);
         transform-origin: top left;
       }
+      /* In portrait con rotation lock: riduce topbar e celle per evitare sovrapposizioni */
+      #page-wrap .topbar { padding: 7px 12px; }
+      #page-wrap .topbar h1 { font-size: 14px; }
+      .board-date { padding: 3px 12px 5px; font-size: 10px; }
+      .board tbody td { height: 38px; }
+      .board tbody td.td-hour .cell-inner { height: 38px; }
+      .board tbody td.td-name .name-cell { height: 38px; }
+      .board thead tr.hdr-main th { padding: 6px 5px; font-size: 10px; }
     }
 
     /* Topbar: in modalità ruotata, env(safe-area-inset-top) diventa padding laterale
