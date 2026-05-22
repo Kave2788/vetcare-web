@@ -102,11 +102,13 @@
       width: var(--ter-w, 130px); min-width: var(--ter-w, 130px);
     }
 
-    /* Alternanza righe */
-    .board tbody tr { background: var(--card); }
-    .board tbody tr:nth-child(even) { background: var(--bg2); }
-    .board tbody tr:nth-child(even) td.td-name { background: var(--bg2); }
-    .board tbody tr:nth-child(even) td.td-kg   { background: var(--bg2); }
+    /* Alternanza righe per paziente */
+    .board tbody tr.pat-even { background: var(--card); }
+    .board tbody tr.pat-odd  { background: var(--bg2); }
+    .board tbody tr.pat-odd td.td-name { background: var(--bg2); }
+    .board tbody tr.pat-odd td.td-kg   { background: var(--bg2); }
+    /* Riga farmaco (non prima) — bordo top tratteggiato per separare */
+    .board tbody tr.drug-row td { border-top: 1px dashed #1e3a5f88; }
 
     .board tbody td {
       padding: 0;
@@ -544,7 +546,7 @@ function computeLayout(nRows) {
   // Larghezze colonne fisse
   const KG_W   = Math.max(36, Math.min(52, Math.floor(lw * 0.05)));
   const ECO_W  = Math.max(44, Math.min(64, Math.floor(lw * 0.06)));
-  const NAME_W = Math.max(100, Math.min(160, Math.floor(lw * 0.15)));
+  const NAME_W = Math.max(80, Math.min(120, Math.floor(lw * 0.11)));
   const TER_W  = Math.max(110, Math.min(200, Math.floor(lw * 0.20)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2 + TER_W;
   const HOUR_W = Math.max(28, Math.floor((lw - FIXED) / HOURS.length));
@@ -619,36 +621,40 @@ function vitalToLines(v, maxLines) {
   return lines;
 }
 
-function buildCellHTML(pid, h, L) {
-  const key    = cellKey(pid, h);
-  const vital  = vitalsMap[key];
-  const drugs  = (drugSchedule[pid] || {})[h] || [];
-  const lines  = vitalToLines(vital, L.maxLines);
+// Cella vitali (prima riga di ogni paziente) — tappabile, mostra vitali + X farmaco 0
+function buildVitalCellHTML(pid, h, ci, isScheduled, L) {
+  const key   = cellKey(pid, h);
+  const vital = vitalsMap[key];
+  const lines = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
-
-  const drugHtml  = drugs.map(ci => `<span class="cell-drug dc${ci}">✕</span>`).join('');
+  const drugHtml  = (ci >= 0 && isScheduled) ? `<span class="cell-drug dc${ci}">✕</span>` : '';
   const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
-
-  let bg = '';
-  if (hasData)      bg = 'background:var(--accent-dim)';
-  else if (drugs.length) bg = 'background:#F59E0B09';
-
-  return `<td class="td-hour" data-key="${key}" data-pid="${pid}" data-hour="${h}" style="${bg}">
+  let bg = hasData ? 'background:var(--accent-dim)' : (isScheduled ? 'background:#F59E0B09' : '');
+  return `<td class="td-hour td-vital" data-key="${key}" data-pid="${pid}" data-hour="${h}" style="${bg}">
     <div class="cell-inner">${drugHtml}${vitalHtml}</div>
   </td>`;
+}
+
+// Cella farmaco (righe successive) — non tappabile, solo X se previsto
+function buildDrugCellHTML(ci, isScheduled) {
+  const bg = isScheduled ? 'background:#F59E0B09' : '';
+  const inner = isScheduled ? `<span class="cell-drug dc${ci}">✕</span>` : '';
+  return `<td class="td-hour" style="${bg}"><div class="cell-inner">${inner}</div></td>`;
 }
 
 function updateCellUI(key, pid, h, L) {
   const td = document.querySelector(`[data-key="${key}"]`);
   if (!td) return;
-  const vital  = vitalsMap[key];
-  const drugs  = (drugSchedule[pid] || {})[h] || [];
-  const lines  = vitalToLines(vital, L.maxLines);
+  const vital = vitalsMap[key];
+  const ds    = drugSchedule[pid];
+  const isScheduled = ds ? ds.scheduledHours.has(h) : false;
+  const ci    = ds ? ds.ci : -1;
+  const lines = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
   td.querySelector('.cell-inner').innerHTML =
-    drugs.map(ci => `<span class="cell-drug dc${ci}">✕</span>`).join('') +
+    (ci >= 0 && isScheduled ? `<span class="cell-drug dc${ci}">✕</span>` : '') +
     lines.map(l => `<span>${l}</span>`).join('');
-  td.style.background = hasData ? 'var(--accent-dim)' : (drugs.length ? '#F59E0B09' : '');
+  td.style.background = hasData ? 'var(--accent-dim)' : (isScheduled ? '#F59E0B09' : '');
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -759,55 +765,71 @@ async function render() {
     });
   } catch(e) { /* continua */ }
 
-  // Drug schedule
+  // Drug schedule — per updateCellUI (prima riga = vitali + farmaco 0)
   drugSchedule = {};
   active.forEach(p => {
-    drugSchedule[p.id] = {};
-    const activeDrugs = (p.therapies||[]).filter(t => t.active && t.drug);
-    activeDrugs.forEach((t, colorIdx) => {
-      (FREQ_HOURS[t.frequency]||[]).forEach(h => {
-        if (!HOURS.includes(h)) return;
-        if (!drugSchedule[p.id][h]) drugSchedule[p.id][h] = [];
-        drugSchedule[p.id][h].push(colorIdx % 6);
-      });
-    });
+    const first = (p.therapies||[]).filter(t => t.active && t.drug)[0];
+    if (first) {
+      drugSchedule[p.id] = {
+        ci: 0,
+        scheduledHours: new Set((FREQ_HOURS[first.frequency]||[]).filter(h => HOURS.includes(h)))
+      };
+    }
   });
 
-  // Calcola layout basandosi sulle dimensioni reali del dispositivo
-  const L = computeLayout(active.length);
+  // Numero totale di righe per il layout
+  const totalRows = active.reduce((s, p) => {
+    const n = (p.therapies||[]).filter(t => t.active).length;
+    return s + Math.max(1, n);
+  }, 0);
+
+  const L = computeLayout(totalRows);
   activeLayout = L;
   applyLayout(L);
 
+  const patNames = {};
+  active.forEach(p => { patNames[p.id] = p.name; });
+
   const hoursHdr = HOURS.map(h => `<th class="col-hour">${h}</th>`).join('');
 
-  const rows = active.map(p => {
-    const emoji = SPECIES_EMOJI[p.species] ?? '🐾';
-    const color = STATUS_COLOR[p.status] ?? '#6B7280';
-    const therapies = (p.therapies||[]).filter(t => t.active);
-    const hourCells = HOURS.map(h => buildCellHTML(p.id, h, L)).join('');
-    const ecoKey  = `${p.id}_eco`;
-    const prevKey = `${p.id}_prev`;
-    const drugTags = therapies.length
-      ? therapies.map((t, i) => `<span class="drug-tag dc${i % 6}">${t.drug}</span>`).join('')
-      : `<span style="color:var(--text3)">—</span>`;
-    const kg = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
+  const rows = active.map((p, pi) => {
+    const emoji    = SPECIES_EMOJI[p.species] ?? '🐾';
+    const color    = STATUS_COLOR[p.status] ?? '#6B7280';
+    const drugs    = (p.therapies||[]).filter(t => t.active);
+    const span     = Math.max(1, drugs.length);
+    const ecoKey   = `${p.id}_eco`;
+    const prevKey  = `${p.id}_prev`;
+    const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
+    const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
-    return `<tr>
-      <td class="td-kg">${kg}</td>
-      <td class="td-name">
-        <div class="name-cell">
-          <div class="name-strip" style="background:${color}"></div>
-          <div class="name-info">
-            <span class="pname">${emoji} ${p.name}</span>
-            <span class="psub">${p.species}${p.breed ? ' · '+p.breed : ''}</span>
-          </div>
-        </div>
-      </td>
-      ${hourCells}
-      <td class="td-check eco-col"  data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>
-      <td class="td-check prev-col" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>
-      <td class="td-ter">${drugTags}</td>
-    </tr>`;
+    const kgCell   = `<td class="td-kg" rowspan="${span}">${kg}</td>`;
+    const nameCell = `<td class="td-name" rowspan="${span}">
+      <div class="name-cell">
+        <div class="name-strip" style="background:${color}"></div>
+        <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
+      </div></td>`;
+    const ecoCell  = `<td class="td-check eco-col"  rowspan="${span}" data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>`;
+    const prevCell = `<td class="td-check prev-col" rowspan="${span}" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>`;
+
+    if (drugs.length === 0) {
+      const cells = HOURS.map(h => buildVitalCellHTML(p.id, h, -1, false, L)).join('');
+      return `<tr class="${rowClass}">${kgCell}${nameCell}${cells}${ecoCell}${prevCell}
+        <td class="td-ter"><span style="color:var(--text3)">—</span></td></tr>`;
+    }
+
+    return drugs.map((t, i) => {
+      const ci          = i % 6;
+      const freqSet     = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+      const drugTag     = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
+
+      if (i === 0) {
+        const cells = HOURS.map(h => buildVitalCellHTML(p.id, h, ci, freqSet.has(h), L)).join('');
+        return `<tr class="${rowClass}">${kgCell}${nameCell}${cells}${ecoCell}${prevCell}${drugTag}</tr>`;
+      } else {
+        const cells = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h))).join('');
+        return `<tr class="${rowClass} drug-row">${cells}${drugTag}</tr>`;
+      }
+    }).join('');
   }).join('');
 
   root.innerHTML = `
@@ -819,16 +841,16 @@ async function render() {
           ${hoursHdr}
           <th class="col-eco">Eco</th>
           <th class="col-prev">Prel.</th>
-          <th class="col-ter">Terapia</th>
+          <th class="col-ter">Farmaco</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
 
-  root.querySelectorAll('.td-hour').forEach(td => {
+  // Solo le celle vitali (prima riga) sono tappabili
+  root.querySelectorAll('.td-vital').forEach(td => {
     td.addEventListener('click', () => {
-      const name = td.closest('tr').querySelector('.pname').textContent.trim();
-      openModal(td.dataset.pid, +td.dataset.hour, name);
+      openModal(td.dataset.pid, +td.dataset.hour, patNames[td.dataset.pid] || '');
     });
   });
 
