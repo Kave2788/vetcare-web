@@ -161,17 +161,53 @@
     .cell-drug.dc4 { color:#A78BFA; background:#A78BFA22; }
     .cell-drug.dc5 { color:#FB923C; background:#FB923C22; }
 
-    /* Checkbox eco/prelievi */
-    .board tbody td.td-check { cursor: pointer; }
-    .chk-box {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: calc(var(--row-h, 42px) * 0.6);
-      height: calc(var(--row-h, 42px) * 0.6);
-      border-radius: 6px; border: 1.5px solid var(--border);
-      font-size: var(--name-font, 12px);
-      transition: all .15s; background: transparent;
+    /* ECO / PRELIEVI multi-select */
+    .board tbody td.td-check { cursor: pointer; padding: 2px; }
+    .check-cell {
+      display: flex; flex-wrap: wrap; gap: 2px;
+      align-items: center; justify-content: center;
+      min-height: var(--row-h, 42px);
     }
-    .chk-box.checked { background: #10B98120; border-color: var(--stable); color: var(--stable); }
+    .check-tag {
+      font-size: 9px; font-weight: 700; border-radius: 3px;
+      padding: 1px 3px; background: #10B98120;
+      border: 1px solid var(--stable); color: var(--stable);
+      line-height: 1.3;
+    }
+    .check-empty {
+      font-size: 16px; color: var(--border); line-height: 1;
+    }
+
+    /* Popover selezione */
+    #pick-pop {
+      display: none; position: absolute; z-index: 30;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px;
+      box-shadow: 0 6px 24px #000a;
+      min-width: 150px;
+    }
+    #pick-pop.show { display: block; }
+    #pick-pop .pop-title { font-size: 10px; font-weight: 700; color: var(--text3);
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .pop-opt {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 6px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--text);
+      transition: background .1s;
+    }
+    .pop-opt:active { background: var(--bg3); }
+    .pop-opt .pop-chk {
+      width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+      border: 1.5px solid var(--border); background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; transition: all .15s;
+    }
+    .pop-opt.sel .pop-chk { background: #10B98130; border-color: var(--stable); color: var(--stable); }
+    .pop-done {
+      margin-top: 8px; width: 100%; padding: 8px;
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
 
     /* Terapie */
     .board tbody td.td-ter {
@@ -333,6 +369,12 @@
     </div>
   </div>
 
+  <div id="pick-pop">
+    <div class="pop-title" id="pick-title"></div>
+    <div id="pick-opts"></div>
+    <button class="pop-done" id="pick-done">Fatto</button>
+  </div>
+
   <div id="toast"></div>
 </div>
 
@@ -361,6 +403,83 @@ function toast(msg) {
 function hourToISO(h) {
   const d = new Date(); d.setHours(h, 0, 0, 0); return d.toISOString();
 }
+
+// ── ECO / PRELIEVI multi-select ───────────────────────────────────────────────
+
+const ECO_OPTS  = [{ k:'add', l:'Addome' }, { k:'card', l:'Cardio' }];
+const PREV_OPTS = [
+  { k:'emo',  l:'Emocromo' },
+  { k:'bio',  l:'Biochimico' },
+  { k:'orm',  l:'Ormonale' },
+  { k:'uri',  l:'Urine' },
+  { k:'coag', l:'Coagulazione' },
+  { k:'ele',  l:'Elettroliti' },
+  { k:'epat', l:'Profilo epatico' },
+  { k:'ren',  l:'Profilo renale' },
+];
+
+function renderPickCell(key) {
+  const sel = checks[key] || [];
+  if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
+  const tags = sel.map(k => `<span class="check-tag">${k}</span>`).join('');
+  return `<div class="check-cell">${tags}</div>`;
+}
+
+let pickKey = null;
+const pickPop = document.getElementById('pick-pop');
+
+function openPickPop(key, type, tdEl) {
+  pickKey = key;
+  const opts = type === 'eco' ? ECO_OPTS : PREV_OPTS;
+  const sel  = checks[key] || [];
+  document.getElementById('pick-title').textContent = type === 'eco' ? 'Ecografia' : 'Prelievi';
+  document.getElementById('pick-opts').innerHTML = opts.map(o => `
+    <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}">
+      <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
+    </div>`).join('');
+
+  // Posiziona vicino alla cella
+  const wrap = document.getElementById('page-wrap');
+  const tr = tdEl.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  pickPop.style.top  = (tr.bottom - wr.top + 4) + 'px';
+  pickPop.style.right = '8px';
+  pickPop.classList.add('show');
+
+  document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const k = opt.dataset.k;
+      let cur = checks[pickKey] || [];
+      if (cur.includes(k)) cur = cur.filter(x => x !== k);
+      else cur = [...cur, k];
+      checks[pickKey] = cur;
+      opt.classList.toggle('sel', cur.includes(k));
+      opt.querySelector('.pop-chk').textContent = cur.includes(k) ? '✓' : '';
+    });
+  });
+}
+
+document.getElementById('pick-done').addEventListener('click', () => {
+  saveChecks();
+  pickPop.classList.remove('show');
+  if (pickKey) {
+    const td = root.querySelector(`[data-pick="${pickKey}"]`);
+    if (td) td.innerHTML = renderPickCell(pickKey);
+  }
+  pickKey = null;
+});
+
+document.addEventListener('click', e => {
+  if (pickPop.classList.contains('show') && !pickPop.contains(e.target) && !e.target.closest('.td-check')) {
+    saveChecks();
+    pickPop.classList.remove('show');
+    if (pickKey) {
+      const td = root.querySelector(`[data-pick="${pickKey}"]`);
+      if (td) td.innerHTML = renderPickCell(pickKey);
+    }
+    pickKey = null;
+  }
+});
 
 // ── Layout adattivo ────────────────────────────────────────────────────────
 
@@ -654,8 +773,8 @@ async function render() {
         </div>
       </td>
       ${hourCells}
-      <td class="td-check eco-col" data-check="${ecoKey}"><div class="chk-box ${checks[ecoKey]?'checked':''}">✓</div></td>
-      <td class="td-check prev-col" data-check="${prevKey}"><div class="chk-box ${checks[prevKey]?'checked':''}">✓</div></td>
+      <td class="td-check eco-col"  data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>
+      <td class="td-check prev-col" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>
       <td class="td-ter">${drugTags}</td>
     </tr>`;
   }).join('');
@@ -683,11 +802,9 @@ async function render() {
   });
 
   root.querySelectorAll('.td-check').forEach(td => {
-    td.addEventListener('click', () => {
-      const key = td.dataset.check;
-      checks[key] = !checks[key];
-      saveChecks();
-      td.querySelector('.chk-box').classList.toggle('checked', !!checks[key]);
+    td.addEventListener('click', e => {
+      e.stopPropagation();
+      openPickPop(td.dataset.pick, td.dataset.type, td);
     });
   });
 }
