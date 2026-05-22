@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Lavagna — VetCare</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { overflow-x: hidden; }
+
+    .board-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 0 calc(40px + env(safe-area-inset-bottom));
+    }
+
+    .board-date {
+      font-size: 12px;
+      color: var(--text3);
+      padding: 0 16px 10px;
+      font-weight: 600;
+    }
+
+    /* ── Tabella ── */
+    table.board {
+      border-collapse: collapse;
+      min-width: 900px;
+      width: max-content;
+      margin: 0 12px;
+    }
+
+    .board th, .board td {
+      border: 1px solid var(--border);
+      text-align: center;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* Header principale */
+    .board thead tr.hdr-main th {
+      background: var(--bg2);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 7px 8px;
+    }
+
+    .board thead tr.hdr-main th.col-kg   { width: 46px; }
+    .board thead tr.hdr-main th.col-name { width: 120px; text-align: left; padding-left: 10px; }
+    .board thead tr.hdr-main th.col-hour { width: 34px; }
+    .board thead tr.hdr-main th.col-eco  { width: 72px; }
+    .board thead tr.hdr-main th.col-prev { width: 66px; }
+    .board thead tr.hdr-main th.col-ter  { min-width: 130px; text-align: left; padding-left: 8px; }
+
+    /* Sub-header parametri */
+    .board thead tr.hdr-params th {
+      background: var(--bg3);
+      color: var(--text3);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 4px 3px;
+    }
+
+    /* Righe pazienti */
+    .board tbody tr { background: var(--card); }
+    .board tbody tr:nth-child(even) { background: var(--bg2); }
+
+    .board tbody td {
+      padding: 0;
+      height: 44px;
+    }
+
+    .board tbody td.td-kg {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text2);
+      padding: 4px 6px;
+    }
+
+    .board tbody td.td-name {
+      text-align: left;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 110px;
+    }
+
+    .board tbody td.td-name .species { font-size: 14px; margin-right: 4px; }
+    .board tbody td.td-name .pname   { color: var(--text); }
+
+    /* Celle ora — tappabili */
+    .board tbody td.td-hour {
+      cursor: pointer;
+      position: relative;
+      transition: background .1s;
+    }
+    .board tbody td.td-hour:active { background: var(--accent-dim); }
+
+    .board tbody td.td-hour .cell-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      gap: 1px;
+      padding: 2px;
+      font-size: 9px;
+      color: var(--text2);
+      line-height: 1.1;
+    }
+
+    .board tbody td.td-hour .cell-inner span { display: block; max-width: 32px; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Celle checkbox eco/prelievi */
+    .board tbody td.td-check {
+      cursor: pointer;
+    }
+
+    .chk-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      font-size: 14px;
+      transition: all .15s;
+      background: transparent;
+    }
+    .chk-box.checked {
+      background: #10B98120;
+      border-color: var(--stable);
+      color: var(--stable);
+    }
+
+    /* Colonna terapie */
+    .board tbody td.td-ter {
+      text-align: left;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--text2);
+      max-width: 160px;
+      white-space: normal;
+      line-height: 1.4;
+    }
+
+    .td-ter .drug-tag {
+      display: inline-block;
+      background: #F59E0B18;
+      border: 1px solid #F59E0B40;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 10px;
+      color: #F59E0B;
+      margin: 1px 2px 1px 0;
+      font-weight: 600;
+    }
+
+    /* Modal input ora */
+    #hour-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,.6);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #hour-modal.open { display: flex; }
+
+    .hm-sheet {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .hm-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .hm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .hm-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .hm-field label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+    }
+
+    .hm-field input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font);
+      width: 100%;
+    }
+    .hm-field input:focus { outline: none; border-color: var(--accent); }
+
+    .hm-btns { display: flex; gap: 8px; }
+
+    .hm-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hm-btn.save { background: var(--accent); color: #fff; }
+    .hm-btn.cancel { background: var(--card); border: 1px solid var(--border); color: var(--text2); }
+    .hm-btn.clear { background: #EF444418; border: 1px solid #EF444440; color: #EF4444; }
+
+    .empty-board {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text2);
+    }
+    .empty-board .ei { font-size: 48px; margin-bottom: 12px; }
+    .empty-board .et { font-size: 16px; font-weight: 700; color: var(--text); }
+    .empty-board .eh { font-size: 13px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="index.html">Indietro</a>
+    <h1>Lavagna Giornaliera</h1>
+    <button id="btn-reset" style="background:transparent;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:6px;">Reset</button>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board-date" id="board-date"></div>
+    <div id="board-root"><div class="spinner"></div></div>
+  </div>
+
+  <!-- Modal inserimento ora -->
+  <div id="hour-modal">
+    <div class="hm-sheet">
+      <div class="hm-title" id="hm-title">Ora 08:00 — Paziente</div>
+      <div class="hm-grid">
+        <div class="hm-field"><label>Fc</label><input id="hm-fc" type="number" placeholder="bpm"></div>
+        <div class="hm-field"><label>Fr</label><input id="hm-fr" type="number" placeholder="atti/min"></div>
+        <div class="hm-field"><label>T°</label><input id="hm-t"  type="number" step="0.1" placeholder="°C"></div>
+        <div class="hm-field"><label>Idr</label><input id="hm-idr" type="text" placeholder="%"></div>
+        <div class="hm-field"><label>Muc</label><input id="hm-muc" type="text" placeholder="es. rosee"></div>
+        <div class="hm-field"><label>Ur</label><input id="hm-ur" type="text" placeholder="sì/no"></div>
+        <div class="hm-field"><label>Fec</label><input id="hm-fec" type="text" placeholder="sì/no"></div>
+        <div class="hm-field"><label>Cibo</label><input id="hm-cibo" type="text" placeholder="sì/no"></div>
+        <div class="hm-field"><label>Acqua</label><input id="hm-acqua" type="text" placeholder="sì/no"></div>
+      </div>
+      <div class="hm-btns">
+        <button class="hm-btn cancel" id="hm-cancel">Annulla</button>
+        <button class="hm-btn clear"  id="hm-clear">Svuota</button>
+        <button class="hm-btn save"   id="hm-save">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loadPatients, SPECIES_EMOJI } from './db.js';
+
+    const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
+    const PARAMS = ['fc','fr','t','idr','muc','ur','fec','cibo','acqua'];
+    const TODAY = new Date().toISOString().slice(0,10);
+    const STORE_KEY = `board_${TODAY}`;
+
+    // ── Storage ──────────────────────────────────────────────────────────────
+
+    function loadStore() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch { return {}; }
+    }
+    function saveStore(s) { localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+
+    let store = loadStore();
+
+    function cellKey(pid, h) { return `${pid}_h${h}`; }
+    function checkKey(pid, col) { return `${pid}_${col}`; }
+
+    // ── Modal ─────────────────────────────────────────────────────────────────
+
+    let activeCellKey = null;
+
+    const modal   = document.getElementById('hour-modal');
+    const hmTitle = document.getElementById('hm-title');
+
+    document.getElementById('hm-cancel').onclick = () => modal.classList.remove('open');
+    document.getElementById('hm-clear').onclick  = () => {
+      PARAMS.forEach(p => document.getElementById('hm-'+p).value = '');
+    };
+    document.getElementById('hm-save').onclick = () => {
+      const vals = {};
+      PARAMS.forEach(p => { const v = document.getElementById('hm-'+p).value.trim(); if (v) vals[p] = v; });
+      store[activeCellKey] = vals;
+      saveStore(store);
+      renderCell(activeCellKey);
+      modal.classList.remove('open');
+    };
+
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    function openModal(key, patientName, hour) {
+      activeCellKey = key;
+      hmTitle.textContent = `Ore ${hour}:00 — ${patientName}`;
+      const vals = store[key] || {};
+      PARAMS.forEach(p => { document.getElementById('hm-'+p).value = vals[p] || ''; });
+      modal.classList.add('open');
+    }
+
+    function renderCell(key) {
+      const td = document.querySelector(`[data-key="${key}"]`);
+      if (!td) return;
+      const vals = store[key] || {};
+      const inner = td.querySelector('.cell-inner');
+      inner.innerHTML = Object.entries(vals).map(([k,v]) =>
+        `<span title="${k}: ${v}">${k}:${v}</span>`
+      ).join('');
+      td.style.background = Object.keys(vals).length ? 'var(--accent-dim)' : '';
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    document.getElementById('board-date').textContent =
+      new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    document.getElementById('btn-reset').onclick = () => {
+      if (!confirm('Cancellare tutti i dati della lavagna di oggi?')) return;
+      localStorage.removeItem(STORE_KEY);
+      store = {};
+      render();
+    };
+
+    async function render() {
+      const root = document.getElementById('board-root');
+      root.innerHTML = '<div class="spinner"></div>';
+
+      let patients;
+      try {
+        patients = await loadPatients();
+      } catch(e) {
+        root.innerHTML = `<div class="empty-board"><div class="et">Errore connessione</div><div class="eh">${e.message}</div></div>`;
+        return;
+      }
+
+      const active = patients.filter(p => p.status !== 'discharged');
+
+      if (active.length === 0) {
+        root.innerHTML = `<div class="empty-board"><div class="ei">🐾</div><div class="et">Nessun paziente ricoverato</div><div class="eh">La lavagna si compilerà automaticamente</div></div>`;
+        return;
+      }
+
+      const hoursHdr = HOURS.map(h => `<th class="col-hour">${h}</th>`).join('');
+
+      const rows = active.map(p => {
+        const emoji = SPECIES_EMOJI[p.species] ?? '🐾';
+        const therapies = (p.therapies || []).filter(t => t.active);
+
+        const hourCells = HOURS.map(h => {
+          const key = cellKey(p.id, h);
+          const vals = store[key] || {};
+          const hasData = Object.keys(vals).length > 0;
+          const content = Object.entries(vals).map(([k,v]) =>
+            `<span title="${k}: ${v}">${k}:${v}</span>`
+          ).join('');
+          return `<td class="td-hour" data-key="${key}" data-pid="${p.id}" data-hour="${h}" style="${hasData ? 'background:var(--accent-dim)' : ''}">
+            <div class="cell-inner">${content}</div>
+          </td>`;
+        }).join('');
+
+        const ecoKey  = checkKey(p.id, 'eco');
+        const prevKey = checkKey(p.id, 'prev');
+        const ecoCh   = store[ecoKey]  ? 'checked' : '';
+        const prevCh  = store[prevKey] ? 'checked' : '';
+
+        const drugTags = therapies.length
+          ? therapies.map(t => `<span class="drug-tag">${t.drug}</span>`).join('')
+          : `<span style="color:var(--text3);font-size:10px">—</span>`;
+
+        return `<tr data-pid="${p.id}">
+          <td class="td-kg">${p.weight ? p.weight+'kg' : '—'}</td>
+          <td class="td-name"><span class="species">${emoji}</span><span class="pname">${p.name}</span></td>
+          ${hourCells}
+          <td class="td-check" data-check="${ecoKey}"><div class="chk-box ${ecoCh}">✓</div></td>
+          <td class="td-check" data-check="${prevKey}"><div class="chk-box ${prevCh}">✓</div></td>
+          <td class="td-ter">${drugTags}</td>
+        </tr>`;
+      }).join('');
+
+      root.innerHTML = `
+        <table class="board">
+          <thead>
+            <tr class="hdr-main">
+              <th class="col-kg">KG</th>
+              <th class="col-name">Paziente</th>
+              ${hoursHdr}
+              <th class="col-eco">Eco</th>
+              <th class="col-prev">Prelievi</th>
+              <th class="col-ter">Terapia</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+
+      // Tap su celle ora
+      root.querySelectorAll('.td-hour').forEach(td => {
+        td.addEventListener('click', () => {
+          const pid = td.dataset.pid;
+          const hour = td.dataset.hour;
+          const key = td.dataset.key;
+          const patientName = td.closest('tr').querySelector('.pname').textContent;
+          openModal(key, patientName, hour);
+        });
+      });
+
+      // Tap su checkbox eco/prelievi
+      root.querySelectorAll('.td-check').forEach(td => {
+        td.addEventListener('click', () => {
+          const key = td.dataset.check;
+          store[key] = !store[key];
+          saveStore(store);
+          const box = td.querySelector('.chk-box');
+          box.classList.toggle('checked', !!store[key]);
+        });
+      });
+    }
+
+    render();
+  </script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/vetcare-web/sw.js");</script>
+</body>
+</html>
