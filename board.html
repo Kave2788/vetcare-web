@@ -238,9 +238,9 @@
 
     /* Terapie */
     .board tbody td.td-ter {
-      text-align: left; padding: 3px 6px;
+      text-align: left; padding: 2px 5px;
       font-size: var(--ter-font, 9px);
-      white-space: normal; line-height: 1.4;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .td-ter .drug-tag {
       display: inline-block; border-radius: 3px;
@@ -661,7 +661,7 @@ function computeLayout(nRows) {
   const KG_W   = Math.max(36, Math.min(52, Math.floor(lw * 0.05)));
   const ECO_W  = Math.max(44, Math.min(64, Math.floor(lw * 0.06)));
   const NAME_W = Math.max(80, Math.min(120, Math.floor(lw * 0.11)));
-  const TER_W  = Math.max(110, Math.min(200, Math.floor(lw * 0.20)));
+  const TER_W  = Math.max(70, Math.min(130, Math.floor(lw * 0.12)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2 + TER_W;
   const HOUR_W = Math.max(28, Math.floor((lw - FIXED) / HOURS.length));
 
