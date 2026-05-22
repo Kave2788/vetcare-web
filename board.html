@@ -144,21 +144,22 @@
 
     .board tbody td.td-hour .cell-inner {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 1px; padding: 2px 2px 2px 2px;
-      height: var(--row-h, 42px);
-      font-size: var(--cell-font, 9px);
-      color: var(--text); line-height: 1.3; font-weight: 600;
+      justify-content: center; gap: 2px; padding: 3px 2px;
+      height: var(--row-h, 46px);
+      font-size: var(--cell-font, 10px);
+      color: var(--text); line-height: 1.35; font-weight: 700;
     }
     .board tbody td.td-hour .cell-inner span {
       display: block;
-      max-width: calc(var(--hour-w, 36px) - 4px);
+      width: calc(var(--hour-w, 38px) - 4px);
       overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: nowrap; text-align: center;
     }
-    /* X farmaco: badge in alto al centro, sopra i vitali */
+    /* X farmaco */
     .cell-drug {
-      font-weight: 800 !important; font-size: 10px !important;
-      border-radius: 3px; padding: 0 3px; line-height: 1.4;
+      font-weight: 900 !important;
+      font-size: calc(var(--cell-font, 10px) + 1px) !important;
+      border-radius: 3px; padding: 1px 3px; line-height: 1.3;
       display: block; text-align: center;
     }
     .cell-sep { display: block; width: 80%; height: 1px; background: var(--border); margin: 1px auto; }
@@ -660,28 +661,28 @@ function computeLayout(nRows) {
   const HDR_H    = 28;
   const avail    = lh - TOPBAR_H - DATE_H;
 
-  // Altezza riga: prova a far stare tutto senza scroll
+  // Altezza riga: se le righe sono poche lascia crescere di più
   let rowH = Math.floor(avail / (nRows + 1));
-  rowH = Math.max(30, Math.min(58, rowH));
+  rowH = Math.max(46, Math.min(90, rowH));
 
-  // Larghezze colonne fisse
-  const KG_W   = Math.max(36, Math.min(52, Math.floor(lw * 0.05)));
-  const ECO_W  = Math.max(44, Math.min(64, Math.floor(lw * 0.06)));
-  const NAME_W = Math.max(80, Math.min(120, Math.floor(lw * 0.11)));
-  const TER_W  = Math.max(70, Math.min(130, Math.floor(lw * 0.12)));
+  // Larghezze colonne fisse — ora le ore prendono più spazio
+  const KG_W   = Math.max(34, Math.min(48, Math.floor(lw * 0.045)));
+  const ECO_W  = Math.max(38, Math.min(56, Math.floor(lw * 0.055)));
+  const NAME_W = Math.max(72, Math.min(110, Math.floor(lw * 0.10)));
+  const TER_W  = Math.max(62, Math.min(110, Math.floor(lw * 0.10)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2 + TER_W;
-  const HOUR_W = Math.max(28, Math.floor((lw - FIXED) / HOURS.length));
+  const HOUR_W = Math.max(38, Math.floor((lw - FIXED) / HOURS.length));
 
-  // Font
-  const cellFont = Math.max(8, Math.min(11, Math.floor(rowH * 0.24)));
-  const nameFont = Math.max(10, Math.min(14, Math.floor(rowH * 0.30)));
-  const subFont  = Math.max(8,  Math.min(11, Math.floor(rowH * 0.22)));
-  const hdrFont  = Math.max(9,  Math.min(12, Math.floor(HDR_H * 0.38)));
-  const kgFont   = Math.max(9,  Math.min(13, Math.floor(rowH * 0.28)));
-  const terFont  = Math.max(8,  Math.min(11, Math.floor(rowH * 0.22)));
+  // Font — più grandi e leggibili
+  const cellFont = Math.max(10, Math.min(13, Math.floor(rowH * 0.18)));
+  const nameFont = Math.max(11, Math.min(15, Math.floor(rowH * 0.22)));
+  const subFont  = Math.max(9,  Math.min(11, Math.floor(rowH * 0.14)));
+  const hdrFont  = Math.max(10, Math.min(13, Math.floor(HDR_H * 0.40)));
+  const kgFont   = Math.max(10, Math.min(14, Math.floor(rowH * 0.20)));
+  const terFont  = Math.max(9,  Math.min(12, Math.floor(rowH * 0.16)));
 
   // Quante righe di testo stanno in una cella oraria
-  const maxLines = Math.max(2, Math.floor((rowH - 4) / (cellFont + 2)));
+  const maxLines = Math.max(2, Math.floor((rowH - 8) / (cellFont + 3)));
 
   return { rowH, KG_W, NAME_W, ECO_W, TER_W, HOUR_W,
            cellFont, nameFont, subFont, hdrFont, kgFont, terFont,
