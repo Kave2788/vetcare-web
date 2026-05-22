@@ -239,20 +239,27 @@
         ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()) || d.indicazione.toLowerCase().includes(q.toLowerCase()))
         : dietsDB;
       const list = document.getElementById('diet-list');
-      list.innerHTML = filtered.map(d =>
-        `<div class="diet-item" data-nome="${d.nome}" style="padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer">
-          <div style="font-size:14px;color:var(--text1);font-weight:600">${d.nome}</div>
-          <div style="font-size:12px;color:var(--text3)">${d.indicazione}</div>
-        </div>`
-      ).join('') + `<div class="diet-item" data-nome="${q||''}" style="padding:11px 4px;cursor:pointer">
-        <div style="font-size:14px;color:var(--accent)">✏️ Inserisci testo libero: "${q||''}"</div>
-      </div>`;
-      list.querySelectorAll('.diet-item').forEach(el => {
-        el.addEventListener('click', () => {
-          setFood(el.dataset.nome);
-          closeDietPicker();
-        });
+      list.innerHTML = '';
+
+      const pick = (nome) => { setFood(nome); closeDietPicker(); };
+
+      filtered.forEach(d => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:11px 4px;cursor:pointer';
+        btn.innerHTML = `<div style="font-size:14px;color:var(--text1);font-weight:600">${d.nome}</div><div style="font-size:12px;color:var(--text3)">${d.indicazione}</div>`;
+        btn.addEventListener('click', () => pick(d.nome));
+        list.appendChild(btn);
       });
+
+      if (q) {
+        const custom = document.createElement('button');
+        custom.type = 'button';
+        custom.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;padding:11px 4px;cursor:pointer';
+        custom.innerHTML = `<div style="font-size:14px;color:var(--accent)">✏️ Usa "${q}"</div>`;
+        custom.addEventListener('click', () => pick(q));
+        list.appendChild(custom);
+      }
     }
 
     function openDietPicker() {
