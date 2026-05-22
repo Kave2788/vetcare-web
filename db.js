@@ -70,8 +70,19 @@ export async function loadVitals(patientId) {
 }
 
 export async function addVital(vital) {
-  const { error } = await db.from('vitals').insert(vital);
+  const { data, error } = await db.from('vitals').insert(vital).select('id').single();
   if (error) throw error;
+  return data.id;
+}
+
+export async function loadTodayVitals(patientIds) {
+  const start = new Date(); start.setHours(0,0,0,0);
+  const { data, error } = await db
+    .from('vitals').select('*')
+    .in('patient_id', patientIds)
+    .gte('recorded_at', start.toISOString());
+  if (error) throw error;
+  return data;
 }
 
 export async function loadVital(id) {

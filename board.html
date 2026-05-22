@@ -25,7 +25,6 @@
       font-weight: 600;
     }
 
-    /* ── Tabella ── */
     table.board {
       border-collapse: collapse;
       min-width: 900px;
@@ -40,7 +39,6 @@
       white-space: nowrap;
     }
 
-    /* Header principale */
     .board thead tr.hdr-main th {
       background: var(--bg2);
       color: var(--accent);
@@ -58,193 +56,106 @@
     .board thead tr.hdr-main th.col-prev { width: 66px; }
     .board thead tr.hdr-main th.col-ter  { min-width: 130px; text-align: left; padding-left: 8px; }
 
-    /* Sub-header parametri */
-    .board thead tr.hdr-params th {
-      background: var(--bg3);
-      color: var(--text3);
-      font-size: 10px;
-      font-weight: 600;
-      padding: 4px 3px;
-    }
-
-    /* Righe pazienti */
     .board tbody tr { background: var(--card); }
     .board tbody tr:nth-child(even) { background: var(--bg2); }
 
-    .board tbody td {
-      padding: 0;
-      height: 44px;
-    }
+    .board tbody td { padding: 0; height: 44px; }
 
     .board tbody td.td-kg {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--text2);
-      padding: 4px 6px;
+      font-size: 12px; font-weight: 700; color: var(--text2); padding: 4px 6px;
     }
 
     .board tbody td.td-name {
-      text-align: left;
-      padding: 4px 10px;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-      min-width: 110px;
+      text-align: left; padding: 4px 10px; font-size: 13px;
+      font-weight: 700; color: var(--text); min-width: 110px;
     }
-
     .board tbody td.td-name .species { font-size: 14px; margin-right: 4px; }
-    .board tbody td.td-name .pname   { color: var(--text); }
 
-    /* Celle ora — tappabili */
     .board tbody td.td-hour {
-      cursor: pointer;
-      position: relative;
-      transition: background .1s;
+      cursor: pointer; position: relative; transition: background .1s;
     }
     .board tbody td.td-hour:active { background: var(--accent-dim); }
 
     .board tbody td.td-hour .cell-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 44px;
-      gap: 1px;
-      padding: 2px;
-      font-size: 9px;
-      color: var(--text2);
-      line-height: 1.1;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 44px; gap: 1px; padding: 2px;
+      font-size: 9px; color: var(--text2); line-height: 1.1;
+    }
+    .board tbody td.td-hour .cell-inner span {
+      display: block; max-width: 32px; overflow: hidden; text-overflow: ellipsis;
     }
 
-    .board tbody td.td-hour .cell-inner span { display: block; max-width: 32px; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Celle checkbox eco/prelievi */
-    .board tbody td.td-check {
-      cursor: pointer;
-    }
+    .board tbody td.td-check { cursor: pointer; }
 
     .chk-box {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      border: 1.5px solid var(--border);
-      font-size: 14px;
-      transition: all .15s;
-      background: transparent;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1.5px solid var(--border); font-size: 14px;
+      transition: all .15s; background: transparent;
     }
-    .chk-box.checked {
-      background: #10B98120;
-      border-color: var(--stable);
-      color: var(--stable);
-    }
+    .chk-box.checked { background: #10B98120; border-color: var(--stable); color: var(--stable); }
 
-    /* Colonna terapie */
     .board tbody td.td-ter {
-      text-align: left;
-      padding: 4px 8px;
-      font-size: 10px;
-      color: var(--text2);
-      max-width: 160px;
-      white-space: normal;
-      line-height: 1.4;
+      text-align: left; padding: 4px 8px; font-size: 10px;
+      color: var(--text2); max-width: 160px; white-space: normal; line-height: 1.4;
     }
-
     .td-ter .drug-tag {
-      display: inline-block;
-      background: #F59E0B18;
-      border: 1px solid #F59E0B40;
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: 10px;
-      color: #F59E0B;
-      margin: 1px 2px 1px 0;
-      font-weight: 600;
+      display: inline-block; background: #F59E0B18; border: 1px solid #F59E0B40;
+      border-radius: 4px; padding: 1px 5px; font-size: 10px;
+      color: #F59E0B; margin: 1px 2px 1px 0; font-weight: 600;
     }
 
-    /* Modal input ora */
+    /* Modal */
     #hour-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(0,0,0,.6);
-      align-items: flex-end;
-      justify-content: center;
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.6); align-items: flex-end; justify-content: center;
     }
     #hour-modal.open { display: flex; }
 
     .hm-sheet {
-      background: var(--bg2);
-      border: 1px solid var(--border);
+      background: var(--bg2); border: 1px solid var(--border);
       border-radius: 18px 18px 0 0;
       padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
-      width: 100%;
-      max-width: 480px;
+      width: 100%; max-width: 480px;
+      max-height: 80vh; overflow-y: auto;
     }
 
     .hm-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 14px;
-      text-align: center;
+      font-size: 14px; font-weight: 700; color: var(--accent);
+      margin-bottom: 14px; text-align: center;
     }
 
     .hm-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 14px;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; margin-bottom: 14px;
     }
 
-    .hm-field {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
+    .hm-field { display: flex; flex-direction: column; gap: 3px; }
+    .hm-field label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; }
 
-    .hm-field label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text3);
-      text-transform: uppercase;
+    .hm-field input, .hm-field select {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 6px; color: var(--text);
+      font-size: 13px; font-family: var(--font); width: 100%;
+      -webkit-appearance: none; appearance: none;
     }
+    .hm-field input:focus, .hm-field select:focus { outline: none; border-color: var(--accent); }
+    .hm-field select option { background: var(--card); }
 
-    .hm-field input {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 10px;
-      color: var(--text);
-      font-size: 14px;
-      font-family: var(--font);
-      width: 100%;
-    }
-    .hm-field input:focus { outline: none; border-color: var(--accent); }
+    .hm-saving { text-align: center; font-size: 12px; color: var(--text3); margin-bottom: 8px; display: none; }
+    .hm-saving.show { display: block; }
 
     .hm-btns { display: flex; gap: 8px; }
-
     .hm-btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
+      flex: 1; padding: 12px; border-radius: 10px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
     }
-    .hm-btn.save { background: var(--accent); color: #fff; }
+    .hm-btn.save   { background: var(--accent); color: #fff; }
     .hm-btn.cancel { background: var(--card); border: 1px solid var(--border); color: var(--text2); }
-    .hm-btn.clear { background: #EF444418; border: 1px solid #EF444440; color: #EF4444; }
+    .hm-btn.clear  { background: #EF444418; border: 1px solid #EF444440; color: #EF4444; }
+    .hm-btn:disabled { opacity: .5; }
 
-    .empty-board {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text2);
-    }
+    .empty-board { text-align: center; padding: 60px 20px; color: var(--text2); }
     .empty-board .ei { font-size: 48px; margin-bottom: 12px; }
     .empty-board .et { font-size: 16px; font-weight: 700; color: var(--text); }
     .empty-board .eh { font-size: 13px; margin-top: 6px; }
@@ -254,7 +165,6 @@
   <div class="topbar">
     <a class="back" href="index.html">Indietro</a>
     <h1>Lavagna Giornaliera</h1>
-    <button id="btn-reset" style="background:transparent;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:6px;">Reset</button>
   </div>
 
   <div class="board-wrap">
@@ -262,21 +172,83 @@
     <div id="board-root"><div class="spinner"></div></div>
   </div>
 
-  <!-- Modal inserimento ora -->
+  <!-- Modal ora -->
   <div id="hour-modal">
     <div class="hm-sheet">
-      <div class="hm-title" id="hm-title">Ora 08:00 — Paziente</div>
+      <div class="hm-title" id="hm-title"></div>
       <div class="hm-grid">
-        <div class="hm-field"><label>Fc</label><input id="hm-fc" type="number" placeholder="bpm"></div>
-        <div class="hm-field"><label>Fr</label><input id="hm-fr" type="number" placeholder="atti/min"></div>
-        <div class="hm-field"><label>T°</label><input id="hm-t"  type="number" step="0.1" placeholder="°C"></div>
-        <div class="hm-field"><label>Idr</label><input id="hm-idr" type="text" placeholder="%"></div>
-        <div class="hm-field"><label>Muc</label><input id="hm-muc" type="text" placeholder="es. rosee"></div>
-        <div class="hm-field"><label>Ur</label><input id="hm-ur" type="text" placeholder="sì/no"></div>
-        <div class="hm-field"><label>Fec</label><input id="hm-fec" type="text" placeholder="sì/no"></div>
-        <div class="hm-field"><label>Cibo</label><input id="hm-cibo" type="text" placeholder="sì/no"></div>
-        <div class="hm-field"><label>Acqua</label><input id="hm-acqua" type="text" placeholder="sì/no"></div>
+        <div class="hm-field"><label>Fc (bpm)</label><input id="hm-fc" type="number" placeholder="—"></div>
+        <div class="hm-field"><label>Fr (atti/m)</label><input id="hm-fr" type="number" placeholder="—"></div>
+        <div class="hm-field"><label>T° (°C)</label><input id="hm-t" type="number" step="0.1" placeholder="—"></div>
+        <div class="hm-field"><label>Idratazione</label>
+          <select id="hm-idr">
+            <option value="">—</option>
+            <option value="lt5">&lt;5%</option>
+            <option value="p5">5%</option>
+            <option value="p6">6%</option>
+            <option value="p7">7%</option>
+            <option value="p8">8%</option>
+            <option value="p9">9%</option>
+            <option value="p10">10%</option>
+          </select>
+        </div>
+        <div class="hm-field"><label>Mucose</label>
+          <select id="hm-muc">
+            <option value="">—</option>
+            <option value="rosee">Rosee</option>
+            <option value="rosee_pallide">Rosee-pallide</option>
+            <option value="cianotiche">Cianotiche</option>
+            <option value="congeste">Congeste</option>
+            <option value="pallide">Pallide</option>
+            <option value="pigmentate">Pigmentate</option>
+            <option value="subitteriche">Subitteriche</option>
+            <option value="itteriche">Itteriche</option>
+            <option value="polso_quinck">Polso di Quinck</option>
+          </select>
+        </div>
+        <div class="hm-field"><label>Urine</label>
+          <select id="hm-ur">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="stranguria">Stranguria</option>
+            <option value="ematuria">Ematuria</option>
+            <option value="itteriche">Urine itteriche</option>
+          </select>
+        </div>
+        <div class="hm-field"><label>Feci</label>
+          <select id="hm-fec">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="diarrea">Diarrea</option>
+            <option value="diarrea_emor">Diarrea emor.</option>
+            <option value="ematochezia">Ematochezia</option>
+            <option value="melena">Melena</option>
+          </select>
+        </div>
+        <div class="hm-field"><label>Cibo</label>
+          <select id="hm-cibo">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="a_disposizione">A disposizione</option>
+            <option value="digiuno_forzato">Digiuno</option>
+            <option value="digiuno_acqua">Digiuno + acqua</option>
+          </select>
+        </div>
+        <div class="hm-field"><label>Acqua</label>
+          <select id="hm-acqua">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="a_disposizione">A disposizione</option>
+            <option value="digiuno_forzato">Digiuno</option>
+            <option value="digiuno_acqua">Digiuno + acqua</option>
+          </select>
+        </div>
       </div>
+      <div class="hm-saving" id="hm-saving">Salvataggio...</div>
       <div class="hm-btns">
         <button class="hm-btn cancel" id="hm-cancel">Annulla</button>
         <button class="hm-btn clear"  id="hm-clear">Svuota</button>
@@ -285,87 +257,159 @@
     </div>
   </div>
 
+  <div id="toast"></div>
+
   <script type="module">
-    import { loadPatients, SPECIES_EMOJI } from './db.js';
+    import {
+      loadPatients, loadTodayVitals, addVital, updateVital,
+      SPECIES_EMOJI, DEHYD_LABELS, MUC_LABELS, URINE_LABELS,
+      FECES_LABELS, FOOD_LABELS, WATER_LABELS
+    } from './db.js';
 
     const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
-    const PARAMS = ['fc','fr','t','idr','muc','ur','fec','cibo','acqua'];
-    const TODAY = new Date().toISOString().slice(0,10);
-    const STORE_KEY = `board_${TODAY}`;
 
-    // ── Storage ──────────────────────────────────────────────────────────────
+    // localStorage solo per eco/prelievi (non hanno colonna in vitals)
+    const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
+    let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
+    function saveChecks() { localStorage.setItem(TODAY_KEY, JSON.stringify(checks)); }
 
-    function loadStore() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch { return {}; }
-    }
-    function saveStore(s) { localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
-
-    let store = loadStore();
+    // vitalsMap: `${pid}_h${hour}` → vitals record (o null)
+    let vitalsMap = {};
 
     function cellKey(pid, h) { return `${pid}_h${h}`; }
-    function checkKey(pid, col) { return `${pid}_${col}`; }
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function hourToISO(hour) {
+      const d = new Date(); d.setHours(hour, 0, 0, 0); return d.toISOString();
+    }
+
+    // Abbreviazioni per visualizzare nella cella
+    const SHORT = {
+      lt5:'<5%', p5:'5%', p6:'6%', p7:'7%', p8:'8%', p9:'9%', p10:'10%',
+      rosee:'Ros', rosee_pallide:'R-pal', cianotiche:'Cia', congeste:'Con',
+      pallide:'Pal', pigmentate:'Pig', subitteriche:'SubIt', itteriche:'Itt', polso_quinck:'Quinck',
+      si:'Sì', no:'No', stranguria:'Str', ematuria:'Emat',
+      diarrea:'Diar', diarrea_emor:'D-em', ematochezia:'Emat', melena:'Mel',
+      a_disposizione:'Disp', digiuno_forzato:'Dig', digiuno_acqua:'Dig+A',
+    };
+    function sh(v) { return SHORT[v] || v || ''; }
+
+    function vitalToCell(v) {
+      if (!v) return { lines: [], hasData: false };
+      const lines = [];
+      if (v.heart_rate) lines.push(`Fc:${v.heart_rate}`);
+      if (v.resp_rate)  lines.push(`Fr:${v.resp_rate}`);
+      if (v.temperature) lines.push(`T:${v.temperature}`);
+      if (v.dehydration) lines.push(`Idr:${sh(v.dehydration)}`);
+      if (v.mucosae)     lines.push(`Muc:${sh(v.mucosae)}`);
+      if (v.urine)       lines.push(`Ur:${sh(v.urine)}`);
+      if (v.feces)       lines.push(`Fec:${sh(v.feces)}`);
+      if (v.food_status) lines.push(`Cib:${sh(v.food_status)}`);
+      if (v.water_status) lines.push(`Acq:${sh(v.water_status)}`);
+      return { lines, hasData: lines.length > 0 };
+    }
+
+    function updateCellUI(key) {
+      const td = document.querySelector(`[data-key="${key}"]`);
+      if (!td) return;
+      const v = vitalsMap[key];
+      const { lines, hasData } = vitalToCell(v);
+      td.querySelector('.cell-inner').innerHTML = lines.map(l => `<span>${l}</span>`).join('');
+      td.style.background = hasData ? 'var(--accent-dim)' : '';
+    }
 
     // ── Modal ─────────────────────────────────────────────────────────────────
 
-    let activeCellKey = null;
-
-    const modal   = document.getElementById('hour-modal');
-    const hmTitle = document.getElementById('hm-title');
+    let activePid = null, activeHour = null, activeKey = null;
+    const modal = document.getElementById('hour-modal');
 
     document.getElementById('hm-cancel').onclick = () => modal.classList.remove('open');
-    document.getElementById('hm-clear').onclick  = () => {
-      PARAMS.forEach(p => document.getElementById('hm-'+p).value = '');
+
+    document.getElementById('hm-clear').onclick = () => {
+      ['fc','fr','t'].forEach(f => document.getElementById('hm-'+f).value = '');
+      ['idr','muc','ur','fec','cibo','acqua'].forEach(f => document.getElementById('hm-'+f).value = '');
     };
-    document.getElementById('hm-save').onclick = () => {
-      const vals = {};
-      PARAMS.forEach(p => { const v = document.getElementById('hm-'+p).value.trim(); if (v) vals[p] = v; });
-      store[activeCellKey] = vals;
-      saveStore(store);
-      renderCell(activeCellKey);
-      modal.classList.remove('open');
+
+    document.getElementById('hm-save').onclick = async () => {
+      const fc   = parseFloat(document.getElementById('hm-fc').value)   || null;
+      const fr   = parseFloat(document.getElementById('hm-fr').value)   || null;
+      const t    = parseFloat(document.getElementById('hm-t').value)    || null;
+      const idr  = document.getElementById('hm-idr').value  || null;
+      const muc  = document.getElementById('hm-muc').value  || null;
+      const ur   = document.getElementById('hm-ur').value   || null;
+      const fec  = document.getElementById('hm-fec').value  || null;
+      const cibo = document.getElementById('hm-cibo').value || null;
+      const acqua= document.getElementById('hm-acqua').value|| null;
+
+      const fields = {
+        heart_rate: fc, resp_rate: fr, temperature: t,
+        dehydration: idr, mucosae: muc, urine: ur,
+        feces: fec, food_status: cibo, water_status: acqua
+      };
+
+      const saving = document.getElementById('hm-saving');
+      const saveBtn = document.getElementById('hm-save');
+      saving.classList.add('show');
+      saveBtn.disabled = true;
+
+      try {
+        const existing = vitalsMap[activeKey];
+        if (existing) {
+          await updateVital(existing.id, fields);
+          vitalsMap[activeKey] = { ...existing, ...fields };
+        } else {
+          const newId = await addVital({
+            patient_id: activePid,
+            recorded_at: hourToISO(activeHour),
+            ...fields
+          });
+          vitalsMap[activeKey] = { id: newId, patient_id: activePid, ...fields };
+        }
+        updateCellUI(activeKey);
+        modal.classList.remove('open');
+      } catch(e) {
+        toast('Errore salvataggio: ' + e.message);
+      } finally {
+        saving.classList.remove('show');
+        saveBtn.disabled = false;
+      }
     };
 
     modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 
-    function openModal(key, patientName, hour) {
-      activeCellKey = key;
-      hmTitle.textContent = `Ore ${hour}:00 — ${patientName}`;
-      const vals = store[key] || {};
-      PARAMS.forEach(p => { document.getElementById('hm-'+p).value = vals[p] || ''; });
+    function openModal(pid, hour, patientName) {
+      activePid = pid; activeHour = hour; activeKey = cellKey(pid, hour);
+      document.getElementById('hm-title').textContent = `Ore ${hour}:00 — ${patientName}`;
+      const v = vitalsMap[activeKey] || {};
+      document.getElementById('hm-fc').value    = v.heart_rate   || '';
+      document.getElementById('hm-fr').value    = v.resp_rate    || '';
+      document.getElementById('hm-t').value     = v.temperature  || '';
+      document.getElementById('hm-idr').value   = v.dehydration  || '';
+      document.getElementById('hm-muc').value   = v.mucosae      || '';
+      document.getElementById('hm-ur').value    = v.urine        || '';
+      document.getElementById('hm-fec').value   = v.feces        || '';
+      document.getElementById('hm-cibo').value  = v.food_status  || '';
+      document.getElementById('hm-acqua').value = v.water_status || '';
       modal.classList.add('open');
     }
 
-    function renderCell(key) {
-      const td = document.querySelector(`[data-key="${key}"]`);
-      if (!td) return;
-      const vals = store[key] || {};
-      const inner = td.querySelector('.cell-inner');
-      inner.innerHTML = Object.entries(vals).map(([k,v]) =>
-        `<span title="${k}: ${v}">${k}:${v}</span>`
-      ).join('');
-      td.style.background = Object.keys(vals).length ? 'var(--accent-dim)' : '';
-    }
-
-    // ── Render ────────────────────────────────────────────────────────────────
+    // ── Render ─────────────────────────────────────────────────────────────────
 
     document.getElementById('board-date').textContent =
       new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-
-    document.getElementById('btn-reset').onclick = () => {
-      if (!confirm('Cancellare tutti i dati della lavagna di oggi?')) return;
-      localStorage.removeItem(STORE_KEY);
-      store = {};
-      render();
-    };
 
     async function render() {
       const root = document.getElementById('board-root');
       root.innerHTML = '<div class="spinner"></div>';
 
       let patients;
-      try {
-        patients = await loadPatients();
-      } catch(e) {
+      try { patients = await loadPatients(); }
+      catch(e) {
         root.innerHTML = `<div class="empty-board"><div class="et">Errore connessione</div><div class="eh">${e.message}</div></div>`;
         return;
       }
@@ -377,6 +421,22 @@
         return;
       }
 
+      // Carica vitals di oggi per tutti i pazienti attivi
+      vitalsMap = {};
+      try {
+        const todayVitals = await loadTodayVitals(active.map(p => p.id));
+        todayVitals.forEach(v => {
+          const hour = new Date(v.recorded_at).getHours();
+          if (HOURS.includes(hour)) {
+            const key = cellKey(v.patient_id, hour);
+            // Se ci sono più rilevazioni nella stessa ora, prendi la più recente
+            if (!vitalsMap[key] || v.recorded_at > vitalsMap[key].recorded_at) {
+              vitalsMap[key] = v;
+            }
+          }
+        });
+      } catch(e) { /* continua anche senza vitals */ }
+
       const hoursHdr = HOURS.map(h => `<th class="col-hour">${h}</th>`).join('');
 
       const rows = active.map(p => {
@@ -385,31 +445,25 @@
 
         const hourCells = HOURS.map(h => {
           const key = cellKey(p.id, h);
-          const vals = store[key] || {};
-          const hasData = Object.keys(vals).length > 0;
-          const content = Object.entries(vals).map(([k,v]) =>
-            `<span title="${k}: ${v}">${k}:${v}</span>`
-          ).join('');
+          const { lines, hasData } = vitalToCell(vitalsMap[key]);
           return `<td class="td-hour" data-key="${key}" data-pid="${p.id}" data-hour="${h}" style="${hasData ? 'background:var(--accent-dim)' : ''}">
-            <div class="cell-inner">${content}</div>
+            <div class="cell-inner">${lines.map(l=>`<span>${l}</span>`).join('')}</div>
           </td>`;
         }).join('');
 
-        const ecoKey  = checkKey(p.id, 'eco');
-        const prevKey = checkKey(p.id, 'prev');
-        const ecoCh   = store[ecoKey]  ? 'checked' : '';
-        const prevCh  = store[prevKey] ? 'checked' : '';
+        const ecoKey  = `${p.id}_eco`;
+        const prevKey = `${p.id}_prev`;
 
         const drugTags = therapies.length
           ? therapies.map(t => `<span class="drug-tag">${t.drug}</span>`).join('')
-          : `<span style="color:var(--text3);font-size:10px">—</span>`;
+          : `<span style="color:var(--text3)">—</span>`;
 
-        return `<tr data-pid="${p.id}">
+        return `<tr>
           <td class="td-kg">${p.weight ? p.weight+'kg' : '—'}</td>
-          <td class="td-name"><span class="species">${emoji}</span><span class="pname">${p.name}</span></td>
+          <td class="td-name"><span class="species">${emoji}</span>${p.name}</td>
           ${hourCells}
-          <td class="td-check" data-check="${ecoKey}"><div class="chk-box ${ecoCh}">✓</div></td>
-          <td class="td-check" data-check="${prevKey}"><div class="chk-box ${prevCh}">✓</div></td>
+          <td class="td-check" data-check="${ecoKey}"><div class="chk-box ${checks[ecoKey]?'checked':''}">✓</div></td>
+          <td class="td-check" data-check="${prevKey}"><div class="chk-box ${checks[prevKey]?'checked':''}">✓</div></td>
           <td class="td-ter">${drugTags}</td>
         </tr>`;
       }).join('');
@@ -429,25 +483,19 @@
           <tbody>${rows}</tbody>
         </table>`;
 
-      // Tap su celle ora
       root.querySelectorAll('.td-hour').forEach(td => {
         td.addEventListener('click', () => {
-          const pid = td.dataset.pid;
-          const hour = td.dataset.hour;
-          const key = td.dataset.key;
-          const patientName = td.closest('tr').querySelector('.pname').textContent;
-          openModal(key, patientName, hour);
+          const name = td.closest('tr').querySelector('.td-name').textContent.trim();
+          openModal(td.dataset.pid, +td.dataset.hour, name);
         });
       });
 
-      // Tap su checkbox eco/prelievi
       root.querySelectorAll('.td-check').forEach(td => {
         td.addEventListener('click', () => {
           const key = td.dataset.check;
-          store[key] = !store[key];
-          saveStore(store);
-          const box = td.querySelector('.chk-box');
-          box.classList.toggle('checked', !!store[key]);
+          checks[key] = !checks[key];
+          saveChecks();
+          td.querySelector('.chk-box').classList.toggle('checked', !!checks[key]);
         });
       });
     }
