@@ -24,6 +24,9 @@
         top: 0; left: 100vw;
         transform: rotate(90deg);
         transform-origin: top left;
+        /* dopo la rotazione, il lato fisico sinistro (Dynamic Island) diventa il top visivo */
+        padding-left: env(safe-area-inset-top);
+        padding-right: env(safe-area-inset-bottom);
       }
     }
 
@@ -350,10 +353,23 @@ function hourToISO(h) {
 
 // ── Layout adattivo ────────────────────────────────────────────────────────
 
+function getSafeArea() {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:env(safe-area-inset-top);left:env(safe-area-inset-left);width:0;height:0;visibility:hidden';
+  document.body.appendChild(el);
+  const top  = parseFloat(getComputedStyle(el).top)  || 0;
+  const left = parseFloat(getComputedStyle(el).left) || 0;
+  document.body.removeChild(el);
+  return { top, left };
+}
+
 function computeLayout(nRows) {
   const portrait = window.innerWidth < window.innerHeight;
-  const lw = portrait ? window.innerHeight : window.innerWidth;   // larghezza landscape effettiva
-  const lh = portrait ? window.innerWidth  : window.innerHeight;  // altezza landscape effettiva
+  const sa = getSafeArea();
+  // In portrait con rotazione 90°CW: safe-area-inset-top fisico → bordo sinistro visivo
+  const safeStart = portrait ? sa.top : sa.left;
+  const lw = (portrait ? window.innerHeight : window.innerWidth) - safeStart;
+  const lh = portrait ? window.innerWidth  : window.innerHeight;
 
   const TOPBAR_H = 40;
   const DATE_H   = 24;
