@@ -180,11 +180,16 @@
       white-space: normal; line-height: 1.4;
     }
     .td-ter .drug-tag {
-      display: inline-block; background: #F59E0B18;
-      border: 1px solid #F59E0B40; border-radius: 3px;
-      padding: 1px 4px; color: #F59E0B;
-      margin: 1px 1px 1px 0; font-weight: 600;
+      display: inline-block; border-radius: 3px;
+      padding: 1px 4px; margin: 1px 1px 1px 0; font-weight: 600;
+      border: 1px solid currentColor;
     }
+    .td-ter .drug-tag.dc0 { color:#F59E0B; background:#F59E0B18; }
+    .td-ter .drug-tag.dc1 { color:#60A5FA; background:#60A5FA18; }
+    .td-ter .drug-tag.dc2 { color:#F472B6; background:#F472B618; }
+    .td-ter .drug-tag.dc3 { color:#34D399; background:#34D39918; }
+    .td-ter .drug-tag.dc4 { color:#A78BFA; background:#A78BFA18; }
+    .td-ter .drug-tag.dc5 { color:#FB923C; background:#FB923C18; }
 
     /* ── Modal centrato ── */
     #hour-modal {
@@ -633,7 +638,7 @@ async function render() {
     const ecoKey  = `${p.id}_eco`;
     const prevKey = `${p.id}_prev`;
     const drugTags = therapies.length
-      ? therapies.map(t => `<span class="drug-tag">${t.drug}</span>`).join('')
+      ? therapies.map((t, i) => `<span class="drug-tag dc${i % 6}">${t.drug}</span>`).join('')
       : `<span style="color:var(--text3)">—</span>`;
     const kg = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
 
