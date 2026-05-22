@@ -304,6 +304,7 @@
     .hm-btn.save   { background: var(--accent); color: #fff; }
     .hm-btn.cancel { background: var(--card); border: 1px solid var(--border); color: var(--text2); }
     .hm-btn.clear  { background: #EF444418; border: 1px solid #EF444440; color: #EF4444; }
+    .hm-btn.delete { background: #EF4444; color: #fff; }
     .hm-btn:disabled { opacity: .5; }
 
     .empty-board { text-align: center; padding: 40px 20px; color: var(--text2); }
@@ -394,9 +395,10 @@
       </div>
       <div class="hm-saving" id="hm-saving">Salvataggio...</div>
       <div class="hm-btns">
-        <button class="hm-btn cancel" id="hm-cancel">Annulla</button>
-        <button class="hm-btn clear"  id="hm-clear">Svuota</button>
-        <button class="hm-btn save"   id="hm-save">Salva</button>
+        <button class="hm-btn cancel"  id="hm-cancel">Annulla</button>
+        <button class="hm-btn clear"   id="hm-clear">Svuota</button>
+        <button class="hm-btn delete"  id="hm-delete" style="display:none">Elimina</button>
+        <button class="hm-btn save"    id="hm-save">Salva</button>
       </div>
     </div>
   </div>
@@ -416,7 +418,7 @@
 
 <script type="module">
 import {
-  loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital,
+  loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
   SPECIES_EMOJI, STATUS_COLOR
 } from './db.js';
 
@@ -805,6 +807,25 @@ document.getElementById('hm-clear').onclick  = () => {
   ['idr','muc','ur','fec','cibo','acqua'].forEach(f => { document.getElementById('hm-'+f).value = ''; });
 };
 
+document.getElementById('hm-delete').onclick = async () => {
+  const existing = vitalsMap[activeKey];
+  if (!existing) return;
+  const saving = document.getElementById('hm-saving');
+  const delBtn = document.getElementById('hm-delete');
+  saving.classList.add('show'); delBtn.disabled = true;
+  try {
+    await deleteVital(existing.id);
+    delete vitalsMap[activeKey];
+    updateCellUI(activeKey, activePid, activeHour, activeLayout);
+    modal.classList.remove('open');
+    toast('Rilevazione eliminata');
+  } catch(e) {
+    toast('Errore: ' + e.message);
+  } finally {
+    saving.classList.remove('show'); delBtn.disabled = false;
+  }
+};
+
 document.getElementById('hm-save').onclick = async () => {
   const fc    = parseFloat(document.getElementById('hm-fc').value)    || null;
   const fr    = parseFloat(document.getElementById('hm-fr').value)    || null;
@@ -857,6 +878,8 @@ function openModal(pid, hour, name) {
   document.getElementById('hm-fec').value   = v.feces        || '';
   document.getElementById('hm-cibo').value  = v.food_status  || '';
   document.getElementById('hm-acqua').value = v.water_status || '';
+  const hasExisting = !!vitalsMap[activeKey];
+  document.getElementById('hm-delete').style.display = hasExisting ? '' : 'none';
   modal.classList.add('open');
 }
 

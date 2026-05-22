@@ -109,6 +109,11 @@ export async function updateVital(id, fields) {
   if (error) throw error;
 }
 
+export async function deleteVital(id) {
+  const { error } = await db.from('vitals').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ── Terapie ──────────────────────────────────────────────────────────────────
 
 export async function loadTherapies(patientId) {
