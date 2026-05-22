@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>VetCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <h1>VetCare — Ricoverati</h1>
+  </div>
+
+  <div class="page" id="root">
+    <div class="spinner"></div>
+  </div>
+
+  <a class="fab" href="new-patient.html" title="Nuovo paziente">+</a>
+  <div id="toast"></div>
+
+  <div id="overlay">
+    <div id="dialog">
+      <h3 id="dlg-title"></h3>
+      <p id="dlg-msg"></p>
+      <div class="dbtns">
+        <button class="btn btn-danger" id="dlg-confirm">Elimina</button>
+        <button class="btn btn-ghost" id="dlg-cancel">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { loadPatients, deletePatient, daysSince, STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI } from './db.js';
+
+    const root = document.getElementById('root');
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    let pendingDelete = null;
+    document.getElementById('dlg-cancel').onclick = () => document.getElementById('overlay').classList.remove('show');
+    document.getElementById('dlg-confirm').onclick = async () => {
+      if (!pendingDelete) return;
+      document.getElementById('overlay').classList.remove('show');
+      try {
+        await deletePatient(pendingDelete.id);
+        toast('Paziente eliminato');
+        await render();
+      } catch { toast('Errore eliminazione'); }
+      pendingDelete = null;
+    };
+
+    function confirmDelete(patient) {
+      pendingDelete = patient;
+      document.getElementById('dlg-title').textContent = 'Elimina paziente';
+      document.getElementById('dlg-msg').textContent = `Eliminare ${patient.name}? Tutti i dati verranno persi.`;
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    async function render() {
+      root.innerHTML = '<div class="spinner"></div>';
+      try {
+        const patients = await loadPatients();
+
+        if (patients.length === 0) {
+          root.innerHTML = `
+            <div class="empty">
+              <div class="ei">🐾</div>
+              <div class="et">Nessun paziente ricoverato</div>
+              <div class="eh">Tocca + per aggiungere il primo paziente</div>
+            </div>`;
+          return;
+        }
+
+        const active = patients.filter(p => p.status !== 'discharged').length;
+        const discharged = patients.filter(p => p.status === 'discharged').length;
+        const headerText = `${active} ricoverat${active === 1 ? 'o' : 'i'}${discharged > 0 ? ` · ${discharged} dimes${discharged === 1 ? 'so' : 'si'}` : ''}`;
+
+        root.innerHTML = `<div class="list-header">${headerText}</div>` +
+          patients.map(p => {
+            const color = STATUS_COLOR[p.status];
+            const label = STATUS_LABEL[p.status];
+            const emoji = SPECIES_EMOJI[p.species] ?? '🐾';
+            const days = daysSince(p.admitted_at);
+            const activeT = (p.therapies || []).filter(t => t.active).length;
+            const daysText = days === 0 ? 'Ricoverato oggi' : `${days} giorn${days === 1 ? 'o' : 'i'} di ricovero`;
+            const therapyPill = activeT > 0
+              ? `<span class="therapy-pill">${activeT} terapia${activeT > 1 ? 'e' : ''} attiva${activeT > 1 ? '' : ''}</span>`
+              : '';
+            return `
+              <a class="patient-card" href="patient.html?id=${p.id}" data-id="${p.id}">
+                <div class="strip" style="background:${color}"></div>
+                <div class="body">
+                  <div class="top">
+                    <div class="emoji">${emoji}</div>
+                    <div class="info">
+                      <div class="name">${p.name}</div>
+                      <div class="sub">${p.species}${p.breed ? ' · ' + p.breed : ''}</div>
+                    </div>
+                    <span class="badge ${p.status}">${label}</span>
+                  </div>
+                  <div class="bottom">
+                    <span class="meta">${daysText}</span>
+                    ${therapyPill}
+                  </div>
+                </div>
+              </a>`;
+          }).join('<div style="height:10px"></div>');
+
+        // Long press per eliminare
+        root.querySelectorAll('.patient-card').forEach(card => {
+          let timer;
+          const start = () => { timer = setTimeout(() => confirmDelete(patients.find(p => p.id === card.dataset.id)), 600); };
+          const cancel = () => clearTimeout(timer);
+          card.addEventListener('touchstart', start, { passive: true });
+          card.addEventListener('touchend', cancel);
+          card.addEventListener('mousedown', start);
+          card.addEventListener('mouseup', cancel);
+          card.addEventListener('mouseleave', cancel);
+        });
+
+      } catch (e) {
+        root.innerHTML = `<div class="empty"><div class="et">Errore di connessione</div><div class="eh">${e.message}</div></div>`;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

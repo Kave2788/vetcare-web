@@ -1,0 +1,683 @@
+[
+  {
+    "nome": "Amoxicillina/Ac. Clavulanico",
+    "principio_attivo": "amoxicillina triidrato + clavulanato di potassio",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01CR02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 12.5, "max": 25, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 12.5, "max": 12.5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "Somministrare con il cibo per ridurre i disturbi gastrointestinali. Durata massima 28 giorni.",
+    "avvertenze": "Evitare in caso di ipersensibilità alle penicilline o cefalosporine."
+  },
+  {
+    "nome": "Amoxicillina",
+    "principio_attivo": "amoxicillina triidrato",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01CA04",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 10, "max": 20, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 10, "max": 20, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "Spettro ampio verso batteri gram+. Preferire amox/clavulanato se sospetto resistenza.",
+    "avvertenze": "Ipersensibilità alle penicilline."
+  },
+  {
+    "nome": "Enrofloxacina",
+    "principio_attivo": "enrofloxacina",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01MA90",
+    "prescrizione": "Ricetta in triplice copia non ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 5, "max": 20, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv", "sc"] },
+      "gatto": { "min": 5, "max": 5, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "Nel gatto non superare 5 mg/kg/die. Diluire EV in SF e infondere lentamente (30 min).",
+    "avvertenze": "Nel gatto dosi elevate causano degenerazione retinica irreversibile. Non usare in animali in accrescimento (danni cartilaginei)."
+  },
+  {
+    "nome": "Marbofloxacina",
+    "principio_attivo": "marbofloxacina",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01MA93",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 2, "max": 4, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc"] },
+      "gatto": { "min": 2, "max": 4, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "Fluorochinolone di prima scelta nel gatto rispetto a enrofloxacina.",
+    "avvertenze": "Evitare in cuccioli e gattini in accrescimento."
+  },
+  {
+    "nome": "Metronidazolo",
+    "principio_attivo": "metronidazolo",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01XD01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 10, "max": 15, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] },
+      "gatto": { "min": 10, "max": 15, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Efficace contro anaerobi e protozoi (Giardia). EV: infondere in 30-60 min.",
+    "avvertenze": "Neurotossico a dosi elevate o trattamenti prolungati. Evitare in gravidanza."
+  },
+  {
+    "nome": "Doxiciclina",
+    "principio_attivo": "doxiciclina cloridrato",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01AA02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] },
+      "gatto": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Indicata per Rickettsie, Ehrlichia, Anaplasma, Mycoplasma. Somministrare con acqua o cibo per prevenire esofagite.",
+    "avvertenze": "Evitare in gravidanza e animali giovani (danno allo smalto dentale). Nel gatto preferire la formulazione liquida."
+  },
+  {
+    "nome": "Cefalexina",
+    "principio_attivo": "cefalexina monoidrato",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01DB01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 15, "max": 30, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] },
+      "gatto": { "min": 15, "max": 30, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Cefalosporina di I generazione, ottima per infezioni cutanee e tessuti molli.",
+    "avvertenze": "Ipersensibilità alle cefalosporine o penicilline."
+  },
+  {
+    "nome": "Ampicillina",
+    "principio_attivo": "ampicillina sodica",
+    "categoria": "Antibiotico",
+    "atc_vet": "QJ01CA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 10, "max": 20, "unita": "mg/kg", "frequenza": "tid", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 10, "max": 20, "unita": "mg/kg", "frequenza": "tid", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Uso prevalentemente parenterale in ospedale. Ricostituire in SF o acqua ppi.",
+    "avvertenze": "Ipersensibilità alle penicilline."
+  },
+  {
+    "nome": "Meloxicam",
+    "principio_attivo": "meloxicam",
+    "categoria": "FANS",
+    "atc_vet": "QM01AC06",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.2, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 0.05, "max": 0.1, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "1° giorno dose carico 0.2 mg/kg cane; dal 2° giorno 0.1 mg/kg. Nel gatto usare con estrema cautela e per breve durata.",
+    "avvertenze": "Controindicato con GI attivo, insufficienza renale/epatica, coagulopatie, gravidanza. Non associare ad altri FANS o corticosteroidi."
+  },
+  {
+    "nome": "Carprofene",
+    "principio_attivo": "carprofene",
+    "categoria": "FANS",
+    "atc_vet": "QM01AE91",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane"],
+    "dosaggio": {
+      "cane": { "min": 2, "max": 4, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc"] }
+    },
+    "note_cliniche": "Monitorare enzimi epatici in trattamenti cronici. Dose unica 4 mg/kg o frazionata 2 mg/kg BID.",
+    "avvertenze": "Non usare nel gatto. Non associare ad altri FANS o steroidi. Monitorare funzionalità renale ed epatica."
+  },
+  {
+    "nome": "Ketoprofene",
+    "principio_attivo": "ketoprofene",
+    "categoria": "FANS",
+    "atc_vet": "QM01AE03",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 2, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 1, "max": 1, "unita": "mg/kg", "frequenza": "sid", "via": ["sc"] }
+    },
+    "note_cliniche": "Max 3-5 giorni di trattamento. Nel gatto una sola somministrazione parenterale.",
+    "avvertenze": "Stesse controindicazioni degli altri FANS. Nel gatto uso molto limitato."
+  },
+  {
+    "nome": "Tramadolo",
+    "principio_attivo": "tramadolo cloridrato",
+    "categoria": "Analgesico oppioide",
+    "atc_vet": "QN02AX02",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 2, "max": 5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv", "sc"] },
+      "gatto": { "min": 2, "max": 4, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Analgesico di medio livello. EV: somministrare lentamente (bolo lento o CRI).",
+    "avvertenze": "Può causare sedazione, nausea. Ridurre dose in insufficienza renale/epatica."
+  },
+  {
+    "nome": "Buprenorfina",
+    "principio_attivo": "buprenorfina cloridrato",
+    "categoria": "Analgesico oppioide",
+    "atc_vet": "QN02AE01",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.005, "max": 0.02, "unita": "mg/kg", "frequenza": "tid", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.01, "max": 0.02, "unita": "mg/kg", "frequenza": "tid", "via": ["iv", "im", "sc", "transmucosale"] }
+    },
+    "note_cliniche": "Nel gatto ottima biodisponibilità per via transmucosale (sublinguale). Durata azione 6-8 h.",
+    "avvertenze": "Agonista parziale: non associare ad altri oppioidi agonisti completi. Registrazione obbligatoria su registro stupefacenti."
+  },
+  {
+    "nome": "Butorfanolo",
+    "principio_attivo": "butorfanolo tartrato",
+    "categoria": "Analgesico oppioide",
+    "atc_vet": "QN02AF01",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.4, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.2, "max": 0.4, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Buona azione antitussiva e sedativa. Analgesia moderata e di breve durata (1-2h).",
+    "avvertenze": "Antagonizza gli effetti degli agonisti µ completi (morfina, fentanyl). Registro stupefacenti."
+  },
+  {
+    "nome": "Morfina",
+    "principio_attivo": "morfina solfato",
+    "categoria": "Analgesico oppioide",
+    "atc_vet": "QN02AA01",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.5, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc", "peridurale"] },
+      "gatto": { "min": 0.05, "max": 0.2, "unita": "mg/kg", "frequenza": "prn", "via": ["im", "sc"] }
+    },
+    "note_cliniche": "EV: somministrare lentamente (rilascio istamina). CRI: 0.1-0.3 mg/kg/h. Nel gatto può causare disforia.",
+    "avvertenze": "Depressione respiratoria dose-dipendente. Antidoto: naloxone. Registro stupefacenti."
+  },
+  {
+    "nome": "Maropitant (Cerenia)",
+    "principio_attivo": "maropitant citrato",
+    "categoria": "Antiemetico",
+    "atc_vet": "QA04AD90",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 1, "unita": "mg/kg", "frequenza": "sid", "via": ["sc", "iv", "oral"] },
+      "gatto": { "min": 1, "max": 1, "unita": "mg/kg", "frequenza": "sid", "via": ["sc", "iv"] }
+    },
+    "note_cliniche": "Antagonista NK1. EV: infondere lento in 15 min, refrigerare e somministrare a temperatura ambiente. Max 5 giorni consecutivi per via SC.",
+    "avvertenze": "Dolore alla somministrazione SC (tenere in frigo fino al momento dell'uso riduce il dolore). Ridurre dose in insufficienza epatica."
+  },
+  {
+    "nome": "Metoclopramide",
+    "principio_attivo": "metoclopramide cloridrato",
+    "categoria": "Antiemetico / Procinetico",
+    "atc_vet": "QA03FA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.2, "max": 0.5, "unita": "mg/kg", "frequenza": "tid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 0.2, "max": 0.5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc", "iv"] }
+    },
+    "note_cliniche": "CRI: 1-2 mg/kg/die. Utile nella gastroparesi e reflusso gastroesofageo.",
+    "avvertenze": "Effetti extrapiramidali (tremore, irrequietezza) se sovradosato. Controindicato in ostruzione GI."
+  },
+  {
+    "nome": "Ondansetron",
+    "principio_attivo": "ondansetron cloridrato",
+    "categoria": "Antiemetico",
+    "atc_vet": "QA04AA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.3, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] },
+      "gatto": { "min": 0.1, "max": 0.15, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Antagonista 5-HT3. EV: infondere lentamente in 15 min. Efficace nel vomito chemio-indotto e vestibolare.",
+    "avvertenze": "Può causare bradicardia e ipotensione se somministrato troppo rapidamente EV."
+  },
+  {
+    "nome": "Omeprazolo",
+    "principio_attivo": "omeprazolo",
+    "categoria": "Gastroprotettore",
+    "atc_vet": "QA02BC01",
+    "prescrizione": "Senza obbligo di prescrizione",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] },
+      "gatto": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Inibitore di pompa protonica. Somministrare a stomaco vuoto (30 min prima del pasto). EV: diluire e infondere in 30 min.",
+    "avvertenze": "Non aprire/masticare le capsule con granuli rivestiti. Uso cronico può ridurre assorbimento B12 e magnesio."
+  },
+  {
+    "nome": "Famotidina",
+    "principio_attivo": "famotidina",
+    "categoria": "Gastroprotettore",
+    "atc_vet": "QA02BA03",
+    "prescrizione": "Senza obbligo di prescrizione",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc", "iv"] },
+      "gatto": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "sc", "iv"] }
+    },
+    "note_cliniche": "Antagonista H2. Meno efficace di omeprazolo ma utile per via parenterale.",
+    "avvertenze": "Ridurre dose in insufficienza renale grave."
+  },
+  {
+    "nome": "Sucralfato",
+    "principio_attivo": "sucralfato",
+    "categoria": "Gastroprotettore",
+    "atc_vet": "QA02BX02",
+    "prescrizione": "Senza obbligo di prescrizione",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 1, "unita": "g/cane", "frequenza": "tid", "via": ["oral"] },
+      "gatto": { "min": 0.25, "max": 0.5, "unita": "g/gatto", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Somministrare a stomaco vuoto, lontano dagli altri farmaci (chelazione). Sospendere in acqua per i gatti.",
+    "avvertenze": "Può ridurre l'assorbimento di altri farmaci se somministrato contemporaneamente."
+  },
+  {
+    "nome": "Desametasone",
+    "principio_attivo": "desametasone",
+    "categoria": "Corticosteroide",
+    "atc_vet": "QH02AB02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 2, "unita": "mg/kg", "frequenza": "sid", "via": ["iv", "im", "sc", "oral"] },
+      "gatto": { "min": 0.1, "max": 2, "unita": "mg/kg", "frequenza": "sid", "via": ["iv", "im", "sc", "oral"] }
+    },
+    "note_cliniche": "Anti-infiammatorio: 0.1-0.2 mg/kg. Shock: 2-4 mg/kg EV (dose unica). Edema cerebrale: 0.25 mg/kg TID.",
+    "avvertenze": "Non associare a FANS (ulcera GI). Immunosoppressione, poliuria/polidipsia, iperglicemia."
+  },
+  {
+    "nome": "Prednisolone",
+    "principio_attivo": "prednisolone",
+    "categoria": "Corticosteroide",
+    "atc_vet": "QH02AB06",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 2, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] },
+      "gatto": { "min": 1, "max": 4, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Anti-infiammatorio: 0.5-1 mg/kg. Immunosoppressivo: 2-4 mg/kg. Nel gatto preferire il prednisolone alla prednisone (minor conversione epatica).",
+    "avvertenze": "Stesse dell'intera classe. Scalare sempre la dose gradualmente."
+  },
+  {
+    "nome": "Furosemide",
+    "principio_attivo": "furosemide",
+    "categoria": "Diuretico",
+    "atc_vet": "QC03CA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 4, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv", "im", "sc"] },
+      "gatto": { "min": 1, "max": 4, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv", "im", "sc"] }
+    },
+    "note_cliniche": "Crisi acute: 2-4 mg/kg EV. Manutenzione: 1-2 mg/kg BID PO. CRI: 0.5-1 mg/kg/h. Monitorare elettroliti.",
+    "avvertenze": "Ipokaliemia, disidratazione, alcalosi metabolica. Ototossicità a dosi elevate EV."
+  },
+  {
+    "nome": "Benazepril",
+    "principio_attivo": "benazepril cloridrato",
+    "categoria": "ACE-inibitore",
+    "atc_vet": "QC09AA07",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.25, "max": 0.5, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] },
+      "gatto": { "min": 0.25, "max": 0.5, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Indicato in insufficienza cardiaca e nefropatia cronica. Monitorare azotemia e potassio.",
+    "avvertenze": "Ipotensione, iperkaliemia, peggioramento azotemia in ipovolemia."
+  },
+  {
+    "nome": "Enalapril",
+    "principio_attivo": "enalapril maleato",
+    "categoria": "ACE-inibitore",
+    "atc_vet": "QC09AA02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.25, "max": 0.5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] },
+      "gatto": { "min": 0.25, "max": 0.5, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Monitorare PA, azotemia e potassio specialmente all'inizio della terapia.",
+    "avvertenze": "Controindicato in ipovolemia, stenosi aortica. Evitare in gravidanza."
+  },
+  {
+    "nome": "Pimobendan",
+    "principio_attivo": "pimobendan",
+    "categoria": "Cardiotonico",
+    "atc_vet": "QC01CE90",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.3, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Somministrare 1 h prima del pasto. Indicato in CMD e MMVD stadio B2/C/D.",
+    "avvertenze": "Non usare in ostruzione all'efflusso aortico o polmonare."
+  },
+  {
+    "nome": "Atenololo",
+    "principio_attivo": "atenololo",
+    "categoria": "Beta-bloccante",
+    "atc_vet": "QC07AB03",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.25, "max": 1, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] },
+      "gatto": { "min": 1, "max": 2, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Nel gatto indicato per cardiomiopatia ipertrofica e tachiaritmie. Scalare sempre gradualmente.",
+    "avvertenze": "Bradicardia, blocco AV, broncospasmo. Controindicato in scompenso cardiaco acuto non compensato."
+  },
+  {
+    "nome": "Amlodipina",
+    "principio_attivo": "amlodipina besilato",
+    "categoria": "Calcio-antagonista",
+    "atc_vet": "QC08CA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["gatto", "cane"],
+    "dosaggio": {
+      "gatto": { "min": 0.625, "max": 1.25, "unita": "mg/gatto", "frequenza": "sid", "via": ["oral"] },
+      "cane": { "min": 0.05, "max": 0.2, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Farmaco di prima scelta per l'ipertensione sistemica nel gatto.",
+    "avvertenze": "Ipotensione, tachicardia riflessa. Monitorare PA regolarmente."
+  },
+  {
+    "nome": "Digossina",
+    "principio_attivo": "digossina",
+    "categoria": "Glicosidio cardiaco",
+    "atc_vet": "QC01AA02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane"],
+    "dosaggio": {
+      "cane": { "min": 0.003, "max": 0.005, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Monitorare digossinemia (range terapeutico 0.8-2 ng/ml). Ridurre dose in insufficienza renale. Pesare il paziente senza tener conto del grasso corporeo.",
+    "avvertenze": "Finestra terapeutica stretta. Tossicità: anoressia, vomito, aritmie. Ipokaliemia aumenta la tossicità."
+  },
+  {
+    "nome": "Fenobarbital",
+    "principio_attivo": "fenobarbitale",
+    "categoria": "Anticonvulsivante",
+    "atc_vet": "QN03AA02",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 2, "max": 5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] },
+      "gatto": { "min": 1.5, "max": 2.5, "unita": "mg/kg", "frequenza": "bid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Monitorare fenobarbitalemia (range 20-40 µg/ml) 2 sett. dopo inizio. Status epilepticus: 2-4 mg/kg EV lento.",
+    "avvertenze": "Epatotossicità (monitorare ALT). Polifagia, poliuria/polidipsia. Induttore enzimatico. Registro stupefacenti."
+  },
+  {
+    "nome": "Diazepam",
+    "principio_attivo": "diazepam",
+    "categoria": "Benzodiazepina",
+    "atc_vet": "QN05BA01",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "rettale"] },
+      "gatto": { "min": 0.5, "max": 1, "unita": "mg/kg", "frequenza": "prn", "via": ["iv"] }
+    },
+    "note_cliniche": "Status epilepticus: 0.5-1 mg/kg EV lento o rettale. Non diluire con SF (precipita). Usare siringhe in vetro.",
+    "avvertenze": "Nel gatto orale associato a necrosi epatica fulminante (evitare PO). Registro stupefacenti."
+  },
+  {
+    "nome": "Midazolam",
+    "principio_attivo": "midazolam cloridrato",
+    "categoria": "Benzodiazepina",
+    "atc_vet": "QN05CD08",
+    "prescrizione": "Ricetta ministeriale",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.3, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "intranasale"] },
+      "gatto": { "min": 0.1, "max": 0.3, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "intranasale"] }
+    },
+    "note_cliniche": "Preferire al diazepam per via IM (idrosolubile). Via intranasale: 0.2 mg/kg in emergenza.",
+    "avvertenze": "Depressione respiratoria. Antidoto: flumazenil. Registro stupefacenti."
+  },
+  {
+    "nome": "Medetomidina",
+    "principio_attivo": "medetomidina cloridrato",
+    "categoria": "Alfa2-agonista",
+    "atc_vet": "QN05CM91",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.005, "max": 0.04, "unita": "mg/kg", "frequenza": "once", "via": ["iv", "im"] },
+      "gatto": { "min": 0.01, "max": 0.08, "unita": "mg/kg", "frequenza": "once", "via": ["iv", "im"] }
+    },
+    "note_cliniche": "Sedazione dose-dipendente. Antidoto: atipamezolo. Associare spesso ad oppioide per potenziamento.",
+    "avvertenze": "Bradicardia, blocco AV, vasocostrizione periferica. Controindicata in cardiopatici gravi."
+  },
+  {
+    "nome": "Acepromazina",
+    "principio_attivo": "acepromazina maleato",
+    "categoria": "Fenotiazinico",
+    "atc_vet": "QN05AA04",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.01, "max": 0.05, "unita": "mg/kg", "frequenza": "once", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.01, "max": 0.05, "unita": "mg/kg", "frequenza": "once", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Non supera i 3 mg in totale (cap di dose). Effetto calmante, non analgesico.",
+    "avvertenze": "Ipotensione. Controindicata in shock, epilettico, brachicefali gravi, anemici severi. Effetto prolungato."
+  },
+  {
+    "nome": "Atropina",
+    "principio_attivo": "atropina solfato",
+    "categoria": "Anticolinergico",
+    "atc_vet": "QA03BA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.02, "max": 0.04, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.02, "max": 0.04, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Bradicardia vagale: 0.02-0.04 mg/kg EV. Intossicazione da organofosfati: fino a 0.2 mg/kg (titrare).",
+    "avvertenze": "Tachicardia, secchezza mucose, midriasi, ritenzione urinaria, ileo."
+  },
+  {
+    "nome": "Adrenalina (Epinefrina)",
+    "principio_attivo": "adrenalina (epinefrina)",
+    "categoria": "Emergenza",
+    "atc_vet": "QC01CA24",
+    "prescrizione": "Uso ospedaliero",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.01, "max": 0.01, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "intracardiaco", "intratracheale"] },
+      "gatto": { "min": 0.01, "max": 0.01, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "intracardiaco", "intratracheale"] }
+    },
+    "note_cliniche": "Arresto cardiaco: 0.01 mg/kg EV, ripetere ogni 3-5 min. Diluire 1:10.000 per uso EV.",
+    "avvertenze": "Aritmie. Dose elevata causa vasocostrizione grave. Usare solo in emergenza."
+  },
+  {
+    "nome": "Vitamina K1 (Fitomenadione)",
+    "principio_attivo": "fitomenadione",
+    "categoria": "Emostatico",
+    "atc_vet": "QB02BA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 5, "unita": "mg/kg", "frequenza": "bid", "via": ["sc", "oral"] },
+      "gatto": { "min": 1, "max": 5, "unita": "mg/kg", "frequenza": "bid", "via": ["sc", "oral"] }
+    },
+    "note_cliniche": "Intossicazione rodenticidi anticoagulanti: 5 mg/kg SC poi 1 mg/kg BID PO per 3-6 settimane. Non somministrare EV (rischio shock anafilattico).",
+    "avvertenze": "Non usare EV. Monitorare PT/PTT per valutare risposta."
+  },
+  {
+    "nome": "Mannitolo",
+    "principio_attivo": "mannitolo",
+    "categoria": "Diuretico osmotico",
+    "atc_vet": "QB05BC01",
+    "prescrizione": "Uso ospedaliero",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.5, "max": 1, "unita": "g/kg", "frequenza": "prn", "via": ["iv"] },
+      "gatto": { "min": 0.5, "max": 1, "unita": "g/kg", "frequenza": "prn", "via": ["iv"] }
+    },
+    "note_cliniche": "Edema cerebrale: 0.5-1 g/kg EV in 20 min. Glaucoma acuto: 1-2 g/kg. Soluzione 20%. Riscaldare se cristallizzata.",
+    "avvertenze": "Controindicato in edema polmonare, anuria, disidratazione grave. Monitorare osmolarità sierica."
+  },
+  {
+    "nome": "N-Acetilcisteina",
+    "principio_attivo": "acetilcisteina",
+    "categoria": "Antidoto / Epatoprotettore",
+    "atc_vet": "QR05CB01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 70, "max": 140, "unita": "mg/kg", "frequenza": "qid", "via": ["oral", "iv"] },
+      "gatto": { "min": 70, "max": 140, "unita": "mg/kg", "frequenza": "qid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Intossicazione paracetamolo: dose carico 140 mg/kg EV/PO, poi 70 mg/kg q4-6h. Diluire al 5% per infusione EV in 15-20 min.",
+    "avvertenze": "EV: rischio reazione anafilattoide se infuso troppo rapidamente. Odore solfureo."
+  },
+  {
+    "nome": "Insulina (regolare)",
+    "principio_attivo": "insulina umana regolare",
+    "categoria": "Endocrino",
+    "atc_vet": "QA10AB01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.1, "max": 0.5, "unita": "UI/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.1, "max": 0.5, "unita": "UI/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Chetoacidosi diabetica: CRI 0.05-0.1 UI/kg/h EV. Monitorare glicemia ogni 1-2h. Iperkaliemia: 0.1-0.25 UI/kg + destrosio.",
+    "avvertenze": "Ipoglicemia. Monitorare glicemia strettamente. L'insulina aderisce al PVC: priming del set necessario."
+  },
+  {
+    "nome": "Calcio Gluconato",
+    "principio_attivo": "calcio gluconato",
+    "categoria": "Elettrolita",
+    "atc_vet": "QB05XA01",
+    "prescrizione": "Uso ospedaliero",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 50, "max": 150, "unita": "mg/kg", "frequenza": "prn", "via": ["iv"] },
+      "gatto": { "min": 50, "max": 150, "unita": "mg/kg", "frequenza": "prn", "via": ["iv"] }
+    },
+    "note_cliniche": "Ipocalcemia/tetania: 50-100 mg/kg EV lento (10-15 min) con monitoraggio ECG. Diluire 1:1 con SF o glucosio 5%.",
+    "avvertenze": "Bradicardia e arresto cardiaco se infuso troppo velocemente. Monitorare ECG durante l'infusione. Non mescolare con bicarbonato."
+  },
+  {
+    "nome": "Bicarbonato di Sodio",
+    "principio_attivo": "sodio bicarbonato",
+    "categoria": "Elettrolita",
+    "atc_vet": "QB05XA02",
+    "prescrizione": "Uso ospedaliero",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.3, "max": 1, "unita": "mEq/kg", "frequenza": "prn", "via": ["iv"] },
+      "gatto": { "min": 0.3, "max": 1, "unita": "mEq/kg", "frequenza": "prn", "via": ["iv"] }
+    },
+    "note_cliniche": "Dose: 0.3 × peso × deficit di basi. Infondere metà dose in 30 min, rivalutare. Formula: mEq = 0.3 × kg × (BE target - BE attuale).",
+    "avvertenze": "Iperosmolarità, ipernatremia, alcalosi paradossa a livello cerebrale. Non mescolare con calcio o catecolamine."
+  },
+  {
+    "nome": "Naloxone",
+    "principio_attivo": "naloxone cloridrato",
+    "categoria": "Antidoto",
+    "atc_vet": "QV03AB15",
+    "prescrizione": "Uso ospedaliero",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 0.01, "max": 0.04, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] },
+      "gatto": { "min": 0.01, "max": 0.04, "unita": "mg/kg", "frequenza": "prn", "via": ["iv", "im", "sc"] }
+    },
+    "note_cliniche": "Antagonista oppioide. Effetto breve (30-60 min): monitorare e ripetere se necessario o usare CRI. Titrare per non eliminare completamente l'analgesia.",
+    "avvertenze": "Può scatenare dolore acuto e agitazione. Durata d'azione più breve degli oppioidi: rischio re-narcotizzazione."
+  },
+  {
+    "nome": "Spironolattone",
+    "principio_attivo": "spironolattone",
+    "categoria": "Diuretico risparmiatore di potassio",
+    "atc_vet": "QC03DA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 2, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] },
+      "gatto": { "min": 1, "max": 2, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Usato in combinazione con furosemide nell'insufficienza cardiaca. Ha anche effetto antifibrotico.",
+    "avvertenze": "Iperkaliemia (non associare ad ACE-inibitori senza monitoraggio). Nel gatto è stata descritta dermatite ulcerativa facciale."
+  },
+  {
+    "nome": "Levotiroxina",
+    "principio_attivo": "levotiroxina sodica",
+    "categoria": "Ormone tiroideo",
+    "atc_vet": "QH03AA01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane"],
+    "dosaggio": {
+      "cane": { "min": 0.01, "max": 0.02, "unita": "mg/kg", "frequenza": "bid", "via": ["oral"] }
+    },
+    "note_cliniche": "Iniziare con dosi basse e aumentare gradualmente. Monitorare T4 dopo 4-6 settimane dall'inizio o da ogni modifica.",
+    "avvertenze": "Tireotossicosi: tachiaritmie, perdita di peso, poliuria. Somministrare a stomaco vuoto."
+  },
+  {
+    "nome": "Trilostano",
+    "principio_attivo": "trilostano",
+    "categoria": "Antiadrenocorticale",
+    "atc_vet": "QH02CA90",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane"],
+    "dosaggio": {
+      "cane": { "min": 1, "max": 5, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Somministrare con il cibo. Monitorare test ACTH stimolazione a 10-14 gg, 1 mese, poi ogni 3-6 mesi. Obiettivo cortisolo post-ACTH 2-7 µg/dl.",
+    "avvertenze": "Ipoadrenocorticismo iatrogeno: letargia, vomito, debolezza. Test ACTH urgente se sintomi. Crisi addisoniana potenzialmente fatale."
+  },
+  {
+    "nome": "Fluconazolo",
+    "principio_attivo": "fluconazolo",
+    "categoria": "Antifungino",
+    "atc_vet": "QJ02AC01",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] },
+      "gatto": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "sid", "via": ["oral", "iv"] }
+    },
+    "note_cliniche": "Ottima penetrazione SNC e occhio. Di scelta per criptococcosi. Durata terapia: mesi.",
+    "avvertenze": "Epatotossicità. Numerose interazioni (inibisce CYP2C9 e CYP3A4). Monitorare enzimi epatici."
+  },
+  {
+    "nome": "Itraconazolo",
+    "principio_attivo": "itraconazolo",
+    "categoria": "Antifungino",
+    "atc_vet": "QJ02AC02",
+    "prescrizione": "Ricetta ripetibile",
+    "specie": ["cane", "gatto"],
+    "dosaggio": {
+      "cane": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] },
+      "gatto": { "min": 5, "max": 10, "unita": "mg/kg", "frequenza": "sid", "via": ["oral"] }
+    },
+    "note_cliniche": "Somministrare con il cibo grasso per massimizzare l'assorbimento. Protocollo pulse therapy per dermatofitosi nel gatto (1 sett. sì/1 sett. no).",
+    "avvertenze": "Epatotossicità, anoresssia. Interazioni farmacologiche (inibitore CYP3A4). Monitorare ALT."
+  }
+]

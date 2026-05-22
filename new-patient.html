@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nuovo paziente — VetCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="index.html">Indietro</a>
+    <h1>Nuovo paziente</h1>
+  </div>
+
+  <div class="page">
+    <form id="form">
+      <div class="section-label">Paziente</div>
+      <div class="field">
+        <label>Nome *</label>
+        <input name="name" placeholder="Es. Fido" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Specie</label>
+        <select name="species">
+          <option value="Cane">🐕 Cane</option>
+          <option value="Gatto">🐈 Gatto</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Razza</label>
+          <input name="breed" placeholder="Es. Labrador" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Età</label>
+          <input name="age" placeholder="Es. 4a" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label>Sesso</label>
+        <select name="sex">
+          <option value="M">Maschio</option>
+          <option value="F">Femmina</option>
+        </select>
+      </div>
+
+      <div class="section-label">Proprietario</div>
+      <div class="field">
+        <label>Nome proprietario</label>
+        <input name="owner" placeholder="Mario Rossi" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Telefono</label>
+        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off">
+      </div>
+
+      <div class="section-label">Dieta e allergie</div>
+      <div class="field">
+        <label>Cibo</label>
+        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…"></textarea>
+      </div>
+      <div class="field">
+        <label>Allergie</label>
+        <textarea name="allergies" placeholder="Es. pollame, nichel…"></textarea>
+      </div>
+
+      <div class="section-label">Ricovero</div>
+      <div class="field">
+        <label>Motivo del ricovero</label>
+        <textarea name="reason" placeholder="Descrivi brevemente il motivo…"></textarea>
+      </div>
+      <div class="field">
+        <label>Stato iniziale</label>
+        <select name="status">
+          <option value="stable">Stabile</option>
+          <option value="critical">Critico</option>
+        </select>
+      </div>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Ammetti paziente</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { addPatient } from './db.js';
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio…';
+
+      const fd = new FormData(e.target);
+      const patient = {
+        name:        fd.get('name').trim(),
+        species:     fd.get('species'),
+        breed:       fd.get('breed').trim(),
+        age:         fd.get('age').trim(),
+        sex:         fd.get('sex'),
+        owner:       fd.get('owner').trim(),
+        owner_phone: fd.get('owner_phone').trim(),
+        food:        fd.get('food').trim(),
+        allergies:   fd.get('allergies').trim(),
+        reason:      fd.get('reason').trim(),
+        status:      fd.get('status'),
+        admitted_at: new Date().toISOString(),
+      };
+
+      try {
+        await addPatient(patient);
+        window.location.href = 'index.html';
+      } catch (err) {
+        toast('Errore: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Ammetti paziente';
+      }
+    });
+  </script>
+</body>
+</html>

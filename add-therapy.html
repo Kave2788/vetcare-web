@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nuova terapia — VetCare</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .drug-suggestions {
+      position: absolute; left: 0; right: 0; top: 100%;
+      background: var(--card); border: 1px solid var(--accent);
+      border-radius: 0 0 10px 10px; z-index: 99;
+      max-height: 240px; overflow-y: auto;
+    }
+    .drug-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
+    .drug-item:last-child { border-bottom: none; }
+    .drug-item:hover, .drug-item.focused { background: var(--bg3); }
+    .drug-item .di-name { font-size: 14px; font-weight: 600; color: var(--text1); }
+    .drug-item .di-sub { font-size: 11px; color: var(--text3); }
+    .drug-wrap { position: relative; }
+
+    .patient-summary { background: var(--bg3); border-radius: 10px; padding: 12px 14px; margin-bottom: 4px; font-size: 13px; }
+    .patient-summary .ps-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .patient-summary .ps-row:last-child { margin-bottom: 0; }
+    .patient-summary label { color: var(--text3); font-size: 12px; flex-shrink: 0; width: 56px; }
+    .patient-summary input[type=number] { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; color: var(--text1); padding: 5px 8px; font-size: 13px; width: 80px; }
+    .patient-summary .ps-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .ps-stable { background:#10B98120; color:#10B981; }
+    .ps-critical { background:#EF444420; color:#EF4444; }
+
+    .dose-calc-box { border-radius: 10px; padding: 12px 14px; margin-top: 10px; font-size: 13px; display: none; }
+    .dose-calc-box.ok { background: #10B98112; border: 1px solid #10B98140; }
+    .dose-calc-box.warn { background: #F59E0B12; border: 1px solid #F59E0B40; }
+    .dose-calc-box.danger { background: #EF444412; border: 1px solid #EF444440; }
+    .dcb-result { font-size: 17px; font-weight: 800; color: var(--text1); margin-bottom: 6px; }
+    .dcb-detail { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+    .dcb-note { font-size: 12px; color: #F59E0B; margin-top: 6px; }
+    .dcb-danger { font-size: 12px; color: #EF4444; margin-top: 4px; font-weight: 600; }
+
+    .drug-info-box { background: var(--bg3); border-radius: 10px; padding: 12px 14px; margin-bottom: 4px; display: none; font-size: 12px; line-height: 1.7; margin-top: 6px; }
+    .drug-info-box .dib-row { display: flex; justify-content: space-between; gap: 8px; }
+    .drug-info-box .dib-label { color: var(--text3); flex-shrink: 0; }
+    .drug-info-box .dib-val { color: var(--text1); font-weight: 500; text-align: right; }
+    .drug-info-box .dib-note { color: var(--text2); margin-top: 6px; font-style: italic; }
+    .drug-info-box .dib-warn { color: #EF4444; margin-top: 4px; font-size: 11px; }
+    .badge-rx { display:inline-block; font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; margin-left:4px; }
+    .badge-rx.libre { background:#10B98120; color:#10B981; }
+    .badge-rx.ricetta { background:#F59E0B20; color:#F59E0B; }
+    .badge-rx.triplice { background:#EF444420; color:#EF4444; }
+    .badge-rx.ministeriale { background:#7C3AED20; color:#7C3AED; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" id="back-link" href="#">Indietro</a>
+    <h1>Nuova terapia</h1>
+  </div>
+
+  <div class="page">
+    <form id="form">
+
+      <!-- Riepilogo paziente -->
+      <div class="section-label">Dati paziente</div>
+      <div class="patient-summary">
+        <div class="ps-row">
+          <label>Peso</label>
+          <input type="number" id="calc-weight" step="0.1" placeholder="kg" inputmode="decimal">
+          <span id="weight-source" style="font-size:11px;color:var(--text3)"></span>
+        </div>
+        <div class="ps-row">
+          <label>Età</label>
+          <span id="calc-age" style="color:var(--text1)">—</span>
+          <span id="age-class" style="font-size:11px;font-weight:600;margin-left:4px"></span>
+        </div>
+        <div class="ps-row">
+          <label>Stato</label>
+          <span id="calc-status" class="ps-badge">—</span>
+        </div>
+      </div>
+
+      <!-- Farmaco -->
+      <div class="section-label" style="margin-top:16px">Farmaco</div>
+      <div class="field">
+        <label>Cerca farmaco *</label>
+        <div class="drug-wrap">
+          <input id="drug-input" name="drug" placeholder="Es. Meloxicam, Amoxicillina…" required autocomplete="off">
+          <div class="drug-suggestions" id="drug-suggestions" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Box dose calcolata -->
+      <div class="dose-calc-box" id="dose-calc-box">
+        <div class="dcb-result" id="dcb-result"></div>
+        <div class="dcb-detail" id="dcb-detail"></div>
+        <div id="dcb-notes"></div>
+      </div>
+
+      <!-- Info farmaco -->
+      <div class="drug-info-box" id="drug-info"></div>
+
+      <!-- Dosaggio -->
+      <div class="section-label">Dosaggio</div>
+      <div class="row">
+        <div class="field">
+          <label>Dose (per kg)</label>
+          <input name="dose" id="dose-input" type="number" step="any" placeholder="Es. 10" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label>Unità</label>
+          <select name="unit" id="unit-select">
+            <option value="mg/kg">mg/kg</option>
+            <option value="mg">mg</option>
+            <option value="ml">ml</option>
+            <option value="mcg/kg">mcg/kg</option>
+            <option value="mcg">mcg</option>
+            <option value="UI/kg">UI/kg</option>
+            <option value="UI">UI</option>
+            <option value="g/kg">g/kg</option>
+            <option value="g">g</option>
+            <option value="mEq/kg">mEq/kg</option>
+            <option value="compresse">compresse</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Somministrazione -->
+      <div class="section-label">Somministrazione</div>
+      <div class="field">
+        <label>Via</label>
+        <select name="route" id="route-select">
+          <option value="oral">Orale</option>
+          <option value="iv">Endovenosa</option>
+          <option value="im">Intramuscolo</option>
+          <option value="sc">Sottocutanea</option>
+          <option value="topical">Topica</option>
+          <option value="other">Altra</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Frequenza</label>
+        <select name="frequency" id="freq-select">
+          <option value="sid">1×/die</option>
+          <option value="bid" selected>2×/die</option>
+          <option value="tid">3×/die</option>
+          <option value="qid">4×/die</option>
+          <option value="q8h">Ogni 8 h</option>
+          <option value="q6h">Ogni 6 h</option>
+          <option value="prn">Al bisogno</option>
+          <option value="once">Dose unica</option>
+        </select>
+      </div>
+
+      <div class="section-label">Note</div>
+      <div class="field">
+        <label>Note aggiuntive</label>
+        <textarea name="notes" placeholder="Es. Diluire in 50 ml SF, somministrare lentamente…"></textarea>
+      </div>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Aggiungi al piano terapeutico</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { addTherapy, loadPatient, loadVitals } from './db.js';
+
+    const pid = new URLSearchParams(location.search).get('id');
+    if (!pid) location.href = 'index.html';
+    document.getElementById('back-link').href = `patient.html?id=${pid}`;
+
+    let drugs = [], patient = null, ageMonths = null, selectedDrug = null;
+
+    const ROUTE_MAP = { oral:'oral', iv:'iv', im:'im', sc:'sc', topical:'topical', transmucosale:'other', rettale:'other', peridurale:'other', intranasale:'other', intracardiaco:'iv' };
+    const FREQ_MAP  = { sid:'sid', bid:'bid', tid:'tid', qid:'qid', q8h:'q8h', q6h:'q6h', prn:'prn', once:'once' };
+    const RX_CLASS  = { 'Senza obbligo di prescrizione':'libre', 'Ricetta ripetibile':'ricetta', 'Ricetta in triplice copia non ripetibile':'triplice', 'Ricetta ministeriale':'ministeriale', 'Uso ospedaliero':'ministeriale' };
+    const RX_SHORT  = { 'Senza obbligo di prescrizione':'OTC', 'Ricetta ripetibile':'RR', 'Ricetta in triplice copia non ripetibile':'RNR', 'Ricetta ministeriale':'Stupefacente', 'Uso ospedaliero':'Osp.' };
+
+    // Farmaci controindicati / da ridurre per età
+    const PEDIATRIC_CI  = ['enrofloxacina','marbofloxacina','doxiciclina'];
+    const PEDIATRIC_RED = ['meloxicam','carprofene','ketoprofene','furosemide'];
+    const GERIATRIC_RED = ['metronidazolo','furosemide','enalapril','benazepril','digossina','fenobarbital','meloxicam','carprofene','ketoprofene'];
+    // Farmaci da evitare in paziente critico ipoteso/ipovolemico
+    const CRITICAL_CAUTION = ['meloxicam','carprofene','ketoprofene','enalapril','benazepril'];
+
+    // ── Parsing età ──────────────────────────────────────────────────────────
+    function parseAgeMonths(str) {
+      if (!str) return null;
+      str = str.toLowerCase().trim();
+      let total = 0;
+      const anni = str.match(/(\d+(?:[.,]\d+)?)\s*a(?:nn[io])?/);
+      const mesi = str.match(/(\d+(?:[.,]\d+)?)\s*m(?:es[ei])?/);
+      if (anni) total += parseFloat(anni[1].replace(',','.')) * 12;
+      if (mesi) total += parseFloat(mesi[1].replace(',','.'));
+      if (!anni && !mesi) {
+        const n = parseFloat(str.replace(',','.'));
+        if (!isNaN(n)) total = n * 12; // assume anni se solo numero
+      }
+      return total > 0 ? total : null;
+    }
+
+    function ageClass(months, species) {
+      if (months === null) return null;
+      const isPediatric = months < 6;
+      const isGeriatric = species?.includes('gatt') ? months >= 120 : months >= 84;
+      if (isPediatric) return 'pediatrico';
+      if (isGeriatric) return 'geriatrico';
+      return 'adulto';
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      [drugs, patient] = await Promise.all([
+        fetch('drugs.json').then(r => r.json()),
+        loadPatient(pid)
+      ]);
+
+      // Età
+      ageMonths = parseAgeMonths(patient.age);
+      const cls = ageClass(ageMonths, patient.species?.toLowerCase());
+      const ageLabel = ageMonths !== null
+        ? (ageMonths >= 12 ? `${Math.floor(ageMonths/12)}a ${ageMonths%12 > 0 ? (ageMonths%12)+'m' : ''}`.trim() : `${Math.round(ageMonths)}m`)
+        : (patient.age || '—');
+      document.getElementById('calc-age').textContent = ageLabel;
+      if (cls) {
+        const el = document.getElementById('age-class');
+        el.textContent = cls;
+        el.style.color = cls === 'pediatrico' ? '#F59E0B' : cls === 'geriatrico' ? '#7C3AED' : 'var(--text3)';
+      }
+
+      // Stato
+      const statusEl = document.getElementById('calc-status');
+      statusEl.textContent = { stable:'Stabile', critical:'Critico', discharged:'Dimesso' }[patient.status] || patient.status;
+      statusEl.className = 'ps-badge ' + (patient.status === 'critical' ? 'ps-critical' : 'ps-stable');
+
+      // Peso dall'ultima rilevazione
+      try {
+        const vitals = await loadVitals(pid);
+        const latest = vitals.find(v => v.weight != null);
+        if (latest) {
+          document.getElementById('calc-weight').value = latest.weight;
+          const d = new Date(latest.recorded_at);
+          document.getElementById('weight-source').textContent = `da rilevazione ${d.toLocaleDateString('it-IT')}`;
+        }
+      } catch {}
+    }
+    init();
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ── Calcolo dose ──────────────────────────────────────────────────────────
+    function calcDose() {
+      if (!selectedDrug) return;
+      const kg    = parseFloat(document.getElementById('calc-weight').value);
+      const dose  = parseFloat(document.getElementById('dose-input').value);
+      const unit  = document.getElementById('unit-select').value;
+      const box   = document.getElementById('dose-calc-box');
+      const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
+      const dbDose = selectedDrug.dosaggio?.[spKey];
+      const cls   = ageClass(ageMonths, patient?.species?.toLowerCase());
+      const isCritical = patient?.status === 'critical';
+      const drugNameLower = selectedDrug.nome.toLowerCase();
+
+      const isPerKg = /\/kg$/.test(unit);
+      const notes = [];
+      let boxClass = 'ok';
+
+      // Avvertenze età
+      if (cls === 'pediatrico') {
+        if (PEDIATRIC_CI.some(d => drugNameLower.includes(d))) {
+          notes.push({ type:'danger', text:'⛔ Controindicato in animali in accrescimento (< 6 mesi).' });
+          boxClass = 'danger';
+        } else if (PEDIATRIC_RED.some(d => drugNameLower.includes(d))) {
+          notes.push({ type:'warn', text:'⚠️ Pediatrico: valutare riduzione del 25–30% della dose e monitoraggio stretto.' });
+          boxClass = 'warn';
+        } else {
+          notes.push({ type:'warn', text:'⚠️ Animale < 6 mesi: verificare sicurezza del farmaco in questa fascia d\'età.' });
+          if (boxClass === 'ok') boxClass = 'warn';
+        }
+      } else if (cls === 'geriatrico') {
+        if (GERIATRIC_RED.some(d => drugNameLower.includes(d))) {
+          notes.push({ type:'warn', text:'⚠️ Geriatrico: considerare riduzione del 20–25% e monitoraggio renale/epatico.' });
+          if (boxClass === 'ok') boxClass = 'warn';
+        }
+      }
+
+      // Avvertenze stato critico
+      if (isCritical && CRITICAL_CAUTION.some(d => drugNameLower.includes(d))) {
+        notes.push({ type:'danger', text:'⛔ Paziente critico: questo farmaco è a rischio in caso di ipovolemia/ipotensione.' });
+        boxClass = 'danger';
+      }
+
+      // Range terapeutico
+      if (dbDose && dose) {
+        if (dose < dbDose.min) {
+          notes.push({ type:'warn', text:`⚠️ Dose inferiore al range (min ${dbDose.min} ${dbDose.unita}).` });
+          if (boxClass === 'ok') boxClass = 'warn';
+        } else if (dose > dbDose.max) {
+          notes.push({ type:'danger', text:`⛔ Dose superiore al range (max ${dbDose.max} ${dbDose.unita}).` });
+          boxClass = 'danger';
+        }
+      }
+
+      box.className = `dose-calc-box ${boxClass}`;
+
+      if (isPerKg && kg > 0 && dose > 0) {
+        const total = +(dose * kg).toFixed(3);
+        const baseUnit = unit.replace('/kg','');
+        document.getElementById('dcb-result').textContent = `Dose totale: ${total} ${baseUnit}`;
+        document.getElementById('dcb-detail').textContent = `${dose} ${unit} × ${kg} kg`;
+      } else if (dose > 0) {
+        document.getElementById('dcb-result').textContent = `Dose: ${dose} ${unit}`;
+        document.getElementById('dcb-detail').textContent = isPerKg && !kg ? 'Inserisci il peso per calcolare il totale' : '';
+      } else {
+        document.getElementById('dcb-result').textContent = '';
+        document.getElementById('dcb-detail').textContent = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
+      }
+
+      document.getElementById('dcb-notes').innerHTML = notes.map(n =>
+        `<div class="${n.type === 'danger' ? 'dcb-danger' : 'dcb-note'}">${n.text}</div>`
+      ).join('');
+
+      box.style.display = 'block';
+    }
+
+    document.getElementById('calc-weight').addEventListener('input', calcDose);
+    document.getElementById('dose-input').addEventListener('input', calcDose);
+    document.getElementById('unit-select').addEventListener('change', calcDose);
+
+    // ── Autocomplete ──────────────────────────────────────────────────────────
+    const input   = document.getElementById('drug-input');
+    const sugg    = document.getElementById('drug-suggestions');
+    const infoBox = document.getElementById('drug-info');
+    let focusIdx  = -1;
+
+    input.addEventListener('input', () => {
+      selectedDrug = null;
+      infoBox.style.display = 'none';
+      document.getElementById('dose-calc-box').style.display = 'none';
+      const q = input.value.trim().toLowerCase();
+      if (q.length < 2) { sugg.style.display = 'none'; return; }
+
+      const matches = drugs.filter(d =>
+        d.nome.toLowerCase().includes(q) ||
+        d.principio_attivo.toLowerCase().includes(q) ||
+        d.categoria.toLowerCase().includes(q)
+      ).slice(0, 10);
+
+      if (!matches.length) { sugg.style.display = 'none'; return; }
+
+      focusIdx = -1;
+      sugg.innerHTML = matches.map((d, i) => {
+        const rxClass = RX_CLASS[d.prescrizione] || 'ricetta';
+        const rxShort = RX_SHORT[d.prescrizione] || d.prescrizione;
+        return `<div class="drug-item" data-idx="${i}">
+          <span class="di-name">${d.nome} <span class="badge-rx ${rxClass}">${rxShort}</span></span>
+          <span class="di-sub">${d.principio_attivo} · ${d.categoria}</span>
+        </div>`;
+      }).join('');
+      sugg._matches = matches;
+      sugg.style.display = 'block';
+
+      sugg.querySelectorAll('.drug-item').forEach(el => {
+        el.addEventListener('mousedown', e => { e.preventDefault(); selectDrug(matches[+el.dataset.idx]); });
+      });
+    });
+
+    input.addEventListener('keydown', e => {
+      const items = sugg.querySelectorAll('.drug-item');
+      if (!items.length || sugg.style.display === 'none') return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = Math.min(focusIdx+1, items.length-1); updateFocus(items); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = Math.max(focusIdx-1, 0); updateFocus(items); }
+      else if (e.key === 'Enter' && focusIdx >= 0) { e.preventDefault(); selectDrug(sugg._matches[focusIdx]); }
+      else if (e.key === 'Escape') { sugg.style.display = 'none'; }
+    });
+    function updateFocus(items) { items.forEach((el, i) => el.classList.toggle('focused', i === focusIdx)); }
+    document.addEventListener('click', e => { if (!e.target.closest('.drug-wrap')) sugg.style.display = 'none'; });
+
+    function selectDrug(drug) {
+      selectedDrug = drug;
+      input.value = drug.nome;
+      sugg.style.display = 'none';
+      fillForm(drug);
+      showInfo(drug);
+      calcDose();
+    }
+
+    function fillForm(drug) {
+      const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
+      const dose  = drug.dosaggio?.[spKey];
+      if (!dose) return;
+      document.getElementById('dose-input').value = dose.min;
+      const unitSel = document.getElementById('unit-select');
+      for (let o of unitSel.options) { if (o.value === dose.unita) { unitSel.value = dose.unita; break; } }
+      const via = dose.via?.[0];
+      if (via && ROUTE_MAP[via]) document.getElementById('route-select').value = ROUTE_MAP[via];
+      if (dose.frequenza && FREQ_MAP[dose.frequenza]) document.getElementById('freq-select').value = FREQ_MAP[dose.frequenza];
+    }
+
+    function showInfo(drug) {
+      const spKey   = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
+      const dose    = drug.dosaggio?.[spKey];
+      const rxClass = RX_CLASS[drug.prescrizione] || 'ricetta';
+      const rxShort = RX_SHORT[drug.prescrizione] || drug.prescrizione;
+      const doseLabel = dose ? (dose.min === dose.max ? `${dose.min} ${dose.unita}` : `${dose.min}–${dose.max} ${dose.unita}`) : '—';
+      const vieLabel  = dose?.via?.join(', ') || '—';
+      infoBox.innerHTML = `
+        <div class="dib-row"><span class="dib-label">Categoria</span><span class="dib-val">${drug.categoria}</span></div>
+        <div class="dib-row"><span class="dib-label">Principio attivo</span><span class="dib-val">${drug.principio_attivo}</span></div>
+        <div class="dib-row"><span class="dib-label">Prescrizione</span><span class="dib-val"><span class="badge-rx ${rxClass}">${rxShort}</span></span></div>
+        <div class="dib-row"><span class="dib-label">Specie</span><span class="dib-val">${drug.specie?.join(', ') || '—'}</span></div>
+        <div class="dib-row"><span class="dib-label">Range (${spKey})</span><span class="dib-val">${doseLabel}</span></div>
+        <div class="dib-row"><span class="dib-label">Vie</span><span class="dib-val">${vieLabel}</span></div>
+        ${drug.note_cliniche ? `<div class="dib-note">📋 ${drug.note_cliniche}</div>` : ''}
+        ${drug.avvertenze   ? `<div class="dib-warn">⚠️ ${drug.avvertenze}</div>` : ''}
+      `;
+      infoBox.style.display = 'block';
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true; btn.textContent = 'Salvataggio…';
+      const fd = new FormData(e.target);
+      const therapy = {
+        patient_id: pid,
+        drug:       fd.get('drug').trim(),
+        dose:       fd.get('dose') || '',
+        unit:       fd.get('unit'),
+        route:      fd.get('route'),
+        frequency:  fd.get('frequency'),
+        notes:      fd.get('notes').trim() || null,
+        active:     true,
+        started_at: new Date().toISOString(),
+      };
+      try {
+        await addTherapy(therapy);
+        location.href = `patient.html?id=${pid}`;
+      } catch(err) {
+        toast('Errore: ' + err.message);
+        btn.disabled = false; btn.textContent = 'Aggiungi al piano terapeutico';
+      }
+    });
+  </script>
+</body>
+</html>

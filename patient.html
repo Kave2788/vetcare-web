@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Scheda paziente — VetCare</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tabs-wrap { background: var(--bg2); padding-bottom: 10px; position: sticky; top: 57px; z-index: 9; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="index.html">Ricoverati</a>
+    <h1 id="page-title">Scheda paziente</h1>
+  </div>
+
+  <div id="patient-header"></div>
+
+  <div class="tabs-wrap">
+    <div class="tabs" style="max-width:480px;margin:0 auto;">
+      <div class="tab active" data-tab="info">Anagrafica</div>
+      <div class="tab" data-tab="vitals">Scheda</div>
+      <div class="tab" data-tab="therapies">Terapie</div>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="tab-content" id="tab-vitals">
+      <div class="spinner"></div>
+    </div>
+    <div class="tab-content" id="tab-therapies">
+      <div class="spinner"></div>
+    </div>
+    <div class="tab-content active" id="tab-info">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <div id="overlay">
+    <div id="dialog">
+      <h3 id="dlg-title"></h3>
+      <p id="dlg-msg"></p>
+      <div class="dbtns" id="dlg-btns"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      loadPatient, loadVitals, loadTherapies,
+      updatePatientStatus, updatePatientFields, stopTherapy, deleteTherapy,
+      fmtDate, fmtDateTime,
+      STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI,
+      ROUTE_LABELS, FREQ_LABELS,
+      RESP_LABELS, DEHYD_LABELS, SENS_LABELS, MUC_LABELS, FECES_LABELS, URINE_LABELS,
+      WATER_LABELS, FOOD_LABELS
+    } from './db.js';
+
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) location.href = 'index.html';
+
+    let patient = null;
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function showDialog(title, msg, buttons) {
+      document.getElementById('dlg-title').textContent = title;
+      document.getElementById('dlg-msg').textContent = msg;
+      const c = document.getElementById('dlg-btns');
+      c.innerHTML = '';
+      buttons.forEach(b => {
+        const el = document.createElement('button');
+        el.className = 'btn ' + (b.cls || 'btn-ghost');
+        el.textContent = b.label;
+        el.onclick = () => { document.getElementById('overlay').classList.remove('show'); b.action?.(); };
+        c.appendChild(el);
+      });
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    // ── Tabs ──────────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    function renderHeader() {
+      const color = STATUS_COLOR[patient.status];
+      document.getElementById('patient-header').innerHTML = `
+        <div class="patient-header" style="border-bottom-color:${color}55">
+          <div class="emoji">${SPECIES_EMOJI[patient.species] ?? '🐾'}</div>
+          <div class="info">
+            <div class="pname">${patient.name}</div>
+            <div class="psub">${patient.species}${patient.breed ? ' · ' + patient.breed : ''}</div>
+          </div>
+          <span class="badge ${patient.status}">${STATUS_LABEL[patient.status]}</span>
+        </div>`;
+    }
+
+    // ── Vitals ────────────────────────────────────────────────────────────────
+    async function renderVitals() {
+      const el = document.getElementById('tab-vitals');
+      el.innerHTML = '<div class="spinner"></div>';
+      try {
+        const vitals = await loadVitals(id);
+
+        const FIELD_LABELS = {
+          temperature:'Temperatura', weight:'Peso', heart_rate:'FC',
+          resp_rate:'FR', resp_type:'Tipo respiro', dehydration:'Disidratazione',
+          sensorium:'Sensorio', mucosae:'Mucose', feces:'Feci', urine:'Urine',
+          water_status:'Acqua', food_status:'Cibo',
+        };
+        const FIELD_UNIT = { temperature:'°C', weight:'Kg', heart_rate:'b.p.m.', resp_rate:'a.r.m.' };
+        const ENUM_LABELS = { resp_type:RESP_LABELS, dehydration:DEHYD_LABELS, sensorium:SENS_LABELS, mucosae:MUC_LABELS, feces:FECES_LABELS, urine:URINE_LABELS, water_status:WATER_LABELS, food_status:FOOD_LABELS };
+
+        const patientSection = `
+          <div class="section-label">Stato paziente</div>
+          <div class="field" style="margin-bottom:16px">
+            <select id="status-select">
+              <option value="stable" ${patient.status==='stable'?'selected':''}>Stabile</option>
+              <option value="critical" ${patient.status==='critical'?'selected':''}>Critico</option>
+              <option value="discharged" ${patient.status==='discharged'?'selected':''}>Dimesso</option>
+            </select>
+          </div>
+          <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">
+            Dieta e allergie
+            <button id="diet-edit-btn" class="btn btn-ghost" style="font-size:12px;padding:2px 10px">Modifica</button>
+          </div>
+          <div class="card" style="margin-bottom:16px">
+            <div id="diet-view">
+              <div class="data-row"><span class="lbl">Cibo</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.food || '—'}</span></div>
+              <div class="data-row"><span class="lbl">Allergie</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.allergies || '—'}</span></div>
+            </div>
+            <div id="diet-form" style="display:none">
+              <div style="margin-bottom:8px"><label style="font-size:12px;color:var(--text2)">Cibo</label><textarea id="field-food" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text1);padding:8px;font-size:14px;resize:vertical;margin-top:4px">${patient.food || ''}</textarea></div>
+              <div style="margin-bottom:8px"><label style="font-size:12px;color:var(--text2)">Allergie</label><textarea id="field-allergies" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text1);padding:8px;font-size:14px;resize:vertical;margin-top:4px">${patient.allergies || ''}</textarea></div>
+              <button id="save-patient-fields" class="btn btn-primary" style="width:100%">Salva</button>
+            </div>
+          </div>
+          <div class="section-label">Rilevazioni</div>`;
+
+        const vitalsHTML = vitals.length === 0
+          ? `<div class="empty"><div class="ei">📋</div><div class="et">Nessuna rilevazione</div><div class="eh">Premi + per registrare i parametri vitali</div></div>`
+          : vitals.map(v => {
+          const rows = Object.entries(FIELD_LABELS)
+            .filter(([k]) => v[k] != null && v[k] !== '')
+            .map(([k, lbl]) => {
+              const raw = v[k];
+              const val = ENUM_LABELS[k] ? ENUM_LABELS[k][raw] : (raw + (FIELD_UNIT[k] ? ' ' + FIELD_UNIT[k] : ''));
+              return `<div class="data-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`;
+            }).join('');
+
+          let uoRow = '';
+          if (v.urine_output_ml || v.urine_output_hours) {
+            let uoVal = '';
+            if (v.urine_output_ml && v.urine_output_hours) {
+              const calc = v.weight ? ` → <strong>${(v.urine_output_ml / v.urine_output_hours / v.weight).toFixed(2)} ml/kg/h</strong>` : '';
+              uoVal = `${v.urine_output_ml} ml in ${v.urine_output_hours} h${calc}`;
+            } else if (v.urine_output_ml) {
+              uoVal = `${v.urine_output_ml} ml`;
+            } else {
+              uoVal = `${v.urine_output_hours} h`;
+            }
+            uoRow = `<div class="data-row"><span class="lbl">Prod. urinaria</span><span class="val">${uoVal}</span></div>`;
+          }
+
+          let enteralRow = '';
+          if (v.enteral_rer || v.enteral_ml) {
+            let entVal = '';
+            if (v.enteral_rer && v.weight) {
+              const rer = Math.round(70 * Math.pow(v.weight, 0.75));
+              const frac = v.enteral_rer === '1/3' ? 1/3 : v.enteral_rer === '2/3' ? 2/3 : 1;
+              const kcal = Math.round(rer * frac);
+              entVal = `${v.enteral_rer} RER = ${kcal} kcal`;
+            } else if (v.enteral_rer) {
+              entVal = `${v.enteral_rer} RER`;
+            }
+            if (v.enteral_ml) entVal += (entVal ? ` — ${v.enteral_ml} ml` : `${v.enteral_ml} ml`);
+            enteralRow = `<div class="data-row"><span class="lbl">Alim. enterale</span><span class="val">${entVal}</span></div>`;
+          }
+
+          return `
+            <div class="vital-card" style="margin-bottom:10px;position:relative">
+              <a href="edit-vitals.html?id=${id}&vid=${v.id}" style="position:absolute;top:10px;right:10px;font-size:16px;text-decoration:none;opacity:0.5">✏️</a>
+              <div class="ts">${fmtDateTime(v.recorded_at)}</div>
+              ${rows}
+              ${uoRow}
+              ${enteralRow}
+              ${v.notes ? `<div class="note">📝 ${v.notes}</div>` : ''}
+            </div>`;
+          }).join('');
+
+        el.innerHTML = patientSection + vitalsHTML + `<a class="fab" href="add-vitals.html?id=${id}">+</a>`;
+        document.getElementById('status-select').onchange = async e => {
+          const newStatus = e.target.value;
+          try {
+            await updatePatientStatus(id, newStatus);
+            patient.status = newStatus;
+            renderHeader();
+            toast('Stato aggiornato');
+          } catch { toast('Errore aggiornamento stato'); }
+        };
+
+        document.getElementById('diet-edit-btn').onclick = () => {
+          const open = document.getElementById('diet-form').style.display === 'block';
+          document.getElementById('diet-form').style.display = open ? 'none' : 'block';
+          document.getElementById('diet-view').style.display = open ? 'block' : 'none';
+          document.getElementById('diet-edit-btn').textContent = open ? 'Modifica' : 'Chiudi';
+        };
+
+        document.getElementById('save-patient-fields').onclick = async () => {
+          const food = document.getElementById('field-food').value.trim();
+          const allergies = document.getElementById('field-allergies').value.trim();
+          try {
+            await updatePatientFields(id, { food, allergies });
+            patient.food = food;
+            patient.allergies = allergies;
+            document.querySelector('#diet-view .data-row:nth-child(1) .val').textContent = food || '—';
+            document.querySelector('#diet-view .data-row:nth-child(2) .val').textContent = allergies || '—';
+            document.getElementById('diet-form').style.display = 'none';
+            document.getElementById('diet-view').style.display = 'block';
+            document.getElementById('diet-edit-btn').textContent = 'Modifica';
+            toast('Salvato');
+          } catch { toast('Errore salvataggio'); }
+        };
+      } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }
+    }
+
+    // ── Therapies ─────────────────────────────────────────────────────────────
+    let drugsDB = [];
+    fetch('drugs.json').then(r => r.json()).then(d => { drugsDB = d; }).catch(() => {});
+
+    const RX_CLASS = { 'Senza obbligo di prescrizione':'libre', 'Ricetta ripetibile':'ricetta', 'Ricetta in triplice copia non ripetibile':'triplice', 'Ricetta ministeriale':'ministeriale', 'Uso ospedaliero':'ministeriale' };
+    const RX_SHORT = { 'Senza obbligo di prescrizione':'OTC', 'Ricetta ripetibile':'RR', 'Ricetta in triplice copia non ripetibile':'RNR', 'Ricetta ministeriale':'Stupefacente', 'Uso ospedaliero':'Osp.' };
+
+    async function renderTherapies() {
+      const el = document.getElementById('tab-therapies');
+      el.innerHTML = '<div class="spinner"></div>';
+      try {
+        const therapies = await loadTherapies(id);
+        if (therapies.length === 0) {
+          el.innerHTML = `
+            <div class="empty">
+              <div class="ei">💊</div>
+              <div class="et">Nessuna terapia</div>
+              <div class="eh">Premi + per aggiungere una terapia al piano</div>
+            </div>
+            <a class="fab" href="add-therapy.html?id=${id}">+</a>`;
+          return;
+        }
+
+        const active  = therapies.filter(t => t.active);
+        const stopped = therapies.filter(t => !t.active);
+        const spKey   = patient.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
+
+        function therapyCard(t) {
+          const drug = drugsDB.find(d => d.nome.toLowerCase() === t.drug.toLowerCase());
+          const doseStr = t.dose ? `${t.dose} ${t.unit}` : '';
+          const rxClass = drug ? (RX_CLASS[drug.prescrizione] || 'ricetta') : '';
+          const rxShort = drug ? (RX_SHORT[drug.prescrizione] || '') : '';
+
+          let infoPanel = '';
+          if (drug) {
+            const dose = drug.dosaggio?.[spKey];
+            const doseRange = dose ? (dose.min === dose.max ? `${dose.min} ${dose.unita}` : `${dose.min}–${dose.max} ${dose.unita}`) : '—';
+            const vieLabel = dose?.via?.join(', ') || '—';
+            infoPanel = `
+              <div class="tc-info-panel" id="tip-${t.id}">
+                <div class="ti-row"><span class="ti-lbl">Categoria</span><span class="ti-val">${drug.categoria}</span></div>
+                <div class="ti-row"><span class="ti-lbl">Principio attivo</span><span class="ti-val">${drug.principio_attivo}</span></div>
+                <div class="ti-row"><span class="ti-lbl">Dosaggio (${spKey})</span><span class="ti-val">${doseRange}</span></div>
+                <div class="ti-row"><span class="ti-lbl">Vie</span><span class="ti-val">${vieLabel}</span></div>
+                ${drug.note_cliniche ? `<div class="ti-note">📋 ${drug.note_cliniche}</div>` : ''}
+                ${drug.avvertenze ? `<div class="ti-warn">⚠️ ${drug.avvertenze}</div>` : ''}
+              </div>`;
+          }
+
+          return `
+            <div class="therapy-card ${t.active ? '' : 'inactive'}" data-tid="${t.id}">
+              <div class="tc-top">
+                <div class="tc-main">
+                  <div class="tc-drug">
+                    ${t.drug}
+                    ${rxClass ? `<span class="badge-rx ${rxClass}">${rxShort}</span>` : ''}
+                  </div>
+                  <div class="tc-sub">${[doseStr, ROUTE_LABELS[t.route] ?? t.route, FREQ_LABELS[t.frequency] ?? t.frequency].filter(Boolean).join(' · ')}</div>
+                  ${t.notes ? `<div class="tc-note">📝 ${t.notes}</div>` : ''}
+                </div>
+                <div class="tc-actions">
+                  ${drug ? `<button class="tc-info-btn" data-tid="${t.id}">ℹ info</button>` : ''}
+                  <a href="edit-therapy.html?id=${id}&tid=${t.id}" style="font-size:15px;text-decoration:none;opacity:0.5">✏️</a>
+                  ${t.active ? `<button class="therapy-stop" data-tid="${t.id}" title="Sospendi">✕</button>` : ''}
+                </div>
+              </div>
+              ${infoPanel}
+            </div>`;
+        }
+
+        el.innerHTML =
+          (active.length  > 0 ? `<div class="group-label">Attive (${active.length})</div>`  + active.map(therapyCard).join('') : '') +
+          (stopped.length > 0 ? `<div class="group-label" style="margin-top:16px">Sospese (${stopped.length})</div>` + stopped.map(therapyCard).join('') : '') +
+          `<a class="fab" href="add-therapy.html?id=${id}">+</a>`;
+
+        // Toggle info panel
+        el.querySelectorAll('.tc-info-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const panel = document.getElementById('tip-' + btn.dataset.tid);
+            const open = panel.style.display === 'block';
+            panel.style.display = open ? 'none' : 'block';
+            btn.textContent = open ? 'ℹ info' : '✕ chiudi';
+          });
+        });
+
+        // Stop
+        el.querySelectorAll('.therapy-stop').forEach(btn => {
+          btn.onclick = () => {
+            const t = therapies.find(x => x.id === btn.dataset.tid);
+            showDialog('Sospendi terapia', `Sospendere ${t.drug}?`, [
+              { label: 'Sospendi', cls: 'btn-danger', action: async () => {
+                await stopTherapy(t.id);
+                toast('Terapia sospesa');
+                await renderTherapies();
+              }},
+              { label: 'Annulla', cls: 'btn-ghost' }
+            ]);
+          };
+        });
+
+        // Long press elimina
+        el.querySelectorAll('.therapy-card').forEach(card => {
+          let timer;
+          const start = () => { timer = setTimeout(() => {
+            const t = therapies.find(x => x.id === card.dataset.tid);
+            showDialog('Elimina terapia', `Eliminare ${t.drug} definitivamente?`, [
+              { label: 'Elimina', cls: 'btn-danger', action: async () => {
+                await deleteTherapy(t.id);
+                toast('Terapia eliminata');
+                await renderTherapies();
+              }},
+              { label: 'Annulla', cls: 'btn-ghost' }
+            ]);
+          }, 600); };
+          const cancel = () => clearTimeout(timer);
+          card.addEventListener('touchstart', start, { passive: true });
+          card.addEventListener('touchend', cancel);
+          card.addEventListener('mousedown', start);
+          card.addEventListener('mouseup', cancel);
+          card.addEventListener('mouseleave', cancel);
+        });
+
+      } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }
+    }
+
+    // ── Info ──────────────────────────────────────────────────────────────────
+    function renderInfo() {
+      const el = document.getElementById('tab-info');
+      const rows = [
+        ['Specie', patient.species],
+        ['Razza', patient.breed || '—'],
+        ['Età', patient.age || '—'],
+        ['Sesso', patient.sex === 'M' ? 'Maschio' : 'Femmina'],
+        ['Proprietario', patient.owner || '—'],
+        ['Telefono', patient.owner_phone || '—'],
+        ['Ricoverato il', fmtDate(patient.admitted_at)],
+        ['Motivo', patient.reason || '—'],
+      ];
+
+      el.innerHTML = `
+        <div class="section-label">Dati anagrafici</div>
+        <div class="card">
+          ${rows.map(([l,v]) => `<div class="data-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>`).join('')}
+        </div>`;
+
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      try {
+        patient = await loadPatient(id);
+        document.getElementById('page-title').textContent = patient.name;
+        renderHeader();
+        await renderVitals();
+        await renderTherapies();
+        renderInfo();
+      } catch(e) {
+        document.getElementById('tab-vitals').innerHTML =
+          `<div class="empty"><div class="et">Errore</div><div class="eh">${e.message}</div></div>`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

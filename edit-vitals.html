@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Modifica rilevazione — VetCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" id="back-link" href="#">Indietro</a>
+    <h1>Modifica rilevazione</h1>
+  </div>
+
+  <div class="page">
+    <form id="form">
+      <div class="section-label">Misurazioni</div>
+      <div class="row">
+        <div class="field">
+          <label>Temperatura (°C)</label>
+          <input name="temperature" type="number" step="0.1" placeholder="38.5" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label>Peso (kg)</label>
+          <input name="weight" type="number" step="0.1" placeholder="12.3" inputmode="decimal">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>FC (bpm)</label>
+          <input name="heart_rate" type="number" placeholder="80" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>FR (atti/min)</label>
+          <input name="resp_rate" type="number" placeholder="20" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipo di respiro</label>
+        <select name="resp_type">
+          <option value="">— Non rilevato</option>
+          <option value="eupnea">Eupnea</option>
+          <option value="dyspnea_insp">Dispnea (inspiratoria)</option>
+          <option value="dyspnea_esp">Dispnea (espiratoria)</option>
+          <option value="dyspnea_mixed">Dispnea (mista)</option>
+          <option value="dyspnea_restr">Dispnea (pattern restrittivo)</option>
+          <option value="dyspnea_obstr">Dispnea (pattern ostruttivo)</option>
+          <option value="orthopnea">Ortopnea</option>
+          <option value="tachypnea">Tachipnea</option>
+          <option value="bradypnea">Bradipnea</option>
+          <option value="polypnea">Polipnea</option>
+        </select>
+      </div>
+
+      <div class="section-label">Parametri clinici</div>
+      <div class="field">
+        <label>Disidratazione</label>
+        <select name="dehydration">
+          <option value="">— Non rilevata</option>
+          <option value="lt5">&lt;5%</option>
+          <option value="p5">5%</option>
+          <option value="p6">6%</option>
+          <option value="p7">7%</option>
+          <option value="p8">8%</option>
+          <option value="p9">9%</option>
+          <option value="p10">10%</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Sensorio</label>
+        <select name="sensorium">
+          <option value="">— Non rilevato</option>
+          <option value="normale">Normale</option>
+          <option value="depresso">Depresso</option>
+          <option value="eccitato">Eccitato</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Mucose</label>
+        <select name="mucosae">
+          <option value="">— Non rilevate</option>
+          <option value="rosee">Rosee</option>
+          <option value="rosee_pallide">Rosee-pallide</option>
+          <option value="cianotiche">Cianotiche</option>
+          <option value="congeste">Congeste</option>
+          <option value="pallide">Pallide</option>
+          <option value="pigmentate">Pigmentate</option>
+          <option value="subitteriche">Subitteriche</option>
+          <option value="itteriche">Itteriche</option>
+          <option value="polso_quinck">Polso di Quinck</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Feci</label>
+          <select name="feces">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="diarrea">Diarrea</option>
+            <option value="diarrea_emor">Diarrea emorragica</option>
+            <option value="ematochezia">Ematochezia</option>
+            <option value="melena">Melena</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Urine</label>
+          <select name="urine">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="stranguria">Stranguria</option>
+            <option value="ematuria">Ematuria</option>
+            <option value="itteriche">Urine itteriche</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Produzione urinaria</div>
+      <div class="row">
+        <div class="field">
+          <label>Totale (ml)</label>
+          <input name="urine_output_ml" id="uo-ml" type="number" step="1" placeholder="Es. 150" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Ore</label>
+          <input name="urine_output_hours" id="uo-h" type="number" step="0.5" placeholder="Es. 6" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label>Risultato (ml/kg/h)</label>
+        <div id="uo-result" style="padding:10px;background:var(--bg3);border-radius:8px;font-size:15px;color:var(--text2);min-height:38px">—</div>
+      </div>
+
+      <div class="section-label">Alimentazione enterale</div>
+      <div id="rer-box" style="display:none;background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.8">
+        <span id="rer-total"></span>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Quota RER</label>
+          <select name="enteral_rer">
+            <option value="">—</option>
+            <option value="1/3">1/3 RER</option>
+            <option value="2/3">2/3 RER</option>
+            <option value="3/3">3/3 RER</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Quantità (ml)</label>
+          <input name="enteral_ml" type="number" step="1" placeholder="Es. 80" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="section-label">Assunzioni</div>
+      <div class="row">
+        <div class="field">
+          <label>Acqua</label>
+          <select name="water_status">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="a_disposizione">A disposizione</option>
+            <option value="digiuno_forzato">Digiuno forzato</option>
+            <option value="digiuno_acqua">Digiuno forzato anche acqua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cibo</label>
+          <select name="food_status">
+            <option value="">—</option>
+            <option value="si">Sì</option>
+            <option value="no">No</option>
+            <option value="a_disposizione">A disposizione</option>
+            <option value="digiuno_forzato">Digiuno forzato</option>
+            <option value="digiuno_acqua">Digiuno forzato anche acqua</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">Note</div>
+      <div class="field">
+        <label>Note visita</label>
+        <textarea name="notes" placeholder="Annotazioni aggiuntive…"></textarea>
+      </div>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Salva modifiche</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { loadVital, updateVital } from './db.js';
+
+    const params = new URLSearchParams(location.search);
+    const vid = params.get('vid');
+    const pid = params.get('id');
+    if (!vid || !pid) location.href = 'index.html';
+    document.getElementById('back-link').href = `patient.html?id=${pid}`;
+
+    function set(name, val) {
+      if (val == null) return;
+      const el = document.querySelector(`[name="${name}"]`);
+      if (!el) return;
+      el.value = val;
+    }
+
+    function calcUO() {
+      const ml = parseFloat(document.getElementById('uo-ml').value);
+      const h  = parseFloat(document.getElementById('uo-h').value);
+      const kg = parseFloat(document.querySelector('[name="weight"]').value);
+      const el = document.getElementById('uo-result');
+      if (ml > 0 && h > 0 && kg > 0) {
+        el.textContent = `${(ml / h / kg).toFixed(2)} ml/kg/h`;
+        el.style.color = 'var(--text1)';
+      } else {
+        el.textContent = ml > 0 && h > 0 ? 'Inserisci il peso per calcolare' : '—';
+        el.style.color = 'var(--text2)';
+      }
+    }
+    ['uo-ml','uo-h'].forEach(i => document.getElementById(i).addEventListener('input', calcUO));
+
+    function calcRER() {
+      const kg = parseFloat(document.querySelector('[name="weight"]').value);
+      const box = document.getElementById('rer-box');
+      if (!kg || kg <= 0) { box.style.display = 'none'; return; }
+      const rer = Math.round(70 * Math.pow(kg, 0.75));
+      document.getElementById('rer-total').innerHTML =
+        `RER = 70 × ${kg}kg<sup>0.75</sup> = <strong>${rer} kcal/die</strong><br>` +
+        `1/3 RER = ${Math.round(rer/3)} kcal &nbsp;·&nbsp; ` +
+        `2/3 RER = ${Math.round(rer*2/3)} kcal &nbsp;·&nbsp; ` +
+        `3/3 RER = ${rer} kcal`;
+      box.style.display = 'block';
+    }
+    document.querySelector('[name="weight"]').addEventListener('input', () => { calcUO(); calcRER(); });
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function init() {
+      try {
+        const v = await loadVital(vid);
+        set('temperature', v.temperature);
+        set('weight', v.weight);
+        set('heart_rate', v.heart_rate);
+        set('resp_rate', v.resp_rate);
+        set('resp_type', v.resp_type);
+        set('dehydration', v.dehydration);
+        set('sensorium', v.sensorium);
+        set('mucosae', v.mucosae);
+        set('feces', v.feces);
+        set('urine', v.urine);
+        set('urine_output_ml', v.urine_output_ml);
+        set('urine_output_hours', v.urine_output_hours);
+        set('enteral_rer', v.enteral_rer);
+        set('enteral_ml', v.enteral_ml);
+        set('water_status', v.water_status);
+        set('food_status', v.food_status);
+        set('notes', v.notes);
+        calcUO();
+        calcRER();
+      } catch(e) {
+        toast('Errore caricamento: ' + e.message);
+      }
+    }
+
+    init();
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio…';
+
+      const fd = new FormData(e.target);
+      const num = (k) => fd.get(k) ? parseFloat(fd.get(k)) : null;
+      const str = (k) => fd.get(k) || null;
+
+      const fields = {
+        temperature:        num('temperature'),
+        weight:             num('weight'),
+        heart_rate:         num('heart_rate'),
+        resp_rate:          num('resp_rate'),
+        resp_type:          str('resp_type'),
+        dehydration:        str('dehydration'),
+        sensorium:          str('sensorium'),
+        mucosae:            str('mucosae'),
+        feces:              str('feces'),
+        urine:              str('urine'),
+        urine_output_ml:    num('urine_output_ml'),
+        urine_output_hours: num('urine_output_hours'),
+        enteral_rer:        str('enteral_rer'),
+        enteral_ml:         num('enteral_ml'),
+        water_status:       str('water_status'),
+        food_status:        str('food_status'),
+        notes:              fd.get('notes').trim() || null,
+      };
+
+      try {
+        await updateVital(vid, fields);
+        location.href = `patient.html?id=${pid}`;
+      } catch(err) {
+        toast('Errore: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Salva modifiche';
+      }
+    });
+  </script>
+</body>
+</html>
