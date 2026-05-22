@@ -164,12 +164,12 @@
     }
     .cell-sep { display: block; width: 80%; height: 1px; background: var(--border); margin: 1px auto; }
     .cell-vital { color: var(--text) !important; font-weight: 600; }
-    .cell-drug.dc0 { color:#F59E0B; background:#F59E0B22; }
-    .cell-drug.dc1 { color:#60A5FA; background:#60A5FA22; }
-    .cell-drug.dc2 { color:#F472B6; background:#F472B622; }
-    .cell-drug.dc3 { color:#34D399; background:#34D39922; }
-    .cell-drug.dc4 { color:#A78BFA; background:#A78BFA22; }
-    .cell-drug.dc5 { color:#FB923C; background:#FB923C22; }
+    .cell-drug.dc0 { color:#F59E0B; }
+    .cell-drug.dc1 { color:#60A5FA; }
+    .cell-drug.dc2 { color:#F472B6; }
+    .cell-drug.dc3 { color:#34D399; }
+    .cell-drug.dc4 { color:#A78BFA; }
+    .cell-drug.dc5 { color:#FB923C; }
 
     /* ECO / PRELIEVI multi-select */
     .board tbody td.td-check { cursor: pointer; padding: 0; overflow: visible !important; }
@@ -666,12 +666,12 @@ function computeLayout(nRows) {
   rowH = Math.max(46, Math.min(90, rowH));
 
   // Larghezze colonne fisse — ora le ore prendono più spazio
-  const KG_W   = Math.max(34, Math.min(48, Math.floor(lw * 0.045)));
-  const ECO_W  = Math.max(38, Math.min(56, Math.floor(lw * 0.055)));
-  const NAME_W = Math.max(72, Math.min(110, Math.floor(lw * 0.10)));
-  const TER_W  = Math.max(62, Math.min(110, Math.floor(lw * 0.10)));
+  const KG_W   = Math.max(30, Math.min(42, Math.floor(lw * 0.04)));
+  const ECO_W  = Math.max(32, Math.min(46, Math.floor(lw * 0.045)));
+  const NAME_W = Math.max(64, Math.min(96, Math.floor(lw * 0.09)));
+  const TER_W  = Math.max(58, Math.min(96, Math.floor(lw * 0.09)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2 + TER_W;
-  const HOUR_W = Math.max(38, Math.floor((lw - FIXED) / HOURS.length));
+  const HOUR_W = Math.max(44, Math.floor((lw - FIXED) / HOURS.length));
 
   // Font — più grandi e leggibili
   const cellFont = Math.max(10, Math.min(13, Math.floor(rowH * 0.18)));
