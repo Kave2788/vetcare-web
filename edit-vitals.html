@@ -183,8 +183,8 @@
       <div class="section-label">Dieta e allergie</div>
       <div class="field">
         <label>Cibo</label>
-        <input name="food" id="food-input" type="text" list="diets-list" placeholder="Cerca dieta veterinaria…" autocomplete="off">
-        <datalist id="diets-list"></datalist>
+        <input type="hidden" name="food" id="food-val">
+        <button type="button" id="food-btn" style="width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;color:var(--text2)">Seleziona dieta…</button>
       </div>
       <div class="field">
         <label>Allergie</label>
@@ -201,6 +201,18 @@
         <button type="submit" class="btn btn-primary" id="submit-btn">Salva modifiche</button>
       </div>
     </form>
+  </div>
+
+  <!-- Diet picker bottom sheet -->
+  <div id="diet-overlay" style="display:none;position:fixed;inset:0;background:#0008;z-index:200">
+    <div id="diet-sheet" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg2);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <input id="diet-search" type="text" placeholder="Cerca dieta…" autocomplete="off"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:15px;color:var(--text1)">
+        <button type="button" id="diet-close" style="background:none;border:none;font-size:20px;color:var(--text3);padding:4px">✕</button>
+      </div>
+      <div id="diet-list" style="overflow-y:auto;flex:1"></div>
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -257,21 +269,53 @@
       setTimeout(() => t.classList.remove('show'), 2500);
     }
 
-    fetch('diets.json').then(r => r.json()).then(diets => {
-      const dl = document.getElementById('diets-list');
-      diets.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.nome;
-        opt.label = d.indicazione;
-        dl.appendChild(opt);
+    let dietsDB = [];
+    fetch('diets.json').then(r => r.json()).then(d => { dietsDB = d; }).catch(() => {});
+
+    function setFood(val) {
+      document.getElementById('food-val').value = val;
+      const btn = document.getElementById('food-btn');
+      btn.textContent = val || 'Seleziona dieta…';
+      btn.style.color = val ? 'var(--text1)' : 'var(--text2)';
+    }
+
+    function renderDietList(q) {
+      const filtered = q
+        ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()) || d.indicazione.toLowerCase().includes(q.toLowerCase()))
+        : dietsDB;
+      const list = document.getElementById('diet-list');
+      list.innerHTML = filtered.map(d =>
+        `<div class="diet-item" data-nome="${d.nome}" style="padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+          <div style="font-size:14px;color:var(--text1);font-weight:600">${d.nome}</div>
+          <div style="font-size:12px;color:var(--text3)">${d.indicazione}</div>
+        </div>`
+      ).join('') + `<div class="diet-item" data-nome="${q||''}" style="padding:11px 4px;cursor:pointer">
+        <div style="font-size:14px;color:var(--accent)">✏️ Inserisci testo libero: "${q||''}"</div>
+      </div>`;
+      list.querySelectorAll('.diet-item').forEach(el => {
+        el.addEventListener('click', () => { setFood(el.dataset.nome); closeDietPicker(); });
       });
-    }).catch(() => {});
+    }
+
+    function openDietPicker() {
+      document.getElementById('diet-overlay').style.display = 'block';
+      const search = document.getElementById('diet-search');
+      search.value = document.getElementById('food-val').value;
+      renderDietList(search.value);
+      setTimeout(() => search.focus(), 100);
+    }
+    function closeDietPicker() { document.getElementById('diet-overlay').style.display = 'none'; }
+
+    document.getElementById('food-btn').addEventListener('click', openDietPicker);
+    document.getElementById('diet-close').addEventListener('click', closeDietPicker);
+    document.getElementById('diet-overlay').addEventListener('click', e => { if (e.target === document.getElementById('diet-overlay')) closeDietPicker(); });
+    document.getElementById('diet-search').addEventListener('input', e => renderDietList(e.target.value));
 
     async function init() {
       try {
         const [v, p] = await Promise.all([loadVital(vid), loadPatient(pid)]);
-        set('food', p.food);
-        set('allergies', p.allergies);
+        if (p.food) setFood(p.food);
+        if (p.allergies) document.getElementById('allergies-input').value = p.allergies;
         set('temperature', v.temperature);
         set('weight', v.weight);
         set('heart_rate', v.heart_rate);
