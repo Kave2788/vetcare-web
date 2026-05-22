@@ -47,7 +47,8 @@
 
     .board-date {
       font-size: 11px; color: var(--text3);
-      padding: 4px 14px 6px; font-weight: 600;
+      padding: 5px 14px; font-weight: 600;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
     }
 
     /* ── Tabella — dimensioni da CSS vars ── */
@@ -59,7 +60,7 @@
     }
 
     .board th, .board td {
-      border: 1px solid var(--border);
+      border: 1px solid #1a2f45;
       text-align: center; vertical-align: middle;
       white-space: nowrap; overflow: hidden;
     }
@@ -68,13 +69,14 @@
     .board thead { position: sticky; top: 0; z-index: 4; }
 
     .board thead tr.hdr-main th {
-      background: var(--bg3);
+      background: #0a1825;
       color: var(--accent);
       font-size: var(--hdr-font, 10px);
-      font-weight: 700; text-transform: uppercase;
-      letter-spacing: .4px;
-      padding: 5px 4px;
+      font-weight: 800; text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: 6px 4px;
       height: var(--hdr-h, 30px);
+      border-bottom: 2px solid var(--accent-border);
     }
 
     /* Sticky prime due colonne */
@@ -175,41 +177,57 @@
       font-size: 18px; color: var(--border); line-height: 1;
     }
 
-    /* Popover selezione */
+    /* Pick modal — bottom sheet centrato come hour-modal */
     #pick-pop {
-      display: none; position: absolute; z-index: 30;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 10px;
-      box-shadow: 0 6px 24px #000a;
-      min-width: 150px; max-width: 200px;
-      max-height: calc(100% - 16px); overflow-y: auto;
+      display: none; position: absolute; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.6);
+      align-items: flex-end; justify-content: center;
     }
-    #pick-pop.show { display: block; }
-    #pick-pop .pop-title { font-size: 10px; font-weight: 700; color: var(--text3);
-      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    #pick-pop.show { display: flex; }
+    .pick-sheet {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      padding: 16px 16px 24px; width: 100%; max-width: 480px;
+    }
+    .pick-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 0 auto 14px;
+    }
+    #pick-pop .pop-title {
+      font-size: 13px; font-weight: 700; color: var(--accent);
+      text-transform: uppercase; letter-spacing: .5px;
+      margin-bottom: 12px; text-align: center;
+    }
+    .pop-opts-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 10px;
+    }
     .pop-opt {
       display: flex; align-items: center; gap: 8px;
-      padding: 7px 6px; border-radius: 8px; cursor: pointer;
-      font-size: 13px; font-weight: 600; color: var(--text);
-      transition: background .1s;
+      padding: 11px 10px; border-radius: 10px; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      background: var(--card); border: 1.5px solid var(--border);
+      transition: all .15s;
     }
-    .pop-opt:active { background: var(--bg3); }
+    .pop-opt.sel {
+      background: #10B98118; border-color: var(--stable); color: var(--stable);
+    }
     .pop-opt .pop-chk {
-      width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+      width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
       border: 1.5px solid var(--border); background: transparent;
       display: flex; align-items: center; justify-content: center;
-      font-size: 11px; transition: all .15s;
+      font-size: 12px; transition: all .15s;
     }
     .pop-opt.sel .pop-chk { background: #10B98130; border-color: var(--stable); color: var(--stable); }
     #pick-summary {
-      font-size: 11px; color: var(--stable); font-weight: 600;
-      min-height: 14px; margin: 6px 0 2px; line-height: 1.4;
-      word-break: break-word;
+      font-size: 12px; color: var(--stable); font-weight: 600;
+      min-height: 16px; margin: 4px 0 10px; line-height: 1.4;
+      word-break: break-word; text-align: center;
     }
     .pop-done {
-      margin-top: 8px; width: 100%; padding: 8px;
+      width: 100%; padding: 13px;
       background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+      border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
     }
 
     /* Terapie */
@@ -373,10 +391,13 @@
   </div>
 
   <div id="pick-pop">
-    <div class="pop-title" id="pick-title"></div>
-    <div id="pick-opts"></div>
-    <div id="pick-summary"></div>
-    <button class="pop-done" id="pick-done">Fatto</button>
+    <div class="pick-sheet">
+      <div class="pick-handle"></div>
+      <div class="pop-title" id="pick-title"></div>
+      <div class="pop-opts-grid" id="pick-opts"></div>
+      <div id="pick-summary"></div>
+      <button class="pop-done" id="pick-done">Fatto</button>
+    </div>
   </div>
 
   <div id="toast"></div>
@@ -436,7 +457,7 @@ function getOptLabel(type, k) {
 let pickKey = null, pickType = null;
 const pickPop = document.getElementById('pick-pop');
 
-function openPickPop(key, type, tdEl) {
+function openPickPop(key, type) {
   pickKey = key;
   pickType = type;
   const opts = type === 'eco' ? ECO_OPTS : PREV_OPTS;
@@ -446,24 +467,7 @@ function openPickPop(key, type, tdEl) {
     <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}">
       <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
     </div>`).join('');
-
-  // Posiziona: prova sotto la cella, se non ci sta mettilo sopra
-  const wrap = document.getElementById('page-wrap');
-  const tr  = tdEl.getBoundingClientRect();
-  const wr  = wrap.getBoundingClientRect();
-  const wh  = wr.height;
-  pickPop.style.right = '8px';
-  pickPop.style.top   = '';
-  pickPop.style.bottom = '';
   pickPop.classList.add('show');
-  const ph = pickPop.offsetHeight;
-  const spaceBelow = wh - (tr.bottom - wr.top);
-  if (spaceBelow >= ph + 8) {
-    pickPop.style.top = (tr.bottom - wr.top + 4) + 'px';
-  } else {
-    pickPop.style.top = Math.max(4, (tr.top - wr.top - ph - 4)) + 'px';
-  }
-
   updatePickSummary();
 
   document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
@@ -490,18 +494,18 @@ document.getElementById('pick-done').addEventListener('click', () => {
   saveChecks();
   pickPop.classList.remove('show');
   if (pickKey) {
-    const td = root.querySelector(`[data-pick="${pickKey}"]`);
+    const td = document.querySelector(`[data-pick="${pickKey}"]`);
     if (td) td.innerHTML = renderPickCell(pickKey);
   }
   pickKey = null;
 });
 
-document.addEventListener('click', e => {
-  if (pickPop.classList.contains('show') && !pickPop.contains(e.target) && !e.target.closest('.td-check')) {
+pickPop.addEventListener('click', e => {
+  if (e.target === pickPop) {
     saveChecks();
     pickPop.classList.remove('show');
     if (pickKey) {
-      const td = root.querySelector(`[data-pick="${pickKey}"]`);
+      const td = document.querySelector(`[data-pick="${pickKey}"]`);
       if (td) td.innerHTML = renderPickCell(pickKey);
     }
     pickKey = null;
@@ -831,7 +835,7 @@ async function render() {
   root.querySelectorAll('.td-check').forEach(td => {
     td.addEventListener('click', e => {
       e.stopPropagation();
-      openPickPop(td.dataset.pick, td.dataset.type, td);
+      openPickPop(td.dataset.pick, td.dataset.type);
     });
   });
 }
