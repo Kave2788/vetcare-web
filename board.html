@@ -106,6 +106,14 @@
     .board tbody td.td-hour .cell-inner span {
       display: block; max-width: 32px; overflow: hidden; text-overflow: ellipsis;
     }
+    .cell-drug {
+      color: #F59E0B !important;
+      font-weight: 700 !important;
+      font-size: 8px !important;
+      background: #F59E0B18;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
 
     .board tbody td.td-check { cursor: pointer; }
 
@@ -299,6 +307,8 @@
 
     // vitalsMap: `${pid}_h${hour}` → vitals record (o null)
     let vitalsMap = {};
+    // drugSchedule: pid → { hour → [abbr, ...] }
+    let drugSchedule = {};
 
     function cellKey(pid, h) { return `${pid}_h${h}`; }
 
@@ -338,13 +348,15 @@
       return { lines, hasData: lines.length > 0 };
     }
 
-    function updateCellUI(key) {
+    function updateCellUI(key, drugs = []) {
       const td = document.querySelector(`[data-key="${key}"]`);
       if (!td) return;
       const v = vitalsMap[key];
       const { lines, hasData } = vitalToCell(v);
-      td.querySelector('.cell-inner').innerHTML = lines.map(l => `<span>${l}</span>`).join('');
-      td.style.background = hasData ? 'var(--accent-dim)' : '';
+      const drugHtml  = drugs.map(d => `<span class="cell-drug">${d}</span>`).join('');
+      const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
+      td.querySelector('.cell-inner').innerHTML = drugHtml + vitalHtml;
+      td.style.background = hasData ? 'var(--accent-dim)' : (drugs.length ? '#F59E0B0A' : '');
     }
 
     // ── Modal ─────────────────────────────────────────────────────────────────
@@ -394,7 +406,7 @@
           });
           vitalsMap[activeKey] = { id: newId, patient_id: activePid, ...fields };
         }
-        updateCellUI(activeKey);
+        updateCellUI(activeKey, (drugSchedule[activePid] || {})[activeHour] || []);
         modal.classList.remove('open');
       } catch(e) {
         toast('Errore salvataggio: ' + e.message);
@@ -461,6 +473,34 @@
         });
       } catch(e) { /* continua anche senza vitals */ }
 
+      // ── Mappa frequenza → ore di somministrazione ──────────────────────────
+      drugSchedule = {};
+      const FREQ_HOURS = {
+        sid:  [8],
+        bid:  [8, 20],
+        tid:  [8, 14, 20],
+        qid:  [8, 12, 16, 20],
+        q8h:  [8, 16],
+        q6h:  [8, 14, 20],
+        once: [8],
+        prn:  [],
+      };
+
+      // drugSchedule: pid → { hour → [drug abbrev, ...] }
+      active.forEach(p => {
+        drugSchedule[p.id] = {};
+        (p.therapies || []).filter(t => t.active && t.drug).forEach(t => {
+          const hours = FREQ_HOURS[t.frequency] || [];
+          const abbr = t.drug.slice(0, 4);
+          hours.forEach(h => {
+            if (HOURS.includes(h)) {
+              if (!drugSchedule[p.id][h]) drugSchedule[p.id][h] = [];
+              drugSchedule[p.id][h].push(abbr);
+            }
+          });
+        });
+      });
+
       const hoursHdr = HOURS.map(h => `<th class="col-hour">${h}</th>`).join('');
 
       const rows = active.map(p => {
@@ -470,8 +510,19 @@
         const hourCells = HOURS.map(h => {
           const key = cellKey(p.id, h);
           const { lines, hasData } = vitalToCell(vitalsMap[key]);
-          return `<td class="td-hour" data-key="${key}" data-pid="${p.id}" data-hour="${h}" style="${hasData ? 'background:var(--accent-dim)' : ''}">
-            <div class="cell-inner">${lines.map(l=>`<span>${l}</span>`).join('')}</div>
+          const drugs = drugSchedule[p.id][h] || [];
+
+          const drugHtml = drugs.map(d =>
+            `<span class="cell-drug">${d}</span>`
+          ).join('');
+          const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
+
+          let bg = '';
+          if (hasData) bg = 'background:var(--accent-dim)';
+          else if (drugs.length) bg = 'background:#F59E0B0A';
+
+          return `<td class="td-hour" data-key="${key}" data-pid="${p.id}" data-hour="${h}" style="${bg}">
+            <div class="cell-inner">${drugHtml}${vitalHtml}</div>
           </td>`;
         }).join('');
 
@@ -479,7 +530,7 @@
         const prevKey = `${p.id}_prev`;
 
         const drugTags = therapies.length
-          ? therapies.map(t => `<span class="drug-tag">${t.drug}</span>`).join('')
+          ? therapies.map(t => `<span class="drug-tag" title="${t.frequency}">${t.drug}</span>`).join('')
           : `<span style="color:var(--text3)">—</span>`;
 
         return `<tr>

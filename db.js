@@ -10,7 +10,7 @@ export const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 export async function loadPatients() {
   const { data, error } = await db
     .from('patients')
-    .select('*, therapies(id, active)')
+    .select('*, therapies(id, active, drug, dose, unit, route, frequency)')
     .order('admitted_at', { ascending: false });
   if (error) throw error;
   return data;
