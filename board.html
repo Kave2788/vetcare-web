@@ -170,6 +170,7 @@
     .cell-drug.dc3 { color:#34D399; }
     .cell-drug.dc4 { color:#A78BFA; }
     .cell-drug.dc5 { color:#FB923C; }
+    .cell-drug.done { color:#EF4444 !important; }
 
     /* ECO / PRELIEVI multi-select */
     .board tbody td.td-check { cursor: pointer; padding: 0; overflow: visible !important; }
@@ -426,6 +427,11 @@ import {
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
 const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
 let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
+
+const DONE_KEY = `board_done_${new Date().toISOString().slice(0,10)}`;
+let doneSet = new Set(JSON.parse(localStorage.getItem(DONE_KEY)||'[]'));
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function saveDone() { localStorage.setItem(DONE_KEY, JSON.stringify([...doneSet])); }
 function saveChecks() { localStorage.setItem(TODAY_KEY, JSON.stringify(checks)); }
 
 let vitalsMap = {};
@@ -768,11 +774,14 @@ function buildVitalCellHTML(pid, h, ci, isScheduled, L) {
   </td>`;
 }
 
-// Cella farmaco (righe successive) — non tappabile, solo X se previsto
-function buildDrugCellHTML(ci, isScheduled) {
-  const bg = isScheduled ? 'background:#F59E0B09' : '';
-  const inner = isScheduled ? `<span class="cell-drug dc${ci}">✕</span>` : '';
-  return `<td class="td-hour" style="${bg}"><div class="cell-inner">${inner}</div></td>`;
+// Cella farmaco (righe successive)
+function buildDrugCellHTML(ci, isScheduled, pid, drugIdx, h) {
+  if (!isScheduled) return `<td class="td-hour"><div class="cell-inner"></div></td>`;
+  const doneKey = `done_${todayKey()}_${pid}_${drugIdx}_${h}`;
+  const isDone = doneSet.has(doneKey);
+  const xClass = isDone ? `cell-drug dc${ci} done` : `cell-drug dc${ci}`;
+  const bg = isDone ? 'background:#EF444418' : 'background:#F59E0B09';
+  return `<td class="td-hour td-drug-x" data-done-key="${doneKey}" style="${bg}"><div class="cell-inner"><span class="${xClass}">✕</span></div></td>`;
 }
 
 function updateCellUI(key, pid, h, L) {
@@ -987,7 +996,7 @@ async function render() {
         const cells = HOURS.map(h => buildVitalCellHTML(p.id, h, ci, freqSet.has(h), L)).join('');
         return `<tr class="${rowClass}">${kgCell}${nameCell}${cells}${ecoCell}${prevCell}${drugTag}</tr>`;
       } else {
-        const cells = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h))).join('');
+        const cells = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h)).join('');
         return `<tr class="${rowClass} drug-row">${cells}${drugTag}</tr>`;
       }
     }).join('');
@@ -1019,6 +1028,23 @@ async function render() {
     td.addEventListener('click', e => {
       e.stopPropagation();
       openPickPop(td.dataset.pick, td.dataset.type);
+    });
+  });
+
+  root.querySelectorAll('.td-drug-x').forEach(td => {
+    td.addEventListener('click', () => {
+      const key = td.dataset.doneKey;
+      const span = td.querySelector('.cell-drug');
+      if (doneSet.has(key)) {
+        doneSet.delete(key);
+        span.classList.remove('done');
+        td.style.background = '#F59E0B09';
+      } else {
+        doneSet.add(key);
+        span.classList.add('done');
+        td.style.background = '#EF444418';
+      }
+      saveDone();
     });
   });
 }
