@@ -151,9 +151,15 @@
       overflow: hidden; text-overflow: ellipsis;
     }
     .cell-drug {
-      color: #F59E0B !important; font-weight: 700 !important;
-      background: #F59E0B22; border-radius: 2px; padding: 0 2px;
+      font-weight: 700 !important;
+      border-radius: 2px; padding: 0 2px;
     }
+    .cell-drug.dc0 { color:#F59E0B; background:#F59E0B22; }
+    .cell-drug.dc1 { color:#60A5FA; background:#60A5FA22; }
+    .cell-drug.dc2 { color:#F472B6; background:#F472B622; }
+    .cell-drug.dc3 { color:#34D399; background:#34D39922; }
+    .cell-drug.dc4 { color:#A78BFA; background:#A78BFA22; }
+    .cell-drug.dc5 { color:#FB923C; background:#FB923C22; }
 
     /* Checkbox eco/prelievi */
     .board tbody td.td-check { cursor: pointer; }
@@ -465,7 +471,7 @@ function buildCellHTML(pid, h, L) {
   const lines  = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
 
-  const drugHtml  = drugs.length ? `<span class="cell-drug">✕</span>` : '';
+  const drugHtml  = drugs.map(ci => `<span class="cell-drug dc${ci}">✕</span>`).join('');
   const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
 
   let bg = '';
@@ -485,7 +491,7 @@ function updateCellUI(key, pid, h, L) {
   const lines  = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
   td.querySelector('.cell-inner').innerHTML =
-    (drugs.length ? `<span class="cell-drug">✕</span>` : '') +
+    drugs.map(ci => `<span class="cell-drug dc${ci}">✕</span>`).join('') +
     lines.map(l => `<span>${l}</span>`).join('');
   td.style.background = hasData ? 'var(--accent-dim)' : (drugs.length ? '#F59E0B09' : '');
 }
@@ -602,11 +608,12 @@ async function render() {
   drugSchedule = {};
   active.forEach(p => {
     drugSchedule[p.id] = {};
-    (p.therapies||[]).filter(t => t.active && t.drug).forEach(t => {
+    const activeDrugs = (p.therapies||[]).filter(t => t.active && t.drug);
+    activeDrugs.forEach((t, colorIdx) => {
       (FREQ_HOURS[t.frequency]||[]).forEach(h => {
         if (!HOURS.includes(h)) return;
         if (!drugSchedule[p.id][h]) drugSchedule[p.id][h] = [];
-        drugSchedule[p.id][h].push('✕');
+        drugSchedule[p.id][h].push(colorIdx % 6);
       });
     });
   });
