@@ -465,7 +465,7 @@ function buildCellHTML(pid, h, L) {
   const lines  = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
 
-  const drugHtml  = drugs.map(d => `<span class="cell-drug">${d}</span>`).join('');
+  const drugHtml  = drugs.length ? `<span class="cell-drug">✕</span>` : '';
   const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
 
   let bg = '';
@@ -485,7 +485,7 @@ function updateCellUI(key, pid, h, L) {
   const lines  = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
   td.querySelector('.cell-inner').innerHTML =
-    drugs.map(d => `<span class="cell-drug">${d}</span>`).join('') +
+    (drugs.length ? `<span class="cell-drug">✕</span>` : '') +
     lines.map(l => `<span>${l}</span>`).join('');
   td.style.background = hasData ? 'var(--accent-dim)' : (drugs.length ? '#F59E0B09' : '');
 }
@@ -603,11 +603,10 @@ async function render() {
   active.forEach(p => {
     drugSchedule[p.id] = {};
     (p.therapies||[]).filter(t => t.active && t.drug).forEach(t => {
-      const abbr = t.drug.slice(0, 5);
       (FREQ_HOURS[t.frequency]||[]).forEach(h => {
         if (!HOURS.includes(h)) return;
         if (!drugSchedule[p.id][h]) drugSchedule[p.id][h] = [];
-        drugSchedule[p.id][h].push(abbr);
+        drugSchedule[p.id][h].push('✕');
       });
     });
   });
