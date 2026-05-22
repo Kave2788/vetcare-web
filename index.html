@@ -94,7 +94,7 @@
             const activeT = (p.therapies || []).filter(t => t.active).length;
             const daysText = days === 0 ? 'Ricoverato oggi' : `${days} giorn${days === 1 ? 'o' : 'i'} di ricovero`;
             const therapyPill = activeT > 0
-              ? `<span class="therapy-pill">${activeT} terapia${activeT > 1 ? 'e' : ''} attiva${activeT > 1 ? '' : ''}</span>`
+              ? `<span class="therapy-pill">${activeT} ${activeT > 1 ? 'terapie attive' : 'terapia attiva'}</span>`
               : '';
             return `
               <a class="patient-card" href="patient.html?id=${p.id}" data-id="${p.id}">
