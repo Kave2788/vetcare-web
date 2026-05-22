@@ -183,7 +183,8 @@
       <div class="section-label">Dieta e allergie</div>
       <div class="field">
         <label>Cibo</label>
-        <textarea name="food" placeholder="Es. Royal Canin Renal, 80g × 2/die…" rows="2"></textarea>
+        <input name="food" id="food-input" type="text" list="diets-list" placeholder="Cerca dieta veterinaria…" autocomplete="off">
+        <datalist id="diets-list"></datalist>
       </div>
       <div class="field">
         <label>Allergie</label>
@@ -205,11 +206,26 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { addVital, updatePatientFields } from './db.js';
+    import { addVital, updatePatientFields, loadPatient } from './db.js';
 
     const id = new URLSearchParams(location.search).get('id');
     if (!id) location.href = 'index.html';
     document.getElementById('back-link').href = `patient.html?id=${id}`;
+
+    fetch('diets.json').then(r => r.json()).then(diets => {
+      const dl = document.getElementById('diets-list');
+      diets.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.nome;
+        opt.label = d.indicazione;
+        dl.appendChild(opt);
+      });
+    }).catch(() => {});
+
+    loadPatient(id).then(p => {
+      if (p.food) document.getElementById('food-input').value = p.food;
+      if (p.allergies) document.querySelector('[name="allergies"]').value = p.allergies;
+    }).catch(() => {});
 
     function calcUO() {
       const ml = parseFloat(document.getElementById('uo-ml').value);

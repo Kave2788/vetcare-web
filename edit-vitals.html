@@ -180,6 +180,17 @@
         </div>
       </div>
 
+      <div class="section-label">Dieta e allergie</div>
+      <div class="field">
+        <label>Cibo</label>
+        <input name="food" id="food-input" type="text" list="diets-list" placeholder="Cerca dieta veterinaria…" autocomplete="off">
+        <datalist id="diets-list"></datalist>
+      </div>
+      <div class="field">
+        <label>Allergie</label>
+        <textarea name="allergies" id="allergies-input" placeholder="Es. Pollo, penicillina…" rows="2"></textarea>
+      </div>
+
       <div class="section-label">Note</div>
       <div class="field">
         <label>Note visita</label>
@@ -195,7 +206,7 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { loadVital, updateVital } from './db.js';
+    import { loadVital, updateVital, loadPatient, updatePatientFields } from './db.js';
 
     const params = new URLSearchParams(location.search);
     const vid = params.get('vid');
@@ -246,9 +257,21 @@
       setTimeout(() => t.classList.remove('show'), 2500);
     }
 
+    fetch('diets.json').then(r => r.json()).then(diets => {
+      const dl = document.getElementById('diets-list');
+      diets.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.nome;
+        opt.label = d.indicazione;
+        dl.appendChild(opt);
+      });
+    }).catch(() => {});
+
     async function init() {
       try {
-        const v = await loadVital(vid);
+        const [v, p] = await Promise.all([loadVital(vid), loadPatient(pid)]);
+        set('food', p.food);
+        set('allergies', p.allergies);
         set('temperature', v.temperature);
         set('weight', v.weight);
         set('heart_rate', v.heart_rate);
@@ -306,7 +329,12 @@
       };
 
       try {
-        await updateVital(vid, fields);
+        const food = fd.get('food').trim();
+        const allergies = fd.get('allergies').trim();
+        await Promise.all([
+          updateVital(vid, fields),
+          updatePatientFields(pid, { food: food || null, allergies: allergies || null }),
+        ]);
         location.href = `patient.html?id=${pid}`;
       } catch(err) {
         toast('Errore: ' + err.message);

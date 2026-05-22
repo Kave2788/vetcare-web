@@ -1,4 +1,4 @@
-const CACHE = 'vetcare-v8';
+const CACHE = 'vetcare-v9';
 const ASSETS = [
   '/vetcare-web/',
   '/vetcare-web/index.html',
@@ -11,7 +11,8 @@ const ASSETS = [
   '/vetcare-web/style.css',
   '/vetcare-web/db.js',
   '/vetcare-web/board.html',
-  '/vetcare-web/drugs.json'
+  '/vetcare-web/drugs.json',
+  '/vetcare-web/diets.json'
 ];
 
 self.addEventListener('install', e => {

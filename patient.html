@@ -198,6 +198,13 @@
             enteralRow = `<div class="data-row"><span class="lbl">Alim. enterale</span><span class="val">${entVal}</span></div>`;
           }
 
+          const dietRow = patient.food
+            ? `<div class="data-row"><span class="lbl">Cibo</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.food}</span></div>`
+            : '';
+          const allergyRow = patient.allergies
+            ? `<div class="data-row"><span class="lbl">Allergie</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.allergies}</span></div>`
+            : '';
+
           return `
             <div class="vital-card" data-vid="${v.id}" style="margin-bottom:10px">
               <div class="vital-header">
@@ -210,6 +217,8 @@
                 ${rows}
                 ${uoRow}
                 ${enteralRow}
+                ${dietRow}
+                ${allergyRow}
                 ${v.notes ? `<div class="note">📝 ${v.notes}</div>` : ''}
               </div>
             </div>`;
