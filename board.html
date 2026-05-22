@@ -201,15 +201,15 @@
       margin-bottom: 12px; text-align: center;
     }
     .pop-opts-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-      margin-bottom: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 10px; max-height: 52vh; overflow-y: auto;
     }
     .pop-opt {
-      display: flex; align-items: center; gap: 8px;
-      padding: 11px 10px; border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 12px; border-radius: 10px; cursor: pointer;
       font-size: 14px; font-weight: 600; color: var(--text);
       background: var(--card); border: 1.5px solid var(--border);
-      transition: all .15s;
+      transition: all .15s; flex-shrink: 0;
     }
     .pop-opt.sel {
       background: #10B98118; border-color: var(--stable); color: var(--stable);
@@ -221,6 +221,10 @@
       font-size: 12px; transition: all .15s;
     }
     .pop-opt.sel .pop-chk { background: #10B98130; border-color: var(--stable); color: var(--stable); }
+    .pop-arrow { font-size: 18px; color: var(--text3); margin-left: auto; }
+    .sub-count { font-size: 11px; font-weight: 800; color: var(--accent);
+      background: var(--accent-dim); border-radius: 10px; padding: 1px 7px; }
+    .pick-back { cursor: pointer; color: var(--accent); margin-right: 6px; font-size: 18px; }
     #pick-summary {
       font-size: 12px; color: var(--stable); font-weight: 600;
       min-height: 16px; margin: 4px 0 10px; line-height: 1.4;
@@ -433,17 +437,77 @@ function hourToISO(h) {
 
 // ── ECO / PRELIEVI multi-select ───────────────────────────────────────────────
 
-const ECO_OPTS  = [{ k:'add', l:'Addome' }, { k:'card', l:'Cardio' }];
-const PREV_OPTS = [
-  { k:'emo',  l:'Emocromo' },
-  { k:'bio',  l:'Biochimico' },
-  { k:'orm',  l:'Ormonale' },
-  { k:'uri',  l:'Urine' },
-  { k:'coag', l:'Coagulazione' },
-  { k:'ele',  l:'Elettroliti' },
-  { k:'epat', l:'Profilo epatico' },
-  { k:'ren',  l:'Profilo renale' },
+const ECO_OPTS = [{ k:'add', l:'Addome' }, { k:'card', l:'Cardio' }];
+
+const PREV_CATS = [
+  { k:'emo',    l:'Emocromo DM61',       sub: null },
+  { k:'bio',    l:'Biochimico BT3500',   sub: [
+    { k:'bio_est',  l:'Profilo Esteso' },
+    { k:'bio_pre',  l:'Preanestesiologico' },
+    { k:'bio_lei',  l:'Leishmania' },
+    { k:'bio_ega',  l:'Compl. + Emogas' },
+    { k:'bio_5fx',  l:'5 Fix' },
+    { k:'bio_epr',  l:'Epato Renale' },
+    { k:'bio_pcr',  l:'Proteina C reattiva' },
+    { k:'bio_fru',  l:'Fruttosamine' },
+    { k:'bio_sam',  l:'Siero Amiloide' },
+    { k:'bio_abd',  l:'Acidi Biliari (dig.)' },
+    { k:'bio_abp',  l:'Acidi Biliari (pp.)' },
+  ]},
+  { k:'orm',    l:'Ormonali',            sub: [
+    { k:'orm_cob',  l:'Cortisolo Basale' },
+    { k:'orm_coa',  l:'Cortisolo ACTH' },
+    { k:'orm_cos',  l:'Cortisolo sopp.' },
+    { k:'orm_t4f',  l:'T4 felino' },
+    { k:'orm_t4c',  l:'T4 canino' },
+    { k:'orm_tsh',  l:'T4+TSH canino' },
+    { k:'orm_ths',  l:'THS' },
+    { k:'orm_bar',  l:'Barbituremia' },
+    { k:'orm_b2d',  l:'Barbiturem. 2 dos.' },
+    { k:'orm_dig',  l:'Digossinemia' },
+    { k:'orm_tro',  l:'Troponina' },
+    { k:'orm_act',  l:'ACTH' },
+    { k:'orm_pro',  l:'Progesterone' },
+    { k:'orm_lh',   l:'LH' },
+    { k:'orm_tli',  l:'TLI FOL B12' },
+    { k:'orm_tlc',  l:'TLI Canino' },
+    { k:'orm_fb12', l:'Folati B12' },
+    { k:'orm_fb9',  l:'Folati Vit B9' },
+    { k:'orm_vb12', l:'Vitamina B12' },
+  ]},
+  { k:'coag',   l:'Coagulazione',        sub: [
+    { k:'coag_c',   l:'COAG Completo' },
+    { k:'coag_r',   l:'COAG Rapido' },
+    { k:'coag_f',   l:'COAG Fibrinogeno' },
+  ]},
+  { k:'uri',    l:'Dosaggi Urinari',     sub: [
+    { k:'uri_pu',   l:'PU/CU' },
+    { k:'uri_cu',   l:'Cortisolo Urinario' },
+  ]},
+  { k:'siero',  l:'Sierologia',          sub: [
+    { k:'s_ifat',   l:'IFAT' },
+    { k:'s_fiv',    l:'FIV FeLV' },
+    { k:'s_fil',    l:'Filaria' },
+    { k:'s_if',     l:'IFAT + Filaria' },
+    { k:'s_lei',    l:'Anap/Erlich/Leishm' },
+    { k:'s_lep',    l:'Lepto' },
+  ]},
+  { k:'ega',    l:'EGA / PHOX',          sub: null },
+  { k:'cito',   l:'Citologia',           sub: null },
+  { k:'copro',  l:'Coproparassitologico',sub: null },
+  { k:'emat',   l:'Ematologia',          sub: null },
+  { k:'coltura',l:'Coltura',             sub: null },
+  { k:'invio',  l:'Invio Esterno',       sub: null },
 ];
+
+function allPrevItems() {
+  const items = [];
+  PREV_CATS.forEach(c => {
+    if (c.sub) c.sub.forEach(s => items.push(s));
+    else items.push(c);
+  });
+  return items;
+}
 
 function renderPickCell(key) {
   const sel = checks[key] || [];
@@ -451,30 +515,67 @@ function renderPickCell(key) {
   return `<div class="check-cell"><span class="check-badge">✓${sel.length > 1 ? sel.length : ''}</span></div>`;
 }
 
-function getOptLabel(type, k) {
-  const opts = type === 'eco' ? ECO_OPTS : PREV_OPTS;
-  return (opts.find(o => o.k === k) || {}).l || k;
+function labelForKey(type, k) {
+  if (type === 'eco') return (ECO_OPTS.find(o => o.k === k) || {}).l || k;
+  return (allPrevItems().find(o => o.k === k) || {}).l || k;
 }
 
-let pickKey = null, pickType = null;
+let pickKey = null, pickType = null, pickSubCat = null;
 const pickPop = document.getElementById('pick-pop');
 
-function openPickPop(key, type) {
-  pickKey = key;
-  pickType = type;
-  const opts = type === 'eco' ? ECO_OPTS : PREV_OPTS;
-  const sel  = checks[key] || [];
-  document.getElementById('pick-title').textContent = type === 'eco' ? 'Ecografia' : 'Prelievi';
-  document.getElementById('pick-opts').innerHTML = opts.map(o => `
-    <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}">
-      <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
-    </div>`).join('');
-  pickPop.classList.add('show');
+function renderPickSheet() {
+  const sel = checks[pickKey] || [];
+
+  if (pickType === 'eco') {
+    document.getElementById('pick-title').textContent = 'Ecografia';
+    document.getElementById('pick-opts').innerHTML = ECO_OPTS.map(o => `
+      <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}" data-leaf="1">
+        <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
+      </div>`).join('');
+  } else if (!pickSubCat) {
+    // Livello macro
+    document.getElementById('pick-title').textContent = 'Prelievi';
+    document.getElementById('pick-opts').innerHTML = PREV_CATS.map(c => {
+      const hasSubs = !!c.sub;
+      const subSel  = hasSubs ? c.sub.filter(s => sel.includes(s.k)).length : 0;
+      const isSel   = !hasSubs && sel.includes(c.k);
+      const badge   = subSel > 0 ? `<span class="sub-count">${subSel}</span>` : '';
+      return `<div class="pop-opt ${isSel ? 'sel' : ''}" data-k="${c.k}" data-has-sub="${hasSubs ? '1' : ''}">
+        <span class="pop-chk">${isSel ? '✓' : ''}</span>
+        <span style="flex:1">${c.l}</span>
+        ${badge}${hasSubs ? '<span class="pop-arrow">›</span>' : ''}
+      </div>`;
+    }).join('');
+  } else {
+    // Livello sub
+    const cat = PREV_CATS.find(c => c.k === pickSubCat);
+    document.getElementById('pick-title').innerHTML =
+      `<span class="pick-back" id="pick-back">‹</span> ${cat.l}`;
+    document.getElementById('pick-opts').innerHTML = cat.sub.map(s => `
+      <div class="pop-opt ${sel.includes(s.k) ? 'sel' : ''}" data-k="${s.k}" data-leaf="1">
+        <span class="pop-chk">${sel.includes(s.k) ? '✓' : ''}</span>${s.l}
+      </div>`).join('');
+    document.getElementById('pick-back').addEventListener('click', () => {
+      pickSubCat = null;
+      renderPickSheet();
+    });
+  }
+
   updatePickSummary();
 
   document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
     opt.addEventListener('click', () => {
-      const k = opt.dataset.k;
+      const k   = opt.dataset.k;
+      const leaf = opt.dataset.leaf === '1';
+      const hasSub = opt.dataset.hasSub === '1';
+
+      if (hasSub) {
+        pickSubCat = k;
+        renderPickSheet();
+        return;
+      }
+      if (!leaf) return;
+
       let cur = checks[pickKey] || [];
       if (cur.includes(k)) cur = cur.filter(x => x !== k);
       else cur = [...cur, k];
@@ -482,13 +583,26 @@ function openPickPop(key, type) {
       opt.classList.toggle('sel', cur.includes(k));
       opt.querySelector('.pop-chk').textContent = cur.includes(k) ? '✓' : '';
       updatePickSummary();
+
+      // Aggiorna badge macro se siamo nel sub
+      if (pickSubCat && pickType === 'prev') {
+        // Refresh macro badges richiede re-render (non facciamo nulla, l'utente vede il sub)
+      }
     });
   });
 }
 
+function openPickPop(key, type) {
+  pickKey = key;
+  pickType = type;
+  pickSubCat = null;
+  renderPickSheet();
+  pickPop.classList.add('show');
+}
+
 function updatePickSummary() {
   const sel = checks[pickKey] || [];
-  const labels = sel.map(k => getOptLabel(pickType, k));
+  const labels = sel.map(k => labelForKey(pickType, k));
   document.getElementById('pick-summary').textContent = labels.join(', ');
 }
 
@@ -499,7 +613,7 @@ document.getElementById('pick-done').addEventListener('click', () => {
     const td = document.querySelector(`[data-pick="${pickKey}"]`);
     if (td) td.innerHTML = renderPickCell(pickKey);
   }
-  pickKey = null;
+  pickKey = null; pickSubCat = null;
 });
 
 pickPop.addEventListener('click', e => {
@@ -510,7 +624,7 @@ pickPop.addEventListener('click', e => {
       const td = document.querySelector(`[data-pick="${pickKey}"]`);
       if (td) td.innerHTML = renderPickCell(pickKey);
     }
-    pickKey = null;
+    pickKey = null; pickSubCat = null;
   }
 });
 
