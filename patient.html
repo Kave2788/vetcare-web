@@ -156,21 +156,6 @@
               <option value="discharged" ${patient.status==='discharged'?'selected':''}>Dimesso</option>
             </select>
           </div>
-          <div class="section-label" style="display:flex;justify-content:space-between;align-items:center">
-            Dieta e allergie
-            <button id="diet-edit-btn" class="btn btn-ghost" style="font-size:12px;padding:2px 10px">Modifica</button>
-          </div>
-          <div class="card" style="margin-bottom:16px">
-            <div id="diet-view">
-              <div class="data-row"><span class="lbl">Cibo</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.food || '—'}</span></div>
-              <div class="data-row"><span class="lbl">Allergie</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.allergies || '—'}</span></div>
-            </div>
-            <div id="diet-form" style="display:none">
-              <div style="margin-bottom:8px"><label style="font-size:12px;color:var(--text2)">Cibo</label><textarea id="field-food" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text1);padding:8px;font-size:14px;resize:vertical;margin-top:4px">${patient.food || ''}</textarea></div>
-              <div style="margin-bottom:8px"><label style="font-size:12px;color:var(--text2)">Allergie</label><textarea id="field-allergies" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text1);padding:8px;font-size:14px;resize:vertical;margin-top:4px">${patient.allergies || ''}</textarea></div>
-              <button id="save-patient-fields" class="btn btn-primary" style="width:100%">Salva</button>
-            </div>
-          </div>
           <div class="section-label">Rilevazioni</div>`;
 
         const vitalsHTML = vitals.length === 0
@@ -270,28 +255,7 @@
           } catch { toast('Errore aggiornamento stato'); }
         };
 
-        document.getElementById('diet-edit-btn').onclick = () => {
-          const open = document.getElementById('diet-form').style.display === 'block';
-          document.getElementById('diet-form').style.display = open ? 'none' : 'block';
-          document.getElementById('diet-view').style.display = open ? 'block' : 'none';
-          document.getElementById('diet-edit-btn').textContent = open ? 'Modifica' : 'Chiudi';
-        };
 
-        document.getElementById('save-patient-fields').onclick = async () => {
-          const food = document.getElementById('field-food').value.trim();
-          const allergies = document.getElementById('field-allergies').value.trim();
-          try {
-            await updatePatientFields(id, { food, allergies });
-            patient.food = food;
-            patient.allergies = allergies;
-            document.querySelector('#diet-view .data-row:nth-child(1) .val').textContent = food || '—';
-            document.querySelector('#diet-view .data-row:nth-child(2) .val').textContent = allergies || '—';
-            document.getElementById('diet-form').style.display = 'none';
-            document.getElementById('diet-view').style.display = 'block';
-            document.getElementById('diet-edit-btn').textContent = 'Modifica';
-            toast('Salvato');
-          } catch { toast('Errore salvataggio'); }
-        };
       } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }
     }
 
