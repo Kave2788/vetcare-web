@@ -184,7 +184,8 @@
       background: var(--card); border: 1px solid var(--border);
       border-radius: 12px; padding: 10px;
       box-shadow: 0 6px 24px #000a;
-      min-width: 150px;
+      min-width: 150px; max-width: 200px;
+      max-height: calc(100% - 16px); overflow-y: auto;
     }
     #pick-pop.show { display: block; }
     #pick-pop .pop-title { font-size: 10px; font-weight: 700; color: var(--text3);
@@ -438,13 +439,22 @@ function openPickPop(key, type, tdEl) {
       <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
     </div>`).join('');
 
-  // Posiziona vicino alla cella
+  // Posiziona: prova sotto la cella, se non ci sta mettilo sopra
   const wrap = document.getElementById('page-wrap');
-  const tr = tdEl.getBoundingClientRect();
-  const wr = wrap.getBoundingClientRect();
-  pickPop.style.top  = (tr.bottom - wr.top + 4) + 'px';
+  const tr  = tdEl.getBoundingClientRect();
+  const wr  = wrap.getBoundingClientRect();
+  const wh  = wr.height;
   pickPop.style.right = '8px';
+  pickPop.style.top   = '';
+  pickPop.style.bottom = '';
   pickPop.classList.add('show');
+  const ph = pickPop.offsetHeight;
+  const spaceBelow = wh - (tr.bottom - wr.top);
+  if (spaceBelow >= ph + 8) {
+    pickPop.style.top = (tr.bottom - wr.top + 4) + 'px';
+  } else {
+    pickPop.style.top = Math.max(4, (tr.top - wr.top - ph - 4)) + 'px';
+  }
 
   document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
     opt.addEventListener('click', () => {
