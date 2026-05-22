@@ -259,6 +259,65 @@
 
   <div id="toast"></div>
 
+  <!-- Pulsante fullscreen/landscape -->
+  <button id="btn-fullscreen" title="Fullscreen landscape" style="
+    position:fixed; top: calc(14px + env(safe-area-inset-top)); right:14px;
+    z-index:50; background:var(--card); border:1px solid var(--border);
+    border-radius:8px; color:var(--text2); font-size:18px;
+    width:36px; height:36px; cursor:pointer; display:flex;
+    align-items:center; justify-content:center;
+  ">⛶</button>
+
+  <script>
+    // Fullscreen + landscape al caricamento se arrivato da param ?fs=1
+    // oppure al click del pulsante
+    const fsBtn = document.getElementById('btn-fullscreen');
+
+    async function enterFullscreenLandscape() {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch(e) {}
+      try {
+        if (screen.orientation?.lock) {
+          await screen.orientation.lock('landscape');
+        }
+      } catch(e) {}
+    }
+
+    async function exitFullscreen() {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      } catch(e) {}
+      try {
+        if (screen.orientation?.unlock) screen.orientation.unlock();
+      } catch(e) {}
+    }
+
+    fsBtn.addEventListener('click', async () => {
+      if (document.fullscreenElement) {
+        await exitFullscreen();
+        fsBtn.textContent = '⛶';
+      } else {
+        await enterFullscreenLandscape();
+        fsBtn.textContent = '✕';
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      fsBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
+    });
+
+    // Se aperto con ?fs=1 (dal pulsante index) entra subito — richiede gesto utente,
+    // quindi lo facciamo dopo il primo click dell'utente sulla pagina
+    if (new URLSearchParams(location.search).get('fs') === '1') {
+      document.addEventListener('click', () => enterFullscreenLandscape(), { once: true });
+    }
+  </script>
+
   <script type="module">
     import {
       loadPatients, loadTodayVitals, addVital, updateVital,
