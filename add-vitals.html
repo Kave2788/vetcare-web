@@ -181,10 +181,11 @@
       </div>
 
       <div class="section-label">Dieta e allergie</div>
-      <div class="field">
+      <div class="field" style="position:relative">
         <label>Cibo</label>
-        <input type="hidden" name="food" id="food-val">
-        <button type="button" id="food-btn" style="width:100%;text-align:left;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:15px;color:var(--text2)">Seleziona dieta…</button>
+        <input type="text" id="food-input" name="food" placeholder="Cerca o scrivi dieta…" autocomplete="off"
+          style="width:100%;box-sizing:border-box">
+        <div id="food-dropdown" style="display:none;position:absolute;left:0;right:0;top:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px #0004;z-index:100;max-height:240px;overflow-y:auto"></div>
       </div>
       <div class="field">
         <label>Allergie</label>
@@ -203,18 +204,6 @@
     </form>
   </div>
 
-  <!-- Diet picker bottom sheet -->
-  <div id="diet-overlay" style="display:none;position:fixed;inset:0;background:#0008;z-index:200">
-    <div id="diet-sheet" style="position:absolute;bottom:0;left:0;right:0;background:var(--bg2);border-radius:16px 16px 0 0;padding:16px;max-height:75vh;display:flex;flex-direction:column">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <input id="diet-search" type="text" placeholder="Cerca dieta…" autocomplete="off"
-          style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:15px;color:var(--text1)">
-        <button type="button" id="diet-close" style="background:none;border:none;font-size:20px;color:var(--text3);padding:4px">✕</button>
-      </div>
-      <div id="diet-list" style="overflow-y:auto;flex:1"></div>
-    </div>
-  </div>
-
   <div id="toast"></div>
 
   <script type="module">
@@ -227,59 +216,32 @@
     let dietsDB = [];
     fetch('diets.json').then(r => r.json()).then(d => { dietsDB = d; }).catch(() => {});
 
-    function setFood(val) {
-      document.getElementById('food-val').value = val;
-      const btn = document.getElementById('food-btn');
-      btn.textContent = val || 'Seleziona dieta…';
-      btn.style.color = val ? 'var(--text1)' : 'var(--text2)';
-    }
+    const foodInput = document.getElementById('food-input');
+    const foodDD = document.getElementById('food-dropdown');
 
-    function renderDietList(q) {
+    function showDropdown(q) {
       const filtered = q
         ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()) || d.indicazione.toLowerCase().includes(q.toLowerCase()))
-        : dietsDB;
-      const list = document.getElementById('diet-list');
-      list.innerHTML = '';
-
-      const pick = (nome) => { setFood(nome); closeDietPicker(); };
-
+        : dietsDB.slice(0, 40);
+      foodDD.innerHTML = '';
       filtered.forEach(d => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:11px 4px;cursor:pointer';
+        btn.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 12px;cursor:pointer';
         btn.innerHTML = `<div style="font-size:14px;color:var(--text1);font-weight:600">${d.nome}</div><div style="font-size:12px;color:var(--text3)">${d.indicazione}</div>`;
-        btn.addEventListener('click', () => pick(d.nome));
-        list.appendChild(btn);
+        btn.addEventListener('mousedown', e => e.preventDefault());
+        btn.addEventListener('click', () => { foodInput.value = d.nome; foodDD.style.display = 'none'; });
+        foodDD.appendChild(btn);
       });
-
-      if (q) {
-        const custom = document.createElement('button');
-        custom.type = 'button';
-        custom.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;padding:11px 4px;cursor:pointer';
-        custom.innerHTML = `<div style="font-size:14px;color:var(--accent)">✏️ Usa "${q}"</div>`;
-        custom.addEventListener('click', () => pick(q));
-        list.appendChild(custom);
-      }
+      foodDD.style.display = filtered.length ? 'block' : 'none';
     }
 
-    function openDietPicker() {
-      document.getElementById('diet-overlay').style.display = 'block';
-      const search = document.getElementById('diet-search');
-      search.value = document.getElementById('food-val').value;
-      renderDietList(search.value);
-      setTimeout(() => search.focus(), 100);
-    }
-    function closeDietPicker() {
-      document.getElementById('diet-overlay').style.display = 'none';
-    }
-
-    document.getElementById('food-btn').addEventListener('click', openDietPicker);
-    document.getElementById('diet-close').addEventListener('click', closeDietPicker);
-    document.getElementById('diet-overlay').addEventListener('click', e => { if (e.target === document.getElementById('diet-overlay')) closeDietPicker(); });
-    document.getElementById('diet-search').addEventListener('input', e => renderDietList(e.target.value));
+    foodInput.addEventListener('focus', () => showDropdown(foodInput.value));
+    foodInput.addEventListener('input', () => showDropdown(foodInput.value));
+    foodInput.addEventListener('blur', () => setTimeout(() => { foodDD.style.display = 'none'; }, 150));
 
     loadPatient(id).then(p => {
-      if (p.food) setFood(p.food);
+      if (p.food) foodInput.value = p.food;
       if (p.allergies) document.querySelector('[name="allergies"]').value = p.allergies;
     }).catch(() => {});
 
