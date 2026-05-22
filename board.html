@@ -18,7 +18,8 @@
       top: 0; left: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     @media (orientation: portrait) {
@@ -32,26 +33,32 @@
       }
     }
 
+    /* Topbar: in modalità ruotata, env(safe-area-inset-top) diventa padding laterale
+       → usiamo un padding fisso uniforme */
+    #page-wrap .topbar {
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
     .board-wrap {
-      overflow-x: auto;
-      overflow-y: auto;
+      flex: 1;
+      overflow: auto;
       -webkit-overflow-scrolling: touch;
-      height: calc(100% - 56px); /* sotto la topbar */
-      padding: 12px 0 20px;
+      padding-bottom: 8px;
     }
 
     .board-date {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text3);
-      padding: 0 16px 10px;
+      padding: 6px 16px 8px;
       font-weight: 600;
     }
 
+    /* ── Tabella ── */
     table.board {
       border-collapse: collapse;
-      min-width: 900px;
       width: max-content;
-      margin: 0 12px;
+      min-width: 100%;
     }
 
     .board th, .board td {
@@ -61,73 +68,117 @@
       white-space: nowrap;
     }
 
+    /* Header sticky */
+    .board thead {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+    }
+
     .board thead tr.hdr-main th {
-      background: var(--bg2);
+      background: var(--bg3);
       color: var(--accent);
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .5px;
-      padding: 7px 8px;
+      padding: 8px 6px;
     }
 
-    .board thead tr.hdr-main th.col-kg   { width: 46px; }
-    .board thead tr.hdr-main th.col-name { width: 120px; text-align: left; padding-left: 10px; }
-    .board thead tr.hdr-main th.col-hour { width: 34px; }
-    .board thead tr.hdr-main th.col-eco  { width: 72px; }
-    .board thead tr.hdr-main th.col-prev { width: 66px; }
-    .board thead tr.hdr-main th.col-ter  { min-width: 130px; text-align: left; padding-left: 8px; }
+    .board thead tr.hdr-main th.col-kg   { width: 48px; min-width: 48px; }
+    .board thead tr.hdr-main th.col-name { width: 130px; min-width: 130px; text-align: left; padding-left: 10px; }
+    .board thead tr.hdr-main th.col-hour { width: 36px; min-width: 36px; }
+    .board thead tr.hdr-main th.col-eco  { width: 60px; min-width: 60px; }
+    .board thead tr.hdr-main th.col-prev { width: 60px; min-width: 60px; }
+    .board thead tr.hdr-main th.col-ter  { min-width: 150px; text-align: left; padding-left: 8px; }
 
+    /* ── Colonne KG e Nome sticky ── */
+    .board th.col-kg,
+    .board td.td-kg {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: var(--bg3);
+    }
+    .board th.col-name,
+    .board td.td-name {
+      position: sticky;
+      left: 48px;
+      z-index: 2;
+      background: var(--card);
+    }
+    /* header sticky ha z-index più alto dei body sticky */
+    .board thead th.col-kg,
+    .board thead th.col-name {
+      z-index: 5;
+    }
+    /* alternanza righe mantiene bg sticky */
+    .board tbody tr:nth-child(even) td.td-name { background: var(--bg2); }
+    .board tbody tr:nth-child(even) td.td-kg   { background: var(--bg2); }
+
+    /* ── Righe ── */
     .board tbody tr { background: var(--card); }
     .board tbody tr:nth-child(even) { background: var(--bg2); }
-
-    .board tbody td { padding: 0; height: 44px; }
+    .board tbody td { padding: 0; height: 46px; }
 
     .board tbody td.td-kg {
-      font-size: 12px; font-weight: 700; color: var(--text2); padding: 4px 6px;
+      font-size: 12px; font-weight: 700; color: var(--text2);
+      padding: 4px 6px; text-align: center;
     }
 
     .board tbody td.td-name {
-      text-align: left; padding: 4px 10px; font-size: 13px;
-      font-weight: 700; color: var(--text); min-width: 110px;
+      text-align: left; padding: 0 10px 0 0; font-size: 13px;
+      font-weight: 700; color: var(--text);
     }
-    .board tbody td.td-name .species { font-size: 14px; margin-right: 4px; }
 
+    /* Strip stato sulla riga nome */
+    .name-cell {
+      display: flex; align-items: center; gap: 6px; height: 46px;
+    }
+    .name-strip {
+      width: 3px; height: 100%; flex-shrink: 0; border-radius: 0;
+    }
+    .name-info { display: flex; flex-direction: column; gap: 1px; }
+    .name-info .pname { font-size: 13px; font-weight: 700; }
+    .name-info .psub  { font-size: 10px; color: var(--text3); }
+
+    /* ── Celle ora ── */
     .board tbody td.td-hour {
       cursor: pointer; position: relative; transition: background .1s;
     }
-    .board tbody td.td-hour:active { background: var(--accent-dim); }
+    .board tbody td.td-hour:active { opacity: .7; }
 
     .board tbody td.td-hour .cell-inner {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 44px; gap: 1px; padding: 2px;
-      font-size: 9px; color: var(--text2); line-height: 1.1;
+      justify-content: center; height: 46px; gap: 1px; padding: 2px;
+      font-size: 9px; color: var(--text2); line-height: 1.2;
     }
     .board tbody td.td-hour .cell-inner span {
-      display: block; max-width: 32px; overflow: hidden; text-overflow: ellipsis;
+      display: block; max-width: 34px; overflow: hidden; text-overflow: ellipsis;
     }
     .cell-drug {
       color: #F59E0B !important;
       font-weight: 700 !important;
       font-size: 8px !important;
-      background: #F59E0B18;
+      background: #F59E0B20;
       border-radius: 2px;
       padding: 0 2px;
     }
 
+    /* ── Checkbox eco/prelievi ── */
     .board tbody td.td-check { cursor: pointer; }
-
     .chk-box {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; border-radius: 6px;
-      border: 1.5px solid var(--border); font-size: 14px;
+      width: 28px; height: 28px; border-radius: 7px;
+      border: 1.5px solid var(--border); font-size: 15px;
       transition: all .15s; background: transparent;
     }
     .chk-box.checked { background: #10B98120; border-color: var(--stable); color: var(--stable); }
 
+    /* ── Colonna terapie ── */
     .board tbody td.td-ter {
       text-align: left; padding: 4px 8px; font-size: 10px;
-      color: var(--text2); max-width: 160px; white-space: normal; line-height: 1.4;
+      color: var(--text2); white-space: normal; line-height: 1.5;
     }
     .td-ter .drug-tag {
       display: inline-block; background: #F59E0B18; border: 1px solid #F59E0B40;
@@ -135,19 +186,19 @@
       color: #F59E0B; margin: 1px 2px 1px 0; font-weight: 600;
     }
 
-    /* Modal — position:absolute perché vive dentro #page-wrap che ha transform */
+    /* ── Modal ── */
     #hour-modal {
       display: none; position: absolute; inset: 0; z-index: 200;
-      background: rgba(0,0,0,.6); align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,.65); align-items: center; justify-content: center;
     }
     #hour-modal.open { display: flex; }
 
     .hm-sheet {
       background: var(--bg2); border: 1px solid var(--border);
-      border-radius: 18px 18px 0 0;
-      padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
-      width: 100%; max-width: 480px;
-      max-height: 80vh; overflow-y: auto;
+      border-radius: 16px;
+      padding: 18px 16px 20px;
+      width: 90%; max-width: 560px;
+      max-height: 90%; overflow-y: auto;
     }
 
     .hm-title {
@@ -161,18 +212,25 @@
     }
 
     .hm-field { display: flex; flex-direction: column; gap: 3px; }
-    .hm-field label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; }
-
+    .hm-field label {
+      font-size: 10px; font-weight: 700; color: var(--text3);
+      text-transform: uppercase;
+    }
     .hm-field input, .hm-field select {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 8px; padding: 8px 6px; color: var(--text);
       font-size: 13px; font-family: var(--font); width: 100%;
       -webkit-appearance: none; appearance: none;
     }
-    .hm-field input:focus, .hm-field select:focus { outline: none; border-color: var(--accent); }
+    .hm-field input:focus, .hm-field select:focus {
+      outline: none; border-color: var(--accent);
+    }
     .hm-field select option { background: var(--card); }
 
-    .hm-saving { text-align: center; font-size: 12px; color: var(--text3); margin-bottom: 8px; display: none; }
+    .hm-saving {
+      text-align: center; font-size: 12px; color: var(--text3);
+      margin-bottom: 8px; display: none;
+    }
     .hm-saving.show { display: block; }
 
     .hm-btns { display: flex; gap: 8px; }
@@ -185,7 +243,9 @@
     .hm-btn.clear  { background: #EF444418; border: 1px solid #EF444440; color: #EF4444; }
     .hm-btn:disabled { opacity: .5; }
 
-    .empty-board { text-align: center; padding: 60px 20px; color: var(--text2); }
+    .empty-board {
+      text-align: center; padding: 60px 20px; color: var(--text2);
+    }
     .empty-board .ei { font-size: 48px; margin-bottom: 12px; }
     .empty-board .et { font-size: 16px; font-weight: 700; color: var(--text); }
     .empty-board .eh { font-size: 13px; margin-top: 6px; }
@@ -289,25 +349,21 @@
   </div>
 
   <div id="toast"></div>
-</div><!-- end #page-wrap -->
+</div>
 
   <script type="module">
     import {
       loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital,
-      SPECIES_EMOJI, DEHYD_LABELS, MUC_LABELS, URINE_LABELS,
-      FECES_LABELS, FOOD_LABELS, WATER_LABELS
+      SPECIES_EMOJI, STATUS_COLOR
     } from './db.js';
 
     const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
 
-    // localStorage solo per eco/prelievi (non hanno colonna in vitals)
     const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
     let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
     function saveChecks() { localStorage.setItem(TODAY_KEY, JSON.stringify(checks)); }
 
-    // vitalsMap: `${pid}_h${hour}` → vitals record (o null)
     let vitalsMap = {};
-    // drugSchedule: pid → { hour → [abbr, ...] }
     let drugSchedule = {};
 
     function cellKey(pid, h) { return `${pid}_h${h}`; }
@@ -322,13 +378,12 @@
       const d = new Date(); d.setHours(hour, 0, 0, 0); return d.toISOString();
     }
 
-    // Abbreviazioni per visualizzare nella cella
     const SHORT = {
       lt5:'<5%', p5:'5%', p6:'6%', p7:'7%', p8:'8%', p9:'9%', p10:'10%',
       rosee:'Ros', rosee_pallide:'R-pal', cianotiche:'Cia', congeste:'Con',
-      pallide:'Pal', pigmentate:'Pig', subitteriche:'SubIt', itteriche:'Itt', polso_quinck:'Quinck',
-      si:'Sì', no:'No', stranguria:'Str', ematuria:'Emat',
-      diarrea:'Diar', diarrea_emor:'D-em', ematochezia:'Emat', melena:'Mel',
+      pallide:'Pal', pigmentate:'Pig', subitteriche:'Sub-It', itteriche:'Itt',
+      polso_quinck:'Quinck', si:'Sì', no:'No', stranguria:'Str', ematuria:'Emat',
+      diarrea:'Diar', diarrea_emor:'D-em', ematochezia:'Emat-c', melena:'Mel',
       a_disposizione:'Disp', digiuno_forzato:'Dig', digiuno_acqua:'Dig+A',
     };
     function sh(v) { return SHORT[v] || v || ''; }
@@ -336,30 +391,29 @@
     function vitalToCell(v) {
       if (!v) return { lines: [], hasData: false };
       const lines = [];
-      if (v.heart_rate) lines.push(`Fc:${v.heart_rate}`);
-      if (v.resp_rate)  lines.push(`Fr:${v.resp_rate}`);
+      if (v.heart_rate)  lines.push(`Fc:${v.heart_rate}`);
+      if (v.resp_rate)   lines.push(`Fr:${v.resp_rate}`);
       if (v.temperature) lines.push(`T:${v.temperature}`);
-      if (v.dehydration) lines.push(`Idr:${sh(v.dehydration)}`);
-      if (v.mucosae)     lines.push(`Muc:${sh(v.mucosae)}`);
-      if (v.urine)       lines.push(`Ur:${sh(v.urine)}`);
-      if (v.feces)       lines.push(`Fec:${sh(v.feces)}`);
-      if (v.food_status) lines.push(`Cib:${sh(v.food_status)}`);
-      if (v.water_status) lines.push(`Acq:${sh(v.water_status)}`);
+      if (v.dehydration) lines.push(`I:${sh(v.dehydration)}`);
+      if (v.mucosae)     lines.push(`M:${sh(v.mucosae)}`);
+      if (v.urine)       lines.push(`U:${sh(v.urine)}`);
+      if (v.feces)       lines.push(`F:${sh(v.feces)}`);
+      if (v.food_status) lines.push(`C:${sh(v.food_status)}`);
+      if (v.water_status) lines.push(`A:${sh(v.water_status)}`);
       return { lines, hasData: lines.length > 0 };
     }
 
     function updateCellUI(key, drugs = []) {
       const td = document.querySelector(`[data-key="${key}"]`);
       if (!td) return;
-      const v = vitalsMap[key];
-      const { lines, hasData } = vitalToCell(v);
+      const { lines, hasData } = vitalToCell(vitalsMap[key]);
       const drugHtml  = drugs.map(d => `<span class="cell-drug">${d}</span>`).join('');
       const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
       td.querySelector('.cell-inner').innerHTML = drugHtml + vitalHtml;
       td.style.background = hasData ? 'var(--accent-dim)' : (drugs.length ? '#F59E0B0A' : '');
     }
 
-    // ── Modal ─────────────────────────────────────────────────────────────────
+    // ── Modal ───────────────────────────────────────────────────────────────────
 
     let activePid = null, activeHour = null, activeKey = null;
     const modal = document.getElementById('hour-modal');
@@ -372,15 +426,15 @@
     };
 
     document.getElementById('hm-save').onclick = async () => {
-      const fc   = parseFloat(document.getElementById('hm-fc').value)   || null;
-      const fr   = parseFloat(document.getElementById('hm-fr').value)   || null;
-      const t    = parseFloat(document.getElementById('hm-t').value)    || null;
-      const idr  = document.getElementById('hm-idr').value  || null;
-      const muc  = document.getElementById('hm-muc').value  || null;
-      const ur   = document.getElementById('hm-ur').value   || null;
-      const fec  = document.getElementById('hm-fec').value  || null;
-      const cibo = document.getElementById('hm-cibo').value || null;
-      const acqua= document.getElementById('hm-acqua').value|| null;
+      const fc    = parseFloat(document.getElementById('hm-fc').value)    || null;
+      const fr    = parseFloat(document.getElementById('hm-fr').value)    || null;
+      const t     = parseFloat(document.getElementById('hm-t').value)     || null;
+      const idr   = document.getElementById('hm-idr').value   || null;
+      const muc   = document.getElementById('hm-muc').value   || null;
+      const ur    = document.getElementById('hm-ur').value    || null;
+      const fec   = document.getElementById('hm-fec').value   || null;
+      const cibo  = document.getElementById('hm-cibo').value  || null;
+      const acqua = document.getElementById('hm-acqua').value || null;
 
       const fields = {
         heart_rate: fc, resp_rate: fr, temperature: t,
@@ -434,10 +488,15 @@
       modal.classList.add('open');
     }
 
-    // ── Render ─────────────────────────────────────────────────────────────────
+    // ── Render ──────────────────────────────────────────────────────────────────
 
     document.getElementById('board-date').textContent =
       new Date().toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    const FREQ_HOURS = {
+      sid: [8], bid: [8,20], tid: [8,14,20], qid: [8,12,16,20],
+      q8h: [8,16], q6h: [8,14,20], once: [8], prn: [],
+    };
 
     async function render() {
       const root = document.getElementById('board-root');
@@ -457,7 +516,7 @@
         return;
       }
 
-      // Carica vitals di oggi + ultimi pesi
+      // Carica vitals di oggi + ultimi pesi in parallelo
       vitalsMap = {};
       let weightMap = {};
       try {
@@ -467,39 +526,23 @@
           loadLatestWeights(ids),
         ]);
         weightMap = wm;
-        const todayVitals2 = todayVitals;
-        todayVitals2.forEach(v => {
+        todayVitals.forEach(v => {
           const hour = new Date(v.recorded_at).getHours();
           if (HOURS.includes(hour)) {
             const key = cellKey(v.patient_id, hour);
-            // Se ci sono più rilevazioni nella stessa ora, prendi la più recente
-            if (!vitalsMap[key] || v.recorded_at > vitalsMap[key].recorded_at) {
+            if (!vitalsMap[key] || v.recorded_at > vitalsMap[key].recorded_at)
               vitalsMap[key] = v;
-            }
           }
         });
-      } catch(e) { /* continua anche senza vitals */ }
+      } catch(e) { /* procede senza vitals */ }
 
-      // ── Mappa frequenza → ore di somministrazione ──────────────────────────
+      // Drug schedule
       drugSchedule = {};
-      const FREQ_HOURS = {
-        sid:  [8],
-        bid:  [8, 20],
-        tid:  [8, 14, 20],
-        qid:  [8, 12, 16, 20],
-        q8h:  [8, 16],
-        q6h:  [8, 14, 20],
-        once: [8],
-        prn:  [],
-      };
-
-      // drugSchedule: pid → { hour → [drug abbrev, ...] }
       active.forEach(p => {
         drugSchedule[p.id] = {};
         (p.therapies || []).filter(t => t.active && t.drug).forEach(t => {
-          const hours = FREQ_HOURS[t.frequency] || [];
-          const abbr = t.drug.slice(0, 4);
-          hours.forEach(h => {
+          const abbr = t.drug.slice(0, 5);
+          (FREQ_HOURS[t.frequency] || []).forEach(h => {
             if (HOURS.includes(h)) {
               if (!drugSchedule[p.id][h]) drugSchedule[p.id][h] = [];
               drugSchedule[p.id][h].push(abbr);
@@ -511,23 +554,19 @@
       const hoursHdr = HOURS.map(h => `<th class="col-hour">${h}</th>`).join('');
 
       const rows = active.map(p => {
-        const emoji = SPECIES_EMOJI[p.species] ?? '🐾';
+        const emoji   = SPECIES_EMOJI[p.species] ?? '🐾';
+        const color   = STATUS_COLOR[p.status] ?? '#6B7280';
         const therapies = (p.therapies || []).filter(t => t.active);
 
         const hourCells = HOURS.map(h => {
-          const key = cellKey(p.id, h);
+          const key  = cellKey(p.id, h);
           const { lines, hasData } = vitalToCell(vitalsMap[key]);
           const drugs = drugSchedule[p.id][h] || [];
-
-          const drugHtml = drugs.map(d =>
-            `<span class="cell-drug">${d}</span>`
-          ).join('');
+          const drugHtml  = drugs.map(d => `<span class="cell-drug">${d}</span>`).join('');
           const vitalHtml = lines.map(l => `<span>${l}</span>`).join('');
-
           let bg = '';
           if (hasData) bg = 'background:var(--accent-dim)';
           else if (drugs.length) bg = 'background:#F59E0B0A';
-
           return `<td class="td-hour" data-key="${key}" data-pid="${p.id}" data-hour="${h}" style="${bg}">
             <div class="cell-inner">${drugHtml}${vitalHtml}</div>
           </td>`;
@@ -540,9 +579,19 @@
           ? therapies.map(t => `<span class="drug-tag" title="${t.frequency}">${t.drug}</span>`).join('')
           : `<span style="color:var(--text3)">—</span>`;
 
+        const kg = weightMap[p.id] ? `${weightMap[p.id]}` : '—';
+
         return `<tr>
-          <td class="td-kg">${weightMap[p.id] ? weightMap[p.id]+'kg' : '—'}</td>
-          <td class="td-name"><span class="species">${emoji}</span>${p.name}</td>
+          <td class="td-kg">${kg}</td>
+          <td class="td-name">
+            <div class="name-cell">
+              <div class="name-strip" style="background:${color}"></div>
+              <div class="name-info">
+                <span class="pname">${emoji} ${p.name}</span>
+                <span class="psub">${p.species}${p.breed ? ' · '+p.breed : ''}</span>
+              </div>
+            </div>
+          </td>
           ${hourCells}
           <td class="td-check" data-check="${ecoKey}"><div class="chk-box ${checks[ecoKey]?'checked':''}">✓</div></td>
           <td class="td-check" data-check="${prevKey}"><div class="chk-box ${checks[prevKey]?'checked':''}">✓</div></td>
@@ -567,7 +616,7 @@
 
       root.querySelectorAll('.td-hour').forEach(td => {
         td.addEventListener('click', () => {
-          const name = td.closest('tr').querySelector('.td-name').textContent.trim();
+          const name = td.closest('tr').querySelector('.pname').textContent.trim();
           openModal(td.dataset.pid, +td.dataset.hour, name);
         });
       });
