@@ -85,6 +85,19 @@ export async function loadTodayVitals(patientIds) {
   return data;
 }
 
+export async function loadLatestWeights(patientIds) {
+  const { data, error } = await db
+    .from('vitals').select('patient_id, weight, recorded_at')
+    .in('patient_id', patientIds)
+    .not('weight', 'is', null)
+    .order('recorded_at', { ascending: false });
+  if (error) throw error;
+  // prendi solo il più recente per paziente
+  const map = {};
+  data.forEach(v => { if (!map[v.patient_id]) map[v.patient_id] = v.weight; });
+  return map;
+}
+
 export async function loadVital(id) {
   const { data, error } = await db.from('vitals').select('*').eq('id', id).single();
   if (error) throw error;

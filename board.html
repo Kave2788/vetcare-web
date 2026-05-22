@@ -293,7 +293,7 @@
 
   <script type="module">
     import {
-      loadPatients, loadTodayVitals, addVital, updateVital,
+      loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital,
       SPECIES_EMOJI, DEHYD_LABELS, MUC_LABELS, URINE_LABELS,
       FECES_LABELS, FOOD_LABELS, WATER_LABELS
     } from './db.js';
@@ -457,11 +457,18 @@
         return;
       }
 
-      // Carica vitals di oggi per tutti i pazienti attivi
+      // Carica vitals di oggi + ultimi pesi
       vitalsMap = {};
+      let weightMap = {};
       try {
-        const todayVitals = await loadTodayVitals(active.map(p => p.id));
-        todayVitals.forEach(v => {
+        const ids = active.map(p => p.id);
+        const [todayVitals, wm] = await Promise.all([
+          loadTodayVitals(ids),
+          loadLatestWeights(ids),
+        ]);
+        weightMap = wm;
+        const todayVitals2 = todayVitals;
+        todayVitals2.forEach(v => {
           const hour = new Date(v.recorded_at).getHours();
           if (HOURS.includes(hour)) {
             const key = cellKey(v.patient_id, hour);
@@ -534,7 +541,7 @@
           : `<span style="color:var(--text3)">—</span>`;
 
         return `<tr>
-          <td class="td-kg">${p.weight ? p.weight+'kg' : '—'}</td>
+          <td class="td-kg">${weightMap[p.id] ? weightMap[p.id]+'kg' : '—'}</td>
           <td class="td-name"><span class="species">${emoji}</span>${p.name}</td>
           ${hourCells}
           <td class="td-check" data-check="${ecoKey}"><div class="chk-box ${checks[ecoKey]?'checked':''}">✓</div></td>
