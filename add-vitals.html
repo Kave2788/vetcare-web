@@ -30,11 +30,17 @@
       <div class="row">
         <div class="field">
           <label>FC — battiti in 10s</label>
-          <input name="heart_rate" type="number" placeholder="12" inputmode="numeric" title="Conteggio battiti in 10 secondi (×6 = bpm)" data-rate-input="fc">
+          <div style="display:flex;gap:8px">
+            <input name="heart_rate" type="number" placeholder="12" inputmode="numeric" title="Conteggio battiti in 10 secondi (×6 = bpm)" data-rate-input="fc" style="flex:1">
+            <div style="padding:10px;color:var(--text2);font-size:13px;min-width:60px;text-align:right;border:1px solid var(--border);border-radius:6px;background:var(--bg3)">— bpm</div>
+          </div>
         </div>
         <div class="field">
           <label>FR — atti in 10s</label>
-          <input name="resp_rate" type="number" placeholder="3" inputmode="numeric" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)" data-rate-input="fr">
+          <div style="display:flex;gap:8px">
+            <input name="resp_rate" type="number" placeholder="3" inputmode="numeric" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)" data-rate-input="fr" style="flex:1">
+            <div style="padding:10px;color:var(--text2);font-size:13px;min-width:60px;text-align:right;border:1px solid var(--border);border-radius:6px;background:var(--bg3)">— atti/m</div>
+          </div>
         </div>
       </div>
       <div class="field">
@@ -300,12 +306,22 @@
     document.querySelector('[name="weight"]').addEventListener('input', () => { calcUO(); calcRER(); });
 
     // Auto-multiply FC/FR by 6 on blur
-    ['heart_rate', 'resp_rate'].forEach(name => {
+    const rateConfig = { heart_rate: 'bpm', resp_rate: 'atti/m' };
+    Object.entries(rateConfig).forEach(([name, unit]) => {
       const input = document.querySelector(`[name="${name}"]`);
+      const display = input.parentElement.querySelector('div:last-child');
+
+      const updateDisplay = () => {
+        const val = parseFloat(input.value);
+        display.textContent = (val && val > 0) ? `${Math.round(val * 6)} ${unit}` : `— ${unit}`;
+      };
+
+      input.addEventListener('input', updateDisplay);
       input.addEventListener('blur', () => {
         const val = parseFloat(input.value);
         if (val && val > 0) {
           input.value = Math.round(val * 6);
+          updateDisplay();
         }
       });
       input.addEventListener('focus', () => {
@@ -313,6 +329,7 @@
         if (val && val > 0) {
           input.value = Math.round(val / 6);
         }
+        updateDisplay();
       });
     });
 
