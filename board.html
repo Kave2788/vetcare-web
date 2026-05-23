@@ -89,6 +89,11 @@
       padding: 6px 4px;
       text-align: left;
     }
+    .board td.td-label {
+      position: sticky; left: var(--name-w, 80px); z-index: 2;
+      width: var(--label-w, 50px); min-width: var(--label-w, 50px);
+      text-align: left; font-size: 10px; color: var(--text3); padding: 0 4px;
+    }
     .board thead th.col-name { z-index: 5; }
 
     /* Colonne dimensionate */
@@ -277,6 +282,35 @@
       border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
     }
 
+    /* Drugs modal */
+    #drugs-modal {
+      display: none; position: absolute; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.6);
+      align-items: flex-end; justify-content: center;
+    }
+    #drugs-modal.show { display: flex; }
+    .drugs-sheet {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px 18px 0 0;
+      padding: 16px 16px 24px; width: 100%; max-width: 480px;
+    }
+    .drugs-list {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 16px; max-height: 50vh; overflow-y: auto;
+    }
+    .drug-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); cursor: pointer;
+    }
+    .drug-item input[type="checkbox"] {
+      cursor: pointer;
+    }
+    .drug-item label {
+      flex: 1; cursor: pointer;
+      font-size: 14px; font-weight: 600;
+    }
+
     /* Terapie */
     .board tbody td.td-ter {
       text-align: left; padding: 2px 5px;
@@ -453,6 +487,15 @@
     </div>
   </div>
 
+  <div id="drugs-modal">
+    <div class="drugs-sheet">
+      <div class="pick-handle"></div>
+      <div class="pop-title" id="drugs-title">Terapie</div>
+      <div class="drugs-list" id="drugs-list"></div>
+      <button class="pop-done" id="drugs-close">Chiudi</button>
+    </div>
+  </div>
+
   <div id="toast"></div>
 </div>
 
@@ -473,16 +516,103 @@ function snapHour(h) {
 const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
 let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
 
-const DONE_KEY = `board_done_${new Date().toISOString().slice(0,10)}`;
-let doneSet = new Set(JSON.parse(localStorage.getItem(DONE_KEY)||'[]'));
+let doneSet = new Set();
 function todayKey() { return new Date().toISOString().slice(0,10); }
-function saveDone() { localStorage.setItem(DONE_KEY, JSON.stringify([...doneSet])); }
+async function saveDone() {
+  // Salva in Supabase
+  const today = todayKey();
+  for (const key of doneSet) {
+    const parts = key.split('_');
+    if (parts.length < 5) continue;
+    const [, , pid, tidx, hour] = parts;
+    try {
+      await db.from('drug_administrations').upsert({
+        patient_id: pid,
+        therapy_index: parseInt(tidx),
+        hour: parseInt(hour),
+        date: today,
+        completed: true
+      }, { onConflict: ['patient_id', 'therapy_index', 'hour', 'date'] });
+    } catch(e) { console.warn('saveDone error:', e); }
+  }
+}
 function saveChecks() { localStorage.setItem(TODAY_KEY, JSON.stringify(checks)); }
 
 let vitalsMap = {};
 let drugSchedule = {};
 
 function cellKey(pid, h) { return `${pid}_h${h}`; }
+
+// Drugs modal
+let patientsData = [];
+let currentDrugsModal = { pid: null, hour: null, drugs: [] };
+
+function openDrugsModal(pid, hour) {
+  // Trova i farmaci per questa ora/paziente
+  const patient = patientsData.find(p => p.id === pid);
+  if (!patient) return;
+
+  const drugs = (patient.therapies || []).filter(t => {
+    const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+    return freqSet.has(hour);
+  });
+
+  currentDrugsModal = { pid, hour, drugs };
+  const modal = document.getElementById('drugs-modal');
+  const list = document.getElementById('drugs-list');
+
+  list.innerHTML = drugs.map((t, i) => {
+    const doneKey = `done_${todayKey()}_${pid}_${i}_${hour}`;
+    const isDone = doneSet.has(doneKey);
+    return `
+      <div class="drug-item">
+        <input type="checkbox" id="drug-${i}" ${isDone ? 'checked' : ''}>
+        <label for="drug-${i}">${t.drug}</label>
+      </div>
+    `;
+  }).join('');
+
+  // Aggiungi click handler ai checkbox
+  list.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
+    cb.addEventListener('change', () => {
+      // Trova l'indice globale del farmaco tra tutti i farmaci del paziente
+      const globalIdx = patientsData.find(p => p.id === pid).therapies.findIndex(t => t.drug === drugs[i].drug);
+      const doneKey = `done_${todayKey()}_${pid}_${globalIdx}_${hour}`;
+      if (cb.checked) {
+        doneSet.add(doneKey);
+      } else {
+        doneSet.delete(doneKey);
+      }
+      saveDone();
+      updateDrugsCellColor(pid, hour);
+    });
+  });
+
+  modal.classList.add('show');
+}
+
+function updateDrugsCellColor(pid, hour) {
+  const cell = document.querySelector(`[data-drug-cell="drugs_${todayKey()}_${pid}_${hour}"]`);
+  if (!cell) return;
+
+  // Trova i farmaci per questa cella
+  const patient = patientsData.find(p => p.id === pid);
+  if (!patient) return;
+
+  const drugs = patient.therapies.filter(t => {
+    const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+    return freqSet.has(hour);
+  });
+
+  if (drugs.length === 0) return;
+
+  // Controlla se tutti i farmaci sono flaggati
+  const allDone = drugs.every(t => {
+    const globalIdx = patient.therapies.findIndex(th => th.drug === t.drug);
+    return doneSet.has(`done_${todayKey()}_${pid}_${globalIdx}_${hour}`);
+  });
+  cell.style.background = allDone ? '#EF4444CC' : '';
+}
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -682,6 +812,11 @@ document.getElementById('pick-done').addEventListener('click', () => {
   pickKey = null; pickSubCat = null;
 });
 
+// Drugs modal close button
+document.getElementById('drugs-close').addEventListener('click', () => {
+  document.getElementById('drugs-modal').classList.remove('show');
+});
+
 pickPop.addEventListener('click', e => {
   if (e.target === pickPop) {
     saveChecks();
@@ -721,7 +856,7 @@ function computeLayout(nRows) {
 
   // Altezza riga: se le righe sono poche lascia crescere di più
   let rowH = Math.floor(avail / (nRows + 1));
-  rowH = Math.max(64, Math.min(110, rowH));
+  rowH = Math.max(32, Math.min(56, rowH));
 
   const isMobile = portrait;
   const KG_W   = isMobile ? Math.max(16, Math.min(22, Math.floor(lw * 0.02))) : Math.max(28, Math.min(36, Math.floor(lw * 0.03)));
@@ -929,24 +1064,40 @@ async function render() {
     return;
   }
 
+  patientsData = patients;
   const active = patients.filter(p => p.status !== 'discharged');
   if (active.length === 0) {
     root.innerHTML = `<div class="empty-board"><div class="ei">🐾</div><div class="et">Nessun paziente ricoverato</div></div>`;
     return;
   }
 
-  // Carica vitals + pesi in parallelo
+  // Carica vitals + pesi + farmaci amministrati in parallelo
   vitalsMap = {};
   let weightMap = {};
+  doneSet = new Set();
   try {
     const ids = active.map(p => p.id);
-    const [tv, wm] = await Promise.all([loadTodayVitals(ids), loadLatestWeights(ids)]);
+    const today = todayKey();
+    const [tv, wm, adminData] = await Promise.all([
+      loadTodayVitals(ids),
+      loadLatestWeights(ids),
+      db.from('drug_administrations').select('*').in('patient_id', ids).eq('date', today)
+    ]);
+
     weightMap = wm;
     tv.forEach(v => {
       const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) vitalsMap[k] = v;
     });
+
+    // Popola doneSet con i farmaci amministrati
+    if (adminData.data) {
+      adminData.data.forEach(ad => {
+        const key = `done_${today}_${ad.patient_id}_${ad.therapy_index}_${ad.hour}`;
+        doneSet.add(key);
+      });
+    }
   } catch(e) { console.warn('loadTodayVitals error:', e); }
 
   // Drug schedule — per updateCellUI (prima riga = vitali + farmaco 0)
@@ -1009,13 +1160,16 @@ async function render() {
     // Righe farmaci — una sola riga con tutti i farmaci raggruppati per ora
     let drugRow = '';
     if (drugs.length > 0) {
+      // Emoji per farmaci
+      const drugEmojis = ['💊', '💙', '🧂', '⚕️', '🩹', '💉'];
+
       // Raggruppa farmaci per ora
       const drugsByHour = {};
       HOURS.forEach(h => { drugsByHour[h] = []; });
       drugs.forEach((t, i) => {
         const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
         freqSet.forEach(h => {
-          drugsByHour[h].push({ drug: t.drug, idx: i, ci: i % 6 });
+          drugsByHour[h].push({ drug: t.drug, emoji: drugEmojis[i % drugEmojis.length], idx: i, ci: i % 6 });
         });
       });
 
@@ -1025,17 +1179,17 @@ async function render() {
         if (drugsForHour.length === 0) {
           return `<td class="td-hour"><div class="cell-inner"></div></td>`;
         }
-        const drugs_html = drugsForHour.map(d => {
-          const doneKey = `done_${todayKey()}_${p.id}_${d.idx}_${h}`;
-          const isDone = doneSet.has(doneKey);
-          const xClass = isDone ? `cell-drug dc${d.ci} done` : `cell-drug dc${d.ci}`;
-          const bg = isDone ? 'background:#EF444418' : 'background:#F59E0B09';
-          return `<span class="${xClass}" data-done-key="${doneKey}" style="display:block">${d.drug}</span>`;
-        }).join('');
-        return `<td class="td-hour td-drug-x" style="position:relative"><div class="cell-inner">${drugs_html}</div></td>`;
+
+        // Calcola se tutti i farmaci sono flaggati
+        const allDone = drugsForHour.every(d => doneSet.has(`done_${todayKey()}_${p.id}_${d.idx}_${h}`));
+        const cellKey = `drugs_${todayKey()}_${p.id}_${h}`;
+        const bg = allDone ? 'background:#EF4444CC' : '';
+
+        return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:18px">💊</span></div></td>`;
       }).join('');
 
-      drugRow = `<tr class="${rowClass} drug-row">${nameCell}${drugCells}</tr>`;
+      const therapyLabel = `<td class="td-label" style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Terapie</td>`;
+      drugRow = `<tr class="${rowClass} drug-row">${nameCell}${therapyLabel}${drugCells}</tr>`;
     }
 
     // Righe Eco e Prelievi
@@ -1050,6 +1204,7 @@ async function render() {
       <thead>
         <tr class="hdr-main">
           <th class="col-name">Paziente</th>
+          <th class="col-label" style="position:sticky;left:var(--name-w,80px);z-index:5;width:var(--label-w,50px);min-width:var(--label-w,50px)"></th>
           ${hoursHdr}
           <th class="col-ter">Farmaco</th>
         </tr>
@@ -1078,22 +1233,11 @@ async function render() {
     });
   });
 
-  // Click su farmaci in riga unica
-  root.querySelectorAll('.td-drug-x [data-done-key]').forEach(span => {
-    span.addEventListener('click', e => {
+  // Click su cella farmaci per aprire modal
+  root.querySelectorAll('.td-drug-cell').forEach(cell => {
+    cell.addEventListener('click', e => {
       e.stopPropagation();
-      const key = span.dataset.doneKey;
-      const td  = span.closest('td');
-      if (doneSet.has(key)) {
-        doneSet.delete(key);
-        span.classList.remove('done');
-        td.style.background = '';
-      } else {
-        doneSet.add(key);
-        span.classList.add('done');
-        td.style.background = '#EF444418';
-      }
-      saveDone();
+      openDrugsModal(cell.dataset.pid, parseInt(cell.dataset.hour));
     });
   });
 
