@@ -259,44 +259,55 @@
     }
 
     let dietsDB = [];
-    const isGitHub = location.hostname.includes('github.io');
-    const dietPath = isGitHub ? '/vetcare-web/diets.json' : '/diets.json';
-
     const foodInput = document.getElementById('food-input');
     const foodDD = document.getElementById('food-dropdown');
 
+    // Carica diete
+    (async () => {
+      try {
+        const res = await fetch('/diets.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        dietsDB = await res.json();
+        console.log('✓ Diets loaded:', dietsDB.length);
+      } catch(e) {
+        console.error('✗ Diets load failed:', e);
+        dietsDB = [];
+      }
+    })();
+
     function showDropdown(q) {
       if (!dietsDB.length) {
-        foodDD.innerHTML = '<div style="padding:10px;color:var(--text3);font-size:12px">Caricamento diete...</div>';
+        foodDD.innerHTML = '<div style="padding:10px;color:var(--text3)">Nessuna dieta disponibile</div>';
         foodDD.style.display = 'block';
         return;
       }
       const filtered = q
-        ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()) || d.indicazione.toLowerCase().includes(q.toLowerCase()))
-        : dietsDB.slice(0, 40);
+        ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()))
+        : dietsDB.slice(0, 50);
       foodDD.innerHTML = '';
+      if (filtered.length === 0) {
+        foodDD.style.display = 'none';
+        return;
+      }
       filtered.forEach(d => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 12px;cursor:pointer';
-        btn.innerHTML = `<div style="font-size:14px;color:var(--text1);font-weight:600">${d.nome}</div><div style="font-size:12px;color:var(--text3)">${d.indicazione}</div>`;
+        btn.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--border);padding:10px 12px;cursor:pointer;font-size:14px';
+        btn.textContent = d.nome;
         btn.addEventListener('mousedown', e => e.preventDefault());
-        btn.addEventListener('click', () => { foodInput.value = d.nome; foodDD.style.display = 'none'; });
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          foodInput.value = d.nome;
+          foodDD.style.display = 'none';
+        });
         foodDD.appendChild(btn);
       });
-      foodDD.style.display = filtered.length ? 'block' : 'none';
+      foodDD.style.display = 'block';
     }
 
-    fetch(dietPath)
-      .then(r => r.json())
-      .then(d => {
-        dietsDB = d;
-        console.log('Diets loaded:', d.length);
-        foodInput.addEventListener('focus', () => showDropdown(foodInput.value));
-        foodInput.addEventListener('input', () => showDropdown(foodInput.value));
-        foodInput.addEventListener('blur', () => setTimeout(() => { foodDD.style.display = 'none'; }, 150));
-      })
-      .catch(e => console.error('diets.json load error:', e));
+    foodInput.addEventListener('focus', () => showDropdown(foodInput.value));
+    foodInput.addEventListener('input', () => showDropdown(foodInput.value));
+    foodInput.addEventListener('blur', () => setTimeout(() => { foodDD.style.display = 'none'; }, 150));
 
     async function init() {
       try {
