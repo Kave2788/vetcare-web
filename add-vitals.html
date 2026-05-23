@@ -216,12 +216,16 @@
     let dietsDB = [];
     const isGitHub = location.hostname.includes('github.io');
     const dietPath = isGitHub ? '/vetcare-web/diets.json' : '/diets.json';
-    fetch(dietPath).then(r => r.json()).then(d => { dietsDB = d; console.log('Diets loaded:', d.length); }).catch(e => console.error('diets.json load error:', e));
 
     const foodInput = document.getElementById('food-input');
     const foodDD = document.getElementById('food-dropdown');
 
     function showDropdown(q) {
+      if (!dietsDB.length) {
+        foodDD.innerHTML = '<div style="padding:10px;color:var(--text3);font-size:12px">Caricamento diete...</div>';
+        foodDD.style.display = 'block';
+        return;
+      }
       const filtered = q
         ? dietsDB.filter(d => d.nome.toLowerCase().includes(q.toLowerCase()) || d.indicazione.toLowerCase().includes(q.toLowerCase()))
         : dietsDB.slice(0, 40);
@@ -238,9 +242,16 @@
       foodDD.style.display = filtered.length ? 'block' : 'none';
     }
 
-    foodInput.addEventListener('focus', () => showDropdown(foodInput.value));
-    foodInput.addEventListener('input', () => showDropdown(foodInput.value));
-    foodInput.addEventListener('blur', () => setTimeout(() => { foodDD.style.display = 'none'; }, 150));
+    fetch(dietPath)
+      .then(r => r.json())
+      .then(d => {
+        dietsDB = d;
+        console.log('Diets loaded:', d.length);
+        foodInput.addEventListener('focus', () => showDropdown(foodInput.value));
+        foodInput.addEventListener('input', () => showDropdown(foodInput.value));
+        foodInput.addEventListener('blur', () => setTimeout(() => { foodDD.style.display = 'none'; }, 150));
+      })
+      .catch(e => console.error('diets.json load error:', e));
 
     loadPatient(id).then(p => {
       if (p.food) foodInput.value = p.food;
