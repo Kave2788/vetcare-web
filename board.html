@@ -754,29 +754,14 @@ function vitalToLines(v) {
   return VITAL_PRIORITY.map(fn => fn(v)).filter(Boolean);
 }
 
-// Cella vitali (prima riga di ogni paziente) — tappabile, mostra vitali + X farmaco 0
-function buildVitalCellHTML(pid, h, ci, isScheduled, L) {
+// Cella vitali — solo FC/FR/T, nessuna X
+function buildVitalCellHTML(pid, h) {
   const key   = cellKey(pid, h);
   const vital = vitalsMap[key];
   const lines = vitalToLines(vital);
   const hasData = lines.length > 0;
-
-  const doneKey0 = isScheduled ? `done_${todayKey()}_${pid}_0_${h}` : '';
-  const isDone0  = doneKey0 && doneSet.has(doneKey0);
-  const xClass0  = isDone0 ? `cell-drug dc${ci} done` : `cell-drug dc${ci}`;
-
-  let inner = '';
-  if (isScheduled && hasData) {
-    inner = `<span class="${xClass0}" data-done-key="${doneKey0}">✕</span>`
-          + `<span class="cell-sep"></span>`
-          + lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
-  } else if (isScheduled) {
-    inner = `<span class="${xClass0}" data-done-key="${doneKey0}">✕</span>`;
-  } else {
-    inner = lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
-  }
-
-  let bg = isDone0 ? 'background:#EF444418' : (hasData ? 'background:var(--accent-dim)' : (isScheduled ? 'background:#F59E0B09' : ''));
+  const inner = lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
+  const bg = hasData ? 'background:var(--accent-dim)' : '';
   return `<td class="td-hour td-vital" data-key="${key}" data-pid="${pid}" data-hour="${h}" style="${bg}">
     <div class="cell-inner">${inner}</div>
   </td>`;
@@ -792,26 +777,14 @@ function buildDrugCellHTML(ci, isScheduled, pid, drugIdx, h) {
   return `<td class="td-hour td-drug-x" data-done-key="${doneKey}" style="${bg}"><div class="cell-inner"><span class="${xClass}">✕</span></div></td>`;
 }
 
-function updateCellUI(key, pid, h, L) {
+function updateCellUI(key) {
   const td = document.querySelector(`[data-key="${key}"]`);
   if (!td) return;
   const vital = vitalsMap[key];
-  const ds    = drugSchedule[pid];
-  const isScheduled = ds ? ds.scheduledHours.has(h) : false;
-  const ci    = ds ? ds.ci : -1;
   const lines = vitalToLines(vital);
   const hasData = lines.length > 0;
-  let inner = '';
-  if (ci >= 0 && isScheduled && hasData) {
-    inner = `<span class="cell-drug dc${ci}">✕</span><span class="cell-sep"></span>`
-          + lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
-  } else if (ci >= 0 && isScheduled) {
-    inner = `<span class="cell-drug dc${ci}">✕</span>`;
-  } else {
-    inner = lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
-  }
-  td.querySelector('.cell-inner').innerHTML = inner;
-  td.style.background = hasData ? 'var(--accent-dim)' : (isScheduled ? '#F59E0B09' : '');
+  td.querySelector('.cell-inner').innerHTML = lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
+  td.style.background = hasData ? 'var(--accent-dim)' : '';
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -834,7 +807,7 @@ document.getElementById('hm-delete').onclick = async () => {
   try {
     await deleteVital(existing.id);
     delete vitalsMap[activeKey];
-    updateCellUI(activeKey, activePid, activeHour, activeLayout);
+    updateCellUI(activeKey);
     modal.classList.remove('open');
     toast('Rilevazione eliminata');
   } catch(e) {
@@ -872,7 +845,7 @@ document.getElementById('hm-save').onclick = async () => {
       const newId = await addVital({ patient_id:activePid, recorded_at:hourToISO(activeHour), ...fields });
       vitalsMap[activeKey] = { id:newId, patient_id:activePid, ...fields };
     }
-    updateCellUI(activeKey, activePid, activeHour, activeLayout);
+    updateCellUI(activeKey);
     modal.classList.remove('open');
   } catch(e) {
     toast('Errore: ' + e.message);
@@ -979,34 +952,35 @@ async function render() {
     const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
-    const kgCell   = `<td class="td-kg" rowspan="${span}">${kg}</td>`;
-    const nameCell = `<td class="td-name" rowspan="${span}">
+    const totalSpan = drugs.length > 0 ? drugs.length + 1 : 1;
+    const kgCell   = `<td class="td-kg" rowspan="${totalSpan}">${kg}</td>`;
+    const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
         <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
       </div></td>`;
-    const ecoCell  = `<td class="td-check eco-col"  rowspan="${span}" data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>`;
-    const prevCell = `<td class="td-check prev-col" rowspan="${span}" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>`;
+    const ecoCell  = `<td class="td-check eco-col"  rowspan="${totalSpan}" data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>`;
+    const prevCell = `<td class="td-check prev-col" rowspan="${totalSpan}" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>`;
 
-    if (drugs.length === 0) {
-      const cells = HOURS.map(h => buildVitalCellHTML(p.id, h, -1, false, L)).join('');
-      return `<tr class="${rowClass}">${kgCell}${nameCell}${cells}${ecoCell}${prevCell}
-        <td class="td-ter"><span style="color:var(--text3)">—</span></td></tr>`;
-    }
+    // Riga vitali (solo FC/FR/T)
+    const vitalCells = HOURS.map(h => buildVitalCellHTML(p.id, h)).join('');
+    const vitalDrugCol = drugs.length === 0
+      ? `<td class="td-ter"><span style="color:var(--text3)">—</span></td>`
+      : `<td class="td-ter" style="font-size:10px;color:var(--text3);font-weight:600">Vitali</td>`;
+    const vitalsRow = `<tr class="${rowClass}">${kgCell}${nameCell}${vitalCells}${ecoCell}${prevCell}${vitalDrugCol}</tr>`;
 
-    return drugs.map((t, i) => {
-      const ci          = i % 6;
-      const freqSet     = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
-      const drugTag     = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
+    if (drugs.length === 0) return vitalsRow;
 
-      if (i === 0) {
-        const cells = HOURS.map(h => buildVitalCellHTML(p.id, h, ci, freqSet.has(h), L)).join('');
-        return `<tr class="${rowClass}">${kgCell}${nameCell}${cells}${ecoCell}${prevCell}${drugTag}</tr>`;
-      } else {
-        const cells = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h)).join('');
-        return `<tr class="${rowClass} drug-row">${cells}${drugTag}</tr>`;
-      }
+    // Righe farmaci (solo X)
+    const drugRows = drugs.map((t, i) => {
+      const ci      = i % 6;
+      const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+      const drugTag = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
+      const cells   = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h)).join('');
+      return `<tr class="${rowClass} drug-row">${cells}${drugTag}</tr>`;
     }).join('');
+
+    return vitalsRow + drugRows;
   }).join('');
 
   root.innerHTML = `
@@ -1101,7 +1075,7 @@ function startRealtime() {
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) {
         vitalsMap[k] = v;
-        updateCellUI(k, v.patient_id, h, activeLayout);
+        updateCellUI(k);
         flashSync();
       }
     })
@@ -1110,7 +1084,7 @@ function startRealtime() {
       const k = cellKey(v.patient_id, h);
       if (vitalsMap[k]?.id === v.id || !vitalsMap[k]) {
         vitalsMap[k] = v;
-        updateCellUI(k, v.patient_id, h, activeLayout);
+        updateCellUI(k);
         flashSync();
       }
     })
@@ -1119,7 +1093,7 @@ function startRealtime() {
       const k = cellKey(v.patient_id, h);
       if (vitalsMap[k]?.id === v.id) {
         delete vitalsMap[k];
-        updateCellUI(k, v.patient_id, h, activeLayout);
+        updateCellUI(k);
         flashSync();
       }
     })
@@ -1149,7 +1123,7 @@ async function softRefresh() {
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) vitalsMap[k] = v;
     });
     ids.forEach(pid => {
-      HOURS.forEach(h => updateCellUI(cellKey(pid, h), pid, h, activeLayout));
+      HOURS.forEach(h => updateCellUI(cellKey(pid, h)));
     });
     flashSync();
   } catch {}
