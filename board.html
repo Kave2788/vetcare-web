@@ -87,8 +87,17 @@
     }
     .board th.col-name, .board td.td-name {
       position: sticky; left: var(--kg-w, 44px); z-index: 2;
-      width: var(--name-w, 120px); min-width: var(--name-w, 120px);
+      width: var(--name-w, 40px); min-width: var(--name-w, 40px);
       background: var(--card);
+    }
+    .board td.td-name {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      padding: 8px 3px;
+      transform: rotate(180deg);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
     }
     .board thead th.col-kg, .board thead th.col-name { z-index: 5; }
 
@@ -109,6 +118,10 @@
     .board tbody tr.pat-odd td.td-kg   { background: var(--bg2); }
     /* Riga farmaco (non prima) — bordo top tratteggiato per separare */
     .board tbody tr.drug-row td { border-top: 1px dashed #1e3a5f88; }
+
+    /* Nascondi riga parametri vitali e colonna farmaco */
+    .board tbody tr:not(.drug-row):not(.check-row) { display: none; }
+    .board th.col-ter, .board td.td-ter { display: none; }
 
     .board tbody td {
       padding: 0;
@@ -217,7 +230,9 @@
       padding: 11px 12px; border-radius: 10px; cursor: pointer;
       font-size: 14px; font-weight: 600; color: var(--text);
       background: var(--card); border: 1.5px solid var(--border);
-      transition: all .15s; flex-shrink: 0;
+      transition: all .15s;
+      white-space: normal;
+      min-height: 44px;
     }
     .pop-opt.sel {
       background: #10B98118; border-color: var(--stable); color: var(--stable);
@@ -540,7 +555,7 @@ const ECO_INITIALS = { add: 'A', card: 'C' };
 function renderPickCell(key) {
   const sel = checks[key] || [];
   if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
-  const isEco = key.endsWith('_eco');
+  const isEco = key.startsWith('eco');
   if (isEco) {
     const labels = sel.map(k => ECO_INITIALS[k] || k[0].toUpperCase()).join('+');
     return `<div class="check-cell"><span class="check-badge">${labels}</span></div>`;
@@ -573,7 +588,7 @@ function renderPickSheet() {
       const subSel  = hasSubs ? c.sub.filter(s => sel.includes(s.k)).length : 0;
       const isSel   = !hasSubs && sel.includes(c.k);
       const badge   = subSel > 0 ? `<span class="sub-count">${subSel}</span>` : '';
-      return `<div class="pop-opt ${isSel ? 'sel' : ''}" data-k="${c.k}" data-has-sub="${hasSubs ? '1' : ''}">
+      return `<div class="pop-opt ${isSel ? 'sel' : ''}" data-k="${c.k}" data-has-sub="${hasSubs ? '1' : ''}" data-leaf="${!hasSubs ? '1' : ''}">
         <span class="pop-chk">${isSel ? '✓' : ''}</span>
         <span style="flex:1">${c.l}</span>
         ${badge}${hasSubs ? '<span class="pop-arrow">›</span>' : ''}
@@ -690,12 +705,12 @@ function computeLayout(nRows) {
   let rowH = Math.floor(avail / (nRows + 1));
   rowH = Math.max(64, Math.min(110, rowH));
 
-  const KG_W   = Math.max(30, Math.min(42, Math.floor(lw * 0.04)));
-  const ECO_W  = Math.max(32, Math.min(46, Math.floor(lw * 0.045)));
-  const NAME_W = Math.max(64, Math.min(96, Math.floor(lw * 0.09)));
+  const KG_W   = Math.max(28, Math.min(36, Math.floor(lw * 0.03)));
+  const ECO_W  = Math.max(30, Math.min(40, Math.floor(lw * 0.035)));
+  const NAME_W = Math.max(28, Math.min(36, Math.floor(lw * 0.02)));
   const TER_W  = Math.max(58, Math.min(96, Math.floor(lw * 0.09)));
-  const FIXED  = KG_W + NAME_W + ECO_W * 2 + TER_W;
-  const HOUR_W = Math.max(52, Math.floor((lw - FIXED) / HOURS.length));
+  const FIXED  = KG_W + NAME_W + ECO_W * 2;
+  const HOUR_W = Math.max(56, Math.floor((lw - FIXED) / HOURS.length));
 
   const cellFont = Math.max(12, Math.min(14, Math.floor(rowH * 0.17)));
   const nameFont = Math.max(12, Math.min(16, Math.floor(rowH * 0.22)));
@@ -768,13 +783,13 @@ function buildVitalCellHTML(pid, h) {
 }
 
 // Cella farmaco (righe successive)
-function buildDrugCellHTML(ci, isScheduled, pid, drugIdx, h) {
+function buildDrugCellHTML(ci, isScheduled, pid, drugIdx, h, drugName) {
   if (!isScheduled) return `<td class="td-hour"><div class="cell-inner"></div></td>`;
   const doneKey = `done_${todayKey()}_${pid}_${drugIdx}_${h}`;
   const isDone = doneSet.has(doneKey);
   const xClass = isDone ? `cell-drug dc${ci} done` : `cell-drug dc${ci}`;
   const bg = isDone ? 'background:#EF444418' : 'background:#F59E0B09';
-  return `<td class="td-hour td-drug-x" data-done-key="${doneKey}" style="${bg}"><div class="cell-inner"><span class="${xClass}">✕</span></div></td>`;
+  return `<td class="td-hour td-drug-x" data-done-key="${doneKey}" style="${bg}"><div class="cell-inner"><span class="${xClass}">${drugName}</span></div></td>`;
 }
 
 function updateCellUI(key) {
@@ -952,35 +967,39 @@ async function render() {
     const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
-    const totalSpan = drugs.length > 0 ? drugs.length + 1 : 1;
+    const totalSpan = Math.max(1, drugs.length);
     const kgCell   = `<td class="td-kg" rowspan="${totalSpan}">${kg}</td>`;
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
         <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
       </div></td>`;
-    const ecoCell  = `<td class="td-check eco-col"  rowspan="${totalSpan}" data-pick="${ecoKey}"  data-type="eco">${renderPickCell(ecoKey)}</td>`;
-    const prevCell = `<td class="td-check prev-col" rowspan="${totalSpan}" data-pick="${prevKey}" data-type="prev">${renderPickCell(prevKey)}</td>`;
 
     // Riga vitali (solo FC/FR/T)
     const vitalCells = HOURS.map(h => buildVitalCellHTML(p.id, h)).join('');
     const vitalDrugCol = drugs.length === 0
       ? `<td class="td-ter"><span style="color:var(--text3)">—</span></td>`
       : `<td class="td-ter" style="font-size:10px;color:var(--text3);font-weight:600">Vitali</td>`;
-    const vitalsRow = `<tr class="${rowClass}">${kgCell}${nameCell}${vitalCells}${ecoCell}${prevCell}${vitalDrugCol}</tr>`;
+    if (drugs.length === 0) {
+      const vitalsRow = `<tr class="${rowClass}">${kgCell}${nameCell}${vitalCells}</tr>`;
+      return vitalsRow;
+    }
 
-    if (drugs.length === 0) return vitalsRow;
-
-    // Righe farmaci (solo X)
+    // Righe farmaci — KG/nome solo sulla prima
     const drugRows = drugs.map((t, i) => {
       const ci      = i % 6;
       const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
       const drugTag = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
-      const cells   = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h)).join('');
-      return `<tr class="${rowClass} drug-row">${cells}${drugTag}</tr>`;
+      const cells   = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h, t.drug)).join('');
+      const kg_name = i === 0 ? `${kgCell}${nameCell}` : '';
+      return `<tr class="${rowClass} drug-row">${kg_name}${cells}${drugTag}</tr>`;
     }).join('');
 
-    return vitalsRow + drugRows;
+    // Righe Eco e Prelievi
+    const ecoRow = `<tr class="${rowClass} check-row"><td colspan="2" style="text-align:left;font-size:10px;color:var(--text3)">Eco</td>${HOURS.map(h => `<td class="td-check" data-pick="eco_${p.id}_${h}" data-type="eco"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
+    const prevRow = `<tr class="${rowClass} check-row"><td colspan="2" style="text-align:left;font-size:10px;color:var(--text3)">Prel.</td>${HOURS.map(h => `<td class="td-check" data-pick="prev_${p.id}_${h}" data-type="prev"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
+
+    return drugRows + ecoRow + prevRow;
   }).join('');
 
   root.innerHTML = `
@@ -990,8 +1009,6 @@ async function render() {
           <th class="col-kg">KG</th>
           <th class="col-name">Paziente</th>
           ${hoursHdr}
-          <th class="col-eco">Eco</th>
-          <th class="col-prev">Prel.</th>
           <th class="col-ter">Farmaco</th>
         </tr>
       </thead>
@@ -1027,6 +1044,8 @@ async function render() {
   });
 
   root.querySelectorAll('.td-check').forEach(td => {
+    const key = td.dataset.pick;
+    td.innerHTML = renderPickCell(key);
     td.addEventListener('click', e => {
       e.stopPropagation();
       openPickPop(td.dataset.pick, td.dataset.type);
