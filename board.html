@@ -539,7 +539,7 @@ function snapHour(h) {
   return HOURS.reduce((a, b) => Math.abs(b - h) < Math.abs(a - h) ? b : a);
 }
 const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
-let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
+let checks = {};
 
 let doneSet = new Set();
 function todayKey() { return new Date().toISOString().slice(0,10); }
@@ -561,7 +561,25 @@ async function saveDone() {
     } catch(e) { console.warn('saveDone error:', e); }
   }
 }
-function saveChecks() { localStorage.setItem(TODAY_KEY, JSON.stringify(checks)); }
+async function saveChecks() {
+  // Salva eco e prelievi in Supabase
+  const today = todayKey();
+  for (const [key, items] of Object.entries(checks)) {
+    const [type, pid, hour] = key.split('_');
+    if (!pid || !hour) continue;
+
+    try {
+      // Salva come array JSON nella tabella exams
+      await db.from('exams').upsert({
+        patient_id: pid,
+        type: type,
+        hour: parseInt(hour),
+        date: today,
+        data: items
+      }, { onConflict: ['patient_id', 'type', 'hour', 'date'] });
+    } catch(e) { console.warn('saveChecks error:', e); }
+  }
+}
 
 let vitalsMap = {};
 let drugSchedule = {};
@@ -1138,6 +1156,15 @@ async function render() {
       adminData.data.forEach(ad => {
         const key = `done_${today}_${ad.patient_id}_${ad.therapy_index}_${ad.hour}`;
         doneSet.add(key);
+      });
+    }
+
+    // Carica esami (eco/prelievi) da Supabase
+    const { data: examsData, error: examsError } = await db.from('exams').select('*').in('patient_id', ids).eq('date', today);
+    if (!examsError && examsData) {
+      examsData.forEach(exam => {
+        const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
+        checks[key] = exam.data || [];
       });
     }
   } catch(e) { console.warn('loadTodayVitals error:', e); }
