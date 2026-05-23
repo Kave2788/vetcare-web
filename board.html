@@ -430,6 +430,13 @@ import {
 } from './db.js';
 
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
+
+// Mappa un'ora qualsiasi all'ora più vicina nella lista HOURS
+function snapHour(h) {
+  if (h <= HOURS[0]) return HOURS[0];
+  if (h >= HOURS[HOURS.length - 1]) return HOURS[HOURS.length - 1];
+  return HOURS.reduce((a, b) => Math.abs(b - h) < Math.abs(a - h) ? b : a);
+}
 const TODAY_KEY = `board_checks_${new Date().toISOString().slice(0,10)}`;
 let checks = (() => { try { return JSON.parse(localStorage.getItem(TODAY_KEY)||'{}'); } catch { return {}; } })();
 
@@ -937,12 +944,11 @@ async function render() {
     const [tv, wm] = await Promise.all([loadTodayVitals(ids), loadLatestWeights(ids)]);
     weightMap = wm;
     tv.forEach(v => {
-      const h = new Date(v.recorded_at).getHours();
-      if (!HOURS.includes(h)) return;
+      const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) vitalsMap[k] = v;
     });
-  } catch(e) { /* continua */ }
+  } catch(e) { console.warn('loadTodayVitals error:', e); }
 
   // Drug schedule — per updateCellUI (prima riga = vitali + farmaco 0)
   drugSchedule = {};
@@ -1099,8 +1105,7 @@ function startRealtime() {
   realtimeChannel = db.channel('board-vitals')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vitals' }, ({ new: v }) => {
       if (new Date(v.recorded_at) < todayStart) return;
-      const h = new Date(v.recorded_at).getHours();
-      if (!HOURS.includes(h)) return;
+      const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) {
         vitalsMap[k] = v;
@@ -1109,8 +1114,7 @@ function startRealtime() {
       }
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'vitals' }, ({ new: v }) => {
-      const h = new Date(v.recorded_at).getHours();
-      if (!HOURS.includes(h)) return;
+      const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (vitalsMap[k]?.id === v.id || !vitalsMap[k]) {
         vitalsMap[k] = v;
@@ -1119,8 +1123,7 @@ function startRealtime() {
       }
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'vitals' }, ({ old: v }) => {
-      const h = new Date(v.recorded_at).getHours();
-      if (!HOURS.includes(h)) return;
+      const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (vitalsMap[k]?.id === v.id) {
         delete vitalsMap[k];
@@ -1149,8 +1152,7 @@ async function softRefresh() {
     if (error) return;
     vitalsMap = {};
     data.forEach(v => {
-      const h = new Date(v.recorded_at).getHours();
-      if (!HOURS.includes(h)) return;
+      const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) vitalsMap[k] = v;
     });
