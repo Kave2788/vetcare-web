@@ -1266,8 +1266,9 @@ async function render() {
         const allDone = drugsForHour.every(d => doneSet.has(`done_${todayKey()}_${p.id}_${d.idx}_${h}`));
         const cellKey = `drugs_${todayKey()}_${p.id}_${h}`;
         const bg = allDone ? 'background:#EF4444CC' : '';
+        const drugCount = drugsForHour.length;
 
-        return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:18px">💊</span></div></td>`;
+        return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:18px;font-weight:700">${drugCount}</span></div></td>`;
       }).join('');
 
       const therapyLabel = `<td class="td-label" style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Terapie</td>`;
