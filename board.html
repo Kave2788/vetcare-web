@@ -126,9 +126,9 @@
     /* Nome con strip stato */
     .board tbody td.td-name { text-align: left; }
     .name-cell {
-      display: flex; align-items: center; gap: 2px;
+      display: flex; align-items: center; gap: 1px;
       height: var(--row-h, 42px);
-      padding: 0 2px;
+      padding: 0 1px;
     }
     .name-strip { width: 3px; height: 100%; flex-shrink: 0; }
     .name-info { display: flex; flex-direction: column; gap: 0; overflow: hidden; }
@@ -147,10 +147,10 @@
 
     .board tbody td.td-hour .cell-inner {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 1px; padding: 3px 1px;
+      justify-content: center; gap: 0; padding: 2px 0;
       height: var(--row-h, 46px);
       font-size: var(--cell-font, 10px);
-      color: var(--text); line-height: 1.35; font-weight: 700;
+      color: var(--text); line-height: 1.2; font-weight: 700;
     }
     .board tbody td.td-hour .cell-inner span {
       display: block;
@@ -955,19 +955,19 @@ function computeLayout(nRows) {
   rowH = Math.max(18, Math.min(42, rowH));
 
   const isMobile = portrait;
-  const KG_W   = isMobile ? Math.max(12, Math.min(14, Math.floor(lw * 0.02))) : Math.max(20, Math.min(26, Math.floor(lw * 0.03)));
-  const ECO_W  = isMobile ? Math.max(14, Math.min(18, Math.floor(lw * 0.022))) : Math.max(24, Math.min(32, Math.floor(lw * 0.035)));
-  const NAME_W = isMobile ? Math.max(14, Math.min(20, Math.floor(lw * 0.015))) : Math.max(22, Math.min(28, Math.floor(lw * 0.02)));
-  const TER_W  = Math.max(48, Math.min(80, Math.floor(lw * 0.09)));
+  const KG_W   = isMobile ? Math.max(10, Math.min(12, Math.floor(lw * 0.02))) : Math.max(16, Math.min(22, Math.floor(lw * 0.03)));
+  const ECO_W  = isMobile ? Math.max(12, Math.min(16, Math.floor(lw * 0.022))) : Math.max(20, Math.min(28, Math.floor(lw * 0.035)));
+  const NAME_W = isMobile ? Math.max(12, Math.min(18, Math.floor(lw * 0.015))) : Math.max(18, Math.min(24, Math.floor(lw * 0.02)));
+  const TER_W  = Math.max(40, Math.min(70, Math.floor(lw * 0.09)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2;
-  const HOUR_W = isMobile ? Math.max(18, Math.floor((lw - FIXED) / HOURS.length)) : Math.max(16, Math.floor((lw - FIXED) / HOURS.length));
+  const HOUR_W = isMobile ? Math.max(14, Math.floor((lw - FIXED) / HOURS.length)) : Math.max(12, Math.floor((lw - FIXED) / HOURS.length));
 
-  const cellFont = Math.max(12, Math.min(14, Math.floor(rowH * 0.17)));
-  const nameFont = Math.max(12, Math.min(16, Math.floor(rowH * 0.22)));
-  const subFont  = Math.max(10, Math.min(12, Math.floor(rowH * 0.14)));
-  const hdrFont  = Math.max(11, Math.min(13, Math.floor(HDR_H * 0.40)));
-  const kgFont   = Math.max(11, Math.min(14, Math.floor(rowH * 0.20)));
-  const terFont  = Math.max(10, Math.min(12, Math.floor(rowH * 0.16)));
+  const cellFont = Math.max(10, Math.min(12, Math.floor(rowH * 0.17)));
+  const nameFont = Math.max(10, Math.min(14, Math.floor(rowH * 0.22)));
+  const subFont  = Math.max(8, Math.min(10, Math.floor(rowH * 0.14)));
+  const hdrFont  = Math.max(9, Math.min(11, Math.floor(HDR_H * 0.40)));
+  const kgFont   = Math.max(9, Math.min(12, Math.floor(rowH * 0.20)));
+  const terFont  = Math.max(8, Math.min(10, Math.floor(rowH * 0.16)));
 
   // Quante righe di testo stanno in una cella oraria
   const maxLines = Math.max(2, Math.floor((rowH - 8) / (cellFont + 3)));
