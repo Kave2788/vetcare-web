@@ -1242,7 +1242,7 @@ async function render() {
     const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
-    const totalSpan = Math.max(1, drugs.length) + 2;
+    const totalSpan = drugs.length === 0 ? 1 : drugs.length + 2;
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
