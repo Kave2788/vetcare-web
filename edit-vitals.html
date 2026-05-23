@@ -29,12 +29,12 @@
       </div>
       <div class="row">
         <div class="field">
-          <label>FC (bpm)</label>
-          <input name="heart_rate" type="number" placeholder="80" inputmode="numeric">
+          <label>FC — battiti in 10s</label>
+          <input name="heart_rate" type="number" placeholder="12" inputmode="numeric" title="Conteggio battiti in 10 secondi (×6 = bpm)">
         </div>
         <div class="field">
-          <label>FR (atti/min)</label>
-          <input name="resp_rate" type="number" placeholder="20" inputmode="numeric">
+          <label>FR — atti in 10s</label>
+          <input name="resp_rate" type="number" placeholder="3" inputmode="numeric" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)">
         </div>
       </div>
       <div class="field">
@@ -292,8 +292,8 @@
         if (p.allergies) document.getElementById('allergies-input').value = p.allergies;
         set('temperature', v.temperature);
         set('weight', v.weight);
-        set('heart_rate', v.heart_rate);
-        set('resp_rate', v.resp_rate);
+        set('heart_rate', v.heart_rate ? v.heart_rate / 6 : null);
+        set('resp_rate', v.resp_rate ? v.resp_rate / 6 : null);
         set('resp_type', v.resp_type);
         set('dehydration', v.dehydration);
         set('sensorium', v.sensorium);
@@ -329,8 +329,8 @@
       const fields = {
         temperature:        num('temperature'),
         weight:             num('weight'),
-        heart_rate:         num('heart_rate'),
-        resp_rate:          num('resp_rate'),
+        heart_rate:         num('heart_rate') ? num('heart_rate') * 6 : null,
+        resp_rate:          num('resp_rate') ? num('resp_rate') * 6 : null,
         resp_type:          str('resp_type'),
         dehydration:        str('dehydration'),
         sensorium:          str('sensorium'),
