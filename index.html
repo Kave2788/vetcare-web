@@ -21,6 +21,8 @@
 
   <a class="fab" href="new-patient.html" title="Nuovo paziente">+</a>
   <a class="board-btn" href="board.html" title="Lavagna giornaliera">📋</a>
+  <button class="timer-btn" id="timer-btn" title="Timer 10s">⏱️</button>
+  <div id="timer-display"></div>
   <div id="toast"></div>
 
   <div id="overlay">
@@ -134,6 +136,29 @@
     }
 
     render();
+
+    // ── Timer 10s ──
+    let timerInterval = null;
+    document.getElementById('timer-btn').addEventListener('click', () => {
+      if (timerInterval) return;
+
+      let count = 10;
+      const display = document.getElementById('timer-display');
+      display.textContent = count;
+      display.classList.add('active');
+
+      timerInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          display.textContent = count;
+        } else {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          display.classList.remove('active');
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        }
+      }, 1000);
+    });
   </script>
   <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/vetcare-web/sw.js");</script>
 </body>
