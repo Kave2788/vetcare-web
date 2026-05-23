@@ -311,6 +311,22 @@
       font-size: 14px; font-weight: 600;
     }
 
+    /* Exam modal */
+    #exam-modal {
+      display: none; position: absolute; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.6);
+      align-items: flex-end; justify-content: center;
+    }
+    #exam-modal.show { display: flex; }
+    .exam-list {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-bottom: 16px; max-height: 50vh; overflow-y: auto;
+    }
+    .exam-item {
+      padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); font-size: 14px; color: var(--text);
+    }
+
     /* Terapie */
     .board tbody td.td-ter {
       text-align: left; padding: 2px 5px;
@@ -496,6 +512,15 @@
     </div>
   </div>
 
+  <div id="exam-modal">
+    <div class="drugs-sheet">
+      <div class="pick-handle"></div>
+      <div class="pop-title" id="exam-title">Esame</div>
+      <div class="exam-list" id="exam-list"></div>
+      <button class="pop-done" id="exam-close">Chiudi</button>
+    </div>
+  </div>
+
   <div id="toast"></div>
 </div>
 
@@ -612,6 +637,18 @@ function updateDrugsCellColor(pid, hour) {
     return doneSet.has(`done_${todayKey()}_${pid}_${globalIdx}_${hour}`);
   });
   cell.style.background = allDone ? '#EF4444CC' : '';
+}
+
+function openExamModal(examKey, type) {
+  const data = checks[examKey] || [];
+  const modal = document.getElementById('exam-modal');
+  const title = document.getElementById('exam-title');
+  const list = document.getElementById('exam-list');
+
+  title.textContent = type === 'eco' ? 'Ecografia' : 'Prelievo';
+  list.innerHTML = data.map(item => `<div class="exam-item">${item}</div>`).join('');
+
+  modal.classList.add('show');
 }
 
 function toast(msg) {
@@ -815,6 +852,11 @@ document.getElementById('pick-done').addEventListener('click', () => {
 // Drugs modal close button
 document.getElementById('drugs-close').addEventListener('click', () => {
   document.getElementById('drugs-modal').classList.remove('show');
+});
+
+// Exam modal close button
+document.getElementById('exam-close').addEventListener('click', () => {
+  document.getElementById('exam-modal').classList.remove('show');
 });
 
 pickPop.addEventListener('click', e => {
@@ -1193,8 +1235,16 @@ async function render() {
     }
 
     // Righe Eco e Prelievi
-    const ecoRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Eco</td>${HOURS.map(h => `<td class="td-check" data-pick="eco_${p.id}_${h}" data-type="eco"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
-    const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => `<td class="td-check" data-pick="prev_${p.id}_${h}" data-type="prev"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
+    const ecoRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Eco</td>${HOURS.map(h => {
+      const ecoKey = `eco_${p.id}_${h}`;
+      const hasData = checks[ecoKey] && checks[ecoKey].length > 0;
+      return `<td class="td-check exam-cell" data-exam-key="${ecoKey}" data-type="eco" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer"><div class="check-cell"><span class="check-empty">${hasData ? '✅' : '+'}</span></div></td>`;
+    }).join('')}</tr>`;
+    const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => {
+      const prevKey = `prev_${p.id}_${h}`;
+      const hasData = checks[prevKey] && checks[prevKey].length > 0;
+      return `<td class="td-check exam-cell" data-exam-key="${prevKey}" data-type="prev" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer"><div class="check-cell"><span class="check-empty">${hasData ? '✅' : '+'}</span></div></td>`;
+    }).join('')}</tr>`;
 
     return drugRow + ecoRow + prevRow;
   }).join('');
@@ -1238,6 +1288,17 @@ async function render() {
     cell.addEventListener('click', e => {
       e.stopPropagation();
       openDrugsModal(cell.dataset.pid, parseInt(cell.dataset.hour));
+    });
+  });
+
+  // Click su celle esami (eco/prelievi) per visualizzare dati
+  root.querySelectorAll('.exam-cell').forEach(cell => {
+    cell.addEventListener('click', e => {
+      e.stopPropagation();
+      const hasData = checks[cell.dataset.examKey] && checks[cell.dataset.examKey].length > 0;
+      if (hasData) {
+        openExamModal(cell.dataset.examKey, cell.dataset.type);
+      }
     });
   });
 
