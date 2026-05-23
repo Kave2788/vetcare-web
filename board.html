@@ -153,8 +153,9 @@
       display: block;
       width: calc(var(--hour-w, 38px) - 4px);
       overflow: hidden; text-overflow: ellipsis;
-      white-space: nowrap; text-align: center;
+      white-space: nowrap; text-align: center; line-height: 1.2;
     }
+    .board tbody td.td-hour .cell-inner { overflow: hidden; }
     /* X farmaco */
     .cell-drug {
       font-weight: 900 !important;
@@ -749,22 +750,16 @@ const VITAL_PRIORITY = [
   v => v.water_status? `A ${sh(v.water_status)}` : null,
 ];
 
-function vitalToLines(v, maxLines) {
+function vitalToLines(v) {
   if (!v) return [];
-  const lines = [];
-  for (const fn of VITAL_PRIORITY) {
-    const l = fn(v);
-    if (l) lines.push(l);
-    if (lines.length >= maxLines) break;
-  }
-  return lines;
+  return VITAL_PRIORITY.map(fn => fn(v)).filter(Boolean);
 }
 
 // Cella vitali (prima riga di ogni paziente) — tappabile, mostra vitali + X farmaco 0
 function buildVitalCellHTML(pid, h, ci, isScheduled, L) {
   const key   = cellKey(pid, h);
   const vital = vitalsMap[key];
-  const lines = vitalToLines(vital, L.maxLines);
+  const lines = vitalToLines(vital);
   const hasData = lines.length > 0;
 
   const doneKey0 = isScheduled ? `done_${todayKey()}_${pid}_0_${h}` : '';
@@ -805,7 +800,7 @@ function updateCellUI(key, pid, h, L) {
   const ds    = drugSchedule[pid];
   const isScheduled = ds ? ds.scheduledHours.has(h) : false;
   const ci    = ds ? ds.ci : -1;
-  const lines = vitalToLines(vital, L.maxLines);
+  const lines = vitalToLines(vital);
   const hasData = lines.length > 0;
   let inner = '';
   if (ci >= 0 && isScheduled && hasData) {
@@ -1041,7 +1036,7 @@ async function render() {
         doneSet.delete(key);
         span.classList.remove('done');
         const vital = vitalsMap[td.dataset.key];
-        const hasData = vital && vitalToLines(vital, 99).length > 0;
+        const hasData = vital && vitalToLines(vital).length > 0;
         td.style.background = hasData ? 'var(--accent-dim)' : '#F59E0B09';
       } else {
         doneSet.add(key);
@@ -1172,6 +1167,11 @@ document.getElementById('refresh-btn').addEventListener('click', async () => {
   await render();
   startRealtime();
   btn.style.opacity = '1';
+});
+
+// Aggiorna vitali ogni volta che la pagina torna visibile (es. dopo aver aggiunto rilevazioni)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') softRefresh();
 });
 
 render().then(() => startRealtime());
