@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>VetCare — Archivio</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="back-btn" href="index.html" title="Indietro">←</a>
+    <h1>Archivio Pazienti</h1>
+  </div>
+
+  <div class="page" id="root">
+    <div class="spinner"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { loadPatients, daysSince, STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI } from './db.js';
+
+    const root = document.getElementById('root');
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function render() {
+      root.innerHTML = '<div class="spinner"></div>';
+      try {
+        const patients = await loadPatients();
+        const archived = patients.filter(p => p.status === 'discharged');
+
+        if (archived.length === 0) {
+          root.innerHTML = `
+            <div class="empty">
+              <div class="ei">📁</div>
+              <div class="et">Nessun paziente in archivio</div>
+              <div class="eh">I pazienti dimessi appariranno qui</div>
+            </div>`;
+          return;
+        }
+
+        root.innerHTML = `<div class="list-header">${archived.length} pazient${archived.length === 1 ? 'e' : 'i'} dimes${archived.length === 1 ? 'so' : 'si'}</div>` +
+          archived.map(p => {
+            const emoji = SPECIES_EMOJI[p.species] ?? '🐾';
+            const days = daysSince(p.admitted_at);
+            const daysText = `${days} giorn${days === 1 ? 'o' : 'i'} di ricovero`;
+            const vitals = (p.vitals || []).length;
+            const therapies = (p.therapies || []).length;
+            return `
+              <a class="patient-card" href="patient.html?id=${p.id}" data-id="${p.id}">
+                <div class="strip" style="background:${STATUS_COLOR[p.status]}"></div>
+                <div class="body">
+                  <div class="top">
+                    <div class="emoji">${emoji}</div>
+                    <div class="info">
+                      <div class="name">${p.name}</div>
+                      <div class="sub">${p.species}${p.breed ? ' · ' + p.breed : ''}</div>
+                    </div>
+                    <span class="badge discharged">Dimes.</span>
+                  </div>
+                  <div class="bottom">
+                    <span class="meta">${daysText}</span>
+                    ${vitals > 0 || therapies > 0 ? `<span class="meta">· ${vitals} rilevaz${vitals === 1 ? 'ione' : 'ioni'} · ${therapies} terapie</span>` : ''}
+                  </div>
+                </div>
+              </a>`;
+          }).join('<div style="height:10px"></div>');
+
+      } catch (e) {
+        root.innerHTML = `<div class="empty"><div class="et">Errore di connessione</div><div class="eh">${e.message}</div></div>`;
+      }
+    }
+
+    render();
+  </script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/vetcare-web/sw.js");</script>
+</body>
+</html>

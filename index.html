@@ -13,6 +13,7 @@
 <body>
   <div class="topbar">
     <h1>VetCare — Ricoverati</h1>
+    <a class="archive-btn" href="archive.html" title="Archivio">📁</a>
   </div>
 
   <div class="page" id="root">
@@ -71,7 +72,8 @@
     async function render() {
       root.innerHTML = '<div class="spinner"></div>';
       try {
-        const patients = await loadPatients();
+        const allPatients = await loadPatients();
+        const patients = allPatients.filter(p => p.status !== 'discharged');
 
         if (patients.length === 0) {
           root.innerHTML = `
@@ -83,9 +85,7 @@
           return;
         }
 
-        const active = patients.filter(p => p.status !== 'discharged').length;
-        const discharged = patients.filter(p => p.status === 'discharged').length;
-        const headerText = `${active} ricoverat${active === 1 ? 'o' : 'i'}${discharged > 0 ? ` · ${discharged} dimes${discharged === 1 ? 'so' : 'si'}` : ''}`;
+        const headerText = `${patients.length} ricoverat${patients.length === 1 ? 'o' : 'i'}`;
 
         root.innerHTML = `<div class="list-header">${headerText}</div>` +
           patients.map(p => {
