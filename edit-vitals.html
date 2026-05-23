@@ -30,11 +30,11 @@
       <div class="row">
         <div class="field">
           <label>FC — battiti in 10s</label>
-          <input name="heart_rate" type="number" placeholder="12" inputmode="numeric" title="Conteggio battiti in 10 secondi (×6 = bpm)">
+          <input name="heart_rate" type="number" placeholder="12" inputmode="numeric" title="Conteggio battiti in 10 secondi (×6 = bpm)" data-rate-input="fc">
         </div>
         <div class="field">
           <label>FR — atti in 10s</label>
-          <input name="resp_rate" type="number" placeholder="3" inputmode="numeric" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)">
+          <input name="resp_rate" type="number" placeholder="3" inputmode="numeric" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)" data-rate-input="fr">
         </div>
       </div>
       <div class="field">
@@ -251,6 +251,23 @@
     }
     document.querySelector('[name="weight"]').addEventListener('input', () => { calcUO(); calcRER(); });
 
+    // Auto-multiply FC/FR by 6 on blur
+    ['heart_rate', 'resp_rate'].forEach(name => {
+      const input = document.querySelector(`[name="${name}"]`);
+      input.addEventListener('blur', () => {
+        const val = parseFloat(input.value);
+        if (val && val > 0) {
+          input.value = Math.round(val * 6);
+        }
+      });
+      input.addEventListener('focus', () => {
+        const val = parseFloat(input.value);
+        if (val && val > 0) {
+          input.value = Math.round(val / 6);
+        }
+      });
+    });
+
     function toast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -353,8 +370,8 @@
       const fields = {
         temperature:        num('temperature'),
         weight:             num('weight'),
-        heart_rate:         num('heart_rate') ? num('heart_rate') * 6 : null,
-        resp_rate:          num('resp_rate') ? num('resp_rate') * 6 : null,
+        heart_rate:         num('heart_rate'),
+        resp_rate:          num('resp_rate'),
         resp_type:          str('resp_type'),
         dehydration:        str('dehydration'),
         sensorium:          str('sensorium'),

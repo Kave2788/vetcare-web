@@ -441,8 +441,8 @@
     <div class="hm-sheet">
       <div class="hm-title" id="hm-title"></div>
       <div class="hm-grid">
-        <div class="hm-field"><label>Fc — battiti in 10s</label><input id="hm-fc" type="number" placeholder="—" title="Conteggio battiti in 10 secondi (×6 = bpm)"></div>
-        <div class="hm-field"><label>Fr — atti in 10s</label><input id="hm-fr" type="number" placeholder="—" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)"></div>
+        <div class="hm-field"><label>Fc — battiti in 10s</label><input id="hm-fc" type="number" placeholder="—" title="Conteggio battiti in 10 secondi (×6 = bpm)" data-rate-input="fc"></div>
+        <div class="hm-field"><label>Fr — atti in 10s</label><input id="hm-fr" type="number" placeholder="—" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)" data-rate-input="fr"></div>
         <div class="hm-field"><label>T° (°C)</label><input id="hm-t" type="number" step="0.1" placeholder="—"></div>
         <div class="hm-field"><label>Idratazione</label>
           <select id="hm-idr">
@@ -1082,10 +1082,8 @@ document.getElementById('hm-delete').onclick = async () => {
 };
 
 document.getElementById('hm-save').onclick = async () => {
-  const fcInput = parseFloat(document.getElementById('hm-fc').value);
-  const frInput = parseFloat(document.getElementById('hm-fr').value);
-  const fc    = fcInput ? fcInput * 6 : null;
-  const fr    = frInput ? frInput * 6 : null;
+  const fc    = parseFloat(document.getElementById('hm-fc').value) || null;
+  const fr    = parseFloat(document.getElementById('hm-fr').value) || null;
   const t     = parseFloat(document.getElementById('hm-t').value)     || null;
   const idr   = document.getElementById('hm-idr').value   || null;
   const muc   = document.getElementById('hm-muc').value   || null;
@@ -1121,6 +1119,23 @@ document.getElementById('hm-save').onclick = async () => {
 };
 
 modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+// Auto-multiply FC/FR by 6 on blur in modal
+['hm-fc', 'hm-fr'].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('blur', () => {
+    const val = parseFloat(input.value);
+    if (val && val > 0) {
+      input.value = Math.round(val * 6);
+    }
+  });
+  input.addEventListener('focus', () => {
+    const val = parseFloat(input.value);
+    if (val && val > 0) {
+      input.value = Math.round(val / 6);
+    }
+  });
+});
 
 function openModal(pid, hour, name) {
   activePid = pid; activeHour = hour; activeKey = cellKey(pid, hour);
