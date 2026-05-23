@@ -240,19 +240,24 @@
         max-height: 35vh;
       }
     }
-    @media (orientation: landscape) {
+    @media (max-height: 800px) {
       .pop-opts-grid {
-        max-height: calc(100vh - 220px);
+        max-height: calc(100vh - 200px);
       }
     }
-    @media (orientation: landscape) and (max-height: 500px) {
-      .pop-opts-grid {
-        max-height: calc(100vh - 180px);
-      }
-    }
-    @media (orientation: landscape) and (max-height: 400px) {
+    @media (max-height: 600px) {
       .pop-opts-grid {
         max-height: calc(100vh - 160px);
+      }
+    }
+    @media (max-height: 500px) {
+      .pop-opts-grid {
+        max-height: calc(100vh - 140px);
+      }
+    }
+    @media (max-height: 430px) {
+      .pop-opts-grid {
+        max-height: calc(100vh - 120px);
       }
     }
     .pop-opt {
