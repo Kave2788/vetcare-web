@@ -214,8 +214,9 @@
     document.getElementById('back-link').href = `patient.html?id=${id}`;
 
     let dietsDB = [];
-    const baseUrl = location.pathname.includes('/vetcare-web/') ? '/vetcare-web/' : '/';
-    fetch(baseUrl + 'diets.json').then(r => r.json()).then(d => { dietsDB = d; }).catch(e => console.warn('diets.json load error:', e));
+    const isGitHub = location.hostname.includes('github.io');
+    const dietPath = isGitHub ? '/vetcare-web/diets.json' : '/diets.json';
+    fetch(dietPath).then(r => r.json()).then(d => { dietsDB = d; console.log('Diets loaded:', d.length); }).catch(e => console.error('diets.json load error:', e));
 
     const foodInput = document.getElementById('food-input');
     const foodDD = document.getElementById('food-dropdown');
