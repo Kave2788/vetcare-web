@@ -118,7 +118,7 @@
     .board th.col-ter, .board td.td-ter { display: none; }
 
     .board tbody td {
-      padding: 0;
+      padding: 2px 0;
       height: var(--row-h, 42px);
     }
 
@@ -950,7 +950,7 @@ function computeLayout(nRows) {
 
   // Altezza riga: se le righe sono poche lascia crescere di più
   let rowH = Math.floor(avail / (nRows + 1));
-  rowH = Math.max(32, Math.min(56, rowH));
+  rowH = Math.max(24, Math.min(42, rowH));
 
   const isMobile = portrait;
   const KG_W   = isMobile ? Math.max(16, Math.min(22, Math.floor(lw * 0.02))) : Math.max(28, Math.min(36, Math.floor(lw * 0.03)));
