@@ -527,9 +527,16 @@ function allPrevItems() {
   return items;
 }
 
+const ECO_INITIALS = { add: 'A', card: 'C' };
+
 function renderPickCell(key) {
   const sel = checks[key] || [];
   if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
+  const isEco = key.endsWith('_eco');
+  if (isEco) {
+    const labels = sel.map(k => ECO_INITIALS[k] || k[0].toUpperCase()).join('+');
+    return `<div class="check-cell"><span class="check-badge">${labels}</span></div>`;
+  }
   return `<div class="check-cell"><span class="check-badge">✓${sel.length > 1 ? sel.length : ''}</span></div>`;
 }
 
