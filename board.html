@@ -79,15 +79,10 @@
       border-bottom: 2px solid var(--accent-border);
     }
 
-    /* Sticky prime due colonne */
-    .board th.col-kg, .board td.td-kg {
-      position: sticky; left: 0; z-index: 2;
-      width: var(--kg-w, 44px); min-width: var(--kg-w, 44px);
-      background: var(--bg3);
-    }
+    /* Sticky prima colonna (name con kg) */
     .board th.col-name, .board td.td-name {
-      position: sticky; left: var(--kg-w, 44px); z-index: 2;
-      width: var(--name-w, 40px); min-width: var(--name-w, 40px);
+      position: sticky; left: 0; z-index: 2;
+      width: var(--name-w, 60px); min-width: var(--name-w, 60px);
       background: var(--card);
     }
     .board td.td-name {
@@ -99,7 +94,7 @@
       font-weight: 800;
       letter-spacing: 2px;
     }
-    .board thead th.col-kg, .board thead th.col-name { z-index: 5; }
+    .board thead th.col-name { z-index: 5; }
 
     /* Colonne dimensionate */
     .board th.col-hour, .board td.td-hour {
@@ -115,7 +110,6 @@
     .board tbody tr.pat-even { background: var(--card); }
     .board tbody tr.pat-odd  { background: var(--bg2); }
     .board tbody tr.pat-odd td.td-name { background: var(--bg2); }
-    .board tbody tr.pat-odd td.td-kg   { background: var(--bg2); }
     /* Riga farmaco (non prima) — bordo top tratteggiato per separare */
     .board tbody tr.drug-row td { border-top: 1px dashed #1e3a5f88; }
 
@@ -126,12 +120,6 @@
     .board tbody td {
       padding: 0;
       height: var(--row-h, 42px);
-    }
-
-    /* KG */
-    .board tbody td.td-kg {
-      font-size: var(--kg-font, 11px); font-weight: 700;
-      color: var(--text2); text-align: center;
     }
 
     /* Nome con strip stato */
@@ -1004,11 +992,13 @@ async function render() {
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
     const totalSpan = Math.max(1, drugs.length);
-    const kgCell   = `<td class="td-kg" rowspan="${totalSpan}">${kg}</td>`;
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
-        <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
+        <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden">
+          <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
+          <span style="font-size:8px;color:var(--text3);padding:0 4px">${kg} kg</span>
+        </div>
       </div></td>`;
 
     // Riga vitali (solo FC/FR/T)
@@ -1017,23 +1007,23 @@ async function render() {
       ? `<td class="td-ter"><span style="color:var(--text3)">—</span></td>`
       : `<td class="td-ter" style="font-size:10px;color:var(--text3);font-weight:600">Vitali</td>`;
     if (drugs.length === 0) {
-      const vitalsRow = `<tr class="${rowClass}">${kgCell}${nameCell}${vitalCells}</tr>`;
+      const vitalsRow = `<tr class="${rowClass}">${nameCell}${vitalCells}</tr>`;
       return vitalsRow;
     }
 
-    // Righe farmaci — KG/nome solo sulla prima
+    // Righe farmaci — nome solo sulla prima
     const drugRows = drugs.map((t, i) => {
       const ci      = i % 6;
       const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
       const drugTag = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
       const cells   = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h, t.drug)).join('');
-      const kg_name = i === 0 ? `${kgCell}${nameCell}` : '';
-      return `<tr class="${rowClass} drug-row">${kg_name}${cells}${drugTag}</tr>`;
+      const name_col = i === 0 ? nameCell : '';
+      return `<tr class="${rowClass} drug-row">${name_col}${cells}${drugTag}</tr>`;
     }).join('');
 
     // Righe Eco e Prelievi
-    const ecoRow = `<tr class="${rowClass} check-row"><td colspan="2" style="text-align:left;font-size:10px;color:var(--text3)">Eco</td>${HOURS.map(h => `<td class="td-check" data-pick="eco_${p.id}_${h}" data-type="eco"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
-    const prevRow = `<tr class="${rowClass} check-row"><td colspan="2" style="text-align:left;font-size:10px;color:var(--text3)">Prel.</td>${HOURS.map(h => `<td class="td-check" data-pick="prev_${p.id}_${h}" data-type="prev"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
+    const ecoRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Eco</td>${HOURS.map(h => `<td class="td-check" data-pick="eco_${p.id}_${h}" data-type="eco"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
+    const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => `<td class="td-check" data-pick="prev_${p.id}_${h}" data-type="prev"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
 
     return drugRows + ecoRow + prevRow;
   }).join('');
@@ -1042,7 +1032,6 @@ async function render() {
     <table class="board">
       <thead>
         <tr class="hdr-main">
-          <th class="col-kg">KG</th>
           <th class="col-name">Paziente</th>
           ${hoursHdr}
           <th class="col-ter">Farmaco</th>
