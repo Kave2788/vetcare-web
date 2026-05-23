@@ -441,8 +441,8 @@
     <div class="hm-sheet">
       <div class="hm-title" id="hm-title"></div>
       <div class="hm-grid">
-        <div class="hm-field"><label>Fc — battiti in 10s</label><div style="display:flex;gap:6px"><input id="hm-fc" type="number" placeholder="—" title="Conteggio battiti in 10 secondi (×6 = bpm)" data-rate-input="fc" style="flex:1"><div id="hm-fc-display" style="padding:6px 8px;color:var(--text2);font-size:12px;min-width:50px;text-align:right;border:1px solid var(--border);border-radius:4px;background:var(--bg3)">— bpm</div></div></div>
-        <div class="hm-field"><label>Fr — atti in 10s</label><div style="display:flex;gap:6px"><input id="hm-fr" type="number" placeholder="—" title="Conteggio atti respiratori in 10 secondi (×6 = atti/min)" data-rate-input="fr" style="flex:1"><div id="hm-fr-display" style="padding:6px 8px;color:var(--text2);font-size:12px;min-width:50px;text-align:right;border:1px solid var(--border);border-radius:4px;background:var(--bg3)">— atti/m</div></div></div>
+        <div class="hm-field"><label>Fc (bpm)</label><input id="hm-fc" type="number" placeholder="—"></div>
+        <div class="hm-field"><label>Fr (atti/min)</label><input id="hm-fr" type="number" placeholder="—"></div>
         <div class="hm-field"><label>T° (°C)</label><input id="hm-t" type="number" step="0.1" placeholder="—"></div>
         <div class="hm-field"><label>Idratazione</label>
           <select id="hm-idr">
@@ -1121,22 +1121,12 @@ document.getElementById('hm-save').onclick = async () => {
 modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
 
 // Auto-multiply FC/FR by 6 on blur in modal
-const rateConfig = { 'hm-fc': 'bpm', 'hm-fr': 'atti/m' };
-Object.entries(rateConfig).forEach(([id, unit]) => {
+['hm-fc', 'hm-fr'].forEach(id => {
   const input = document.getElementById(id);
-  const display = document.getElementById(id + '-display');
-
-  const updateDisplay = () => {
-    const val = parseFloat(input.value);
-    display.textContent = (val && val > 0) ? `${Math.round(val * 6)} ${unit}` : `— ${unit}`;
-  };
-
-  input.addEventListener('input', updateDisplay);
   input.addEventListener('blur', () => {
     const val = parseFloat(input.value);
     if (val && val > 0) {
       input.value = Math.round(val * 6);
-      updateDisplay();
     }
   });
   input.addEventListener('focus', () => {
@@ -1144,7 +1134,6 @@ Object.entries(rateConfig).forEach(([id, unit]) => {
     if (val && val > 0) {
       input.value = Math.round(val / 6);
     }
-    updateDisplay();
   });
 });
 
