@@ -960,7 +960,7 @@ function computeLayout(nRows) {
   const NAME_W = isMobile ? Math.max(12, Math.min(18, Math.floor(lw * 0.015))) : Math.max(18, Math.min(24, Math.floor(lw * 0.02)));
   const TER_W  = Math.max(40, Math.min(70, Math.floor(lw * 0.09)));
   const FIXED  = KG_W + NAME_W + ECO_W * 2;
-  const HOUR_W = isMobile ? Math.max(14, Math.floor((lw - FIXED) / HOURS.length)) : Math.max(12, Math.floor((lw - FIXED) / HOURS.length));
+  const HOUR_W = isMobile ? Math.max(10, Math.floor((lw - FIXED) / HOURS.length)) : Math.max(8, Math.floor((lw - FIXED) / HOURS.length));
 
   const cellFont = Math.max(10, Math.min(12, Math.floor(rowH * 0.17)));
   const nameFont = Math.max(10, Math.min(14, Math.floor(rowH * 0.22)));
