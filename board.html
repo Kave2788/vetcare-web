@@ -212,6 +212,11 @@
       border-radius: 18px 18px 0 0;
       padding: 16px 16px 24px; width: 100%; max-width: 480px;
     }
+    @media (orientation: landscape) and (max-height: 500px) {
+      .pick-sheet {
+        padding: 12px 12px 16px;
+      }
+    }
     .pick-handle {
       width: 36px; height: 4px; background: var(--border);
       border-radius: 2px; margin: 0 auto 14px;
@@ -233,6 +238,16 @@
     @media (max-width: 480px) {
       .pop-opts-grid {
         max-height: 35vh;
+      }
+    }
+    @media (orientation: landscape) and (max-height: 500px) {
+      .pop-opts-grid {
+        max-height: 30vh;
+      }
+    }
+    @media (orientation: landscape) and (max-height: 400px) {
+      .pop-opts-grid {
+        max-height: 25vh;
       }
     }
     .pop-opt {
