@@ -82,17 +82,12 @@
     /* Sticky prima colonna (name con kg) */
     .board th.col-name, .board td.td-name {
       position: sticky; left: 0; z-index: 2;
-      width: var(--name-w, 60px); min-width: var(--name-w, 60px);
+      width: var(--name-w, 80px); min-width: var(--name-w, 80px);
       background: var(--card);
     }
     .board td.td-name {
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      padding: 8px 3px;
-      transform: rotate(180deg);
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 2px;
+      padding: 6px 4px;
+      text-align: left;
     }
     .board thead th.col-name { z-index: 5; }
 
@@ -995,9 +990,9 @@ async function render() {
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
-        <div style="display:flex;flex-direction:column;gap:1px;overflow:hidden">
-          <span class="pname" style="padding:0 4px">${emoji} ${p.name}</span>
-          <span style="font-size:8px;color:var(--text3);padding:0 4px">${kg} kg</span>
+        <div class="name-info">
+          <div class="pname" style="padding:0 4px">${emoji} ${p.name}</div>
+          <div style="font-size:8px;color:var(--text3);padding:0 4px">${kg} kg</div>
         </div>
       </div></td>`;
 
