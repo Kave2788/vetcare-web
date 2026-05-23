@@ -1006,21 +1006,43 @@ async function render() {
       return vitalsRow;
     }
 
-    // Righe farmaci — nome solo sulla prima
-    const drugRows = drugs.map((t, i) => {
-      const ci      = i % 6;
-      const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
-      const drugTag = `<td class="td-ter"><span class="drug-tag dc${ci}">${t.drug}</span></td>`;
-      const cells   = HOURS.map(h => buildDrugCellHTML(ci, freqSet.has(h), p.id, i, h, t.drug)).join('');
-      const name_col = i === 0 ? nameCell : '';
-      return `<tr class="${rowClass} drug-row">${name_col}${cells}${drugTag}</tr>`;
-    }).join('');
+    // Righe farmaci — una sola riga con tutti i farmaci raggruppati per ora
+    let drugRow = '';
+    if (drugs.length > 0) {
+      // Raggruppa farmaci per ora
+      const drugsByHour = {};
+      HOURS.forEach(h => { drugsByHour[h] = []; });
+      drugs.forEach((t, i) => {
+        const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+        freqSet.forEach(h => {
+          drugsByHour[h].push({ drug: t.drug, idx: i, ci: i % 6 });
+        });
+      });
+
+      // Crea celle orarie con tutti i farmaci per ora
+      const drugCells = HOURS.map(h => {
+        const drugsForHour = drugsByHour[h];
+        if (drugsForHour.length === 0) {
+          return `<td class="td-hour"><div class="cell-inner"></div></td>`;
+        }
+        const drugs_html = drugsForHour.map(d => {
+          const doneKey = `done_${todayKey()}_${p.id}_${d.idx}_${h}`;
+          const isDone = doneSet.has(doneKey);
+          const xClass = isDone ? `cell-drug dc${d.ci} done` : `cell-drug dc${d.ci}`;
+          const bg = isDone ? 'background:#EF444418' : 'background:#F59E0B09';
+          return `<span class="${xClass}" data-done-key="${doneKey}" style="display:block">${d.drug}</span>`;
+        }).join('');
+        return `<td class="td-hour td-drug-x" style="position:relative"><div class="cell-inner">${drugs_html}</div></td>`;
+      }).join('');
+
+      drugRow = `<tr class="${rowClass} drug-row">${nameCell}${drugCells}</tr>`;
+    }
 
     // Righe Eco e Prelievi
     const ecoRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Eco</td>${HOURS.map(h => `<td class="td-check" data-pick="eco_${p.id}_${h}" data-type="eco"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
     const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => `<td class="td-check" data-pick="prev_${p.id}_${h}" data-type="prev"><div class="check-cell"><span class="check-empty">+</span></div></td>`).join('')}</tr>`;
 
-    return drugRows + ecoRow + prevRow;
+    return drugRow + ecoRow + prevRow;
   }).join('');
 
   root.innerHTML = `
@@ -1047,6 +1069,25 @@ async function render() {
         const vital = vitalsMap[td.dataset.key];
         const hasData = vital && vitalToLines(vital).length > 0;
         td.style.background = hasData ? 'var(--accent-dim)' : '#F59E0B09';
+      } else {
+        doneSet.add(key);
+        span.classList.add('done');
+        td.style.background = '#EF444418';
+      }
+      saveDone();
+    });
+  });
+
+  // Click su farmaci in riga unica
+  root.querySelectorAll('.td-drug-x [data-done-key]').forEach(span => {
+    span.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = span.dataset.doneKey;
+      const td  = span.closest('td');
+      if (doneSet.has(key)) {
+        doneSet.delete(key);
+        span.classList.remove('done');
+        td.style.background = '';
       } else {
         doneSet.add(key);
         span.classList.add('done');
