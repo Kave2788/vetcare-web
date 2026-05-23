@@ -1,4 +1,4 @@
-const CACHE = 'vetcare-v19';
+const CACHE = 'vetcare-v20';
 const ASSETS = [
   '/vetcare-web/',
   '/vetcare-web/index.html',

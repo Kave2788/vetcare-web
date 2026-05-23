@@ -745,14 +745,8 @@ const sh = v => SHORT[v] || v || '';
 // Ordine di priorità visualizzazione vitali
 const VITAL_PRIORITY = [
   v => v.heart_rate  ? `Fc ${v.heart_rate}`  : null,
-  v => v.temperature ? `T ${v.temperature}`  : null,
   v => v.resp_rate   ? `Fr ${v.resp_rate}`   : null,
-  v => v.mucosae     ? `M ${sh(v.mucosae)}`  : null,
-  v => v.dehydration ? `I ${sh(v.dehydration)}` : null,
-  v => v.urine       ? `U ${sh(v.urine)}`   : null,
-  v => v.feces       ? `F ${sh(v.feces)}`   : null,
-  v => v.food_status ? `C ${sh(v.food_status)}` : null,
-  v => v.water_status? `A ${sh(v.water_status)}` : null,
+  v => v.temperature ? `T ${v.temperature}`  : null,
 ];
 
 function vitalToLines(v) {
