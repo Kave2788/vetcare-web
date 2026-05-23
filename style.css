@@ -104,7 +104,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .board-btn:active { opacity: .8; }
 
 /* ── Timer button ── */
-.timer-btn { position: fixed; bottom: calc(28px + env(safe-area-inset-bottom) + 70px); left: 50%; transform: translateX(-50%); width: 58px; height: 58px; border-radius: 50%; background: var(--accent); border: none; color: #fff; font-size: 24px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,180,166,.4); transition: opacity .15s; z-index: 20; }
+.timer-btn { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 58px; height: 58px; border-radius: 50%; background: var(--accent); border: none; color: #fff; font-size: 24px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(0,180,166,.4); transition: opacity .15s; z-index: 20; }
 .timer-btn:active { opacity: .8; }
 
 #timer-display { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; z-index: 100; width: 180px; height: 180px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 60px; font-weight: 800; align-items: center; justify-content: center; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
