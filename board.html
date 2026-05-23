@@ -1350,11 +1350,11 @@ async function render() {
   });
 
   root.querySelectorAll('.td-check').forEach(td => {
-    const key = td.dataset.pick;
+    const key = td.dataset.examKey;
     td.innerHTML = renderPickCell(key);
     td.addEventListener('click', e => {
       e.stopPropagation();
-      openPickPop(td.dataset.pick, td.dataset.type);
+      openPickPop(td.dataset.examKey, td.dataset.type);
     });
   });
 
