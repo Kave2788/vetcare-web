@@ -756,19 +756,22 @@ function buildVitalCellHTML(pid, h, ci, isScheduled, L) {
   const lines = vitalToLines(vital, L.maxLines);
   const hasData = lines.length > 0;
 
+  const doneKey0 = isScheduled ? `done_${todayKey()}_${pid}_0_${h}` : '';
+  const isDone0  = doneKey0 && doneSet.has(doneKey0);
+  const xClass0  = isDone0 ? `cell-drug dc${ci} done` : `cell-drug dc${ci}`;
+
   let inner = '';
   if (isScheduled && hasData) {
-    // X in cima, poi separatore sottile, poi vitali
-    inner = `<span class="cell-drug dc${ci}">✕</span>`
+    inner = `<span class="${xClass0}" data-done-key="${doneKey0}">✕</span>`
           + `<span class="cell-sep"></span>`
           + lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
   } else if (isScheduled) {
-    inner = `<span class="cell-drug dc${ci}">✕</span>`;
+    inner = `<span class="${xClass0}" data-done-key="${doneKey0}">✕</span>`;
   } else {
     inner = lines.map(l => `<span class="cell-vital">${l}</span>`).join('');
   }
 
-  let bg = hasData ? 'background:var(--accent-dim)' : (isScheduled ? 'background:#F59E0B09' : '');
+  let bg = isDone0 ? 'background:#EF444418' : (hasData ? 'background:var(--accent-dim)' : (isScheduled ? 'background:#F59E0B09' : ''));
   return `<td class="td-hour td-vital" data-key="${key}" data-pid="${pid}" data-hour="${h}" style="${bg}">
     <div class="cell-inner">${inner}</div>
   </td>`;
@@ -1017,7 +1020,28 @@ async function render() {
       <tbody>${rows}</tbody>
     </table>`;
 
-  // Solo le celle vitali (prima riga) sono tappabili
+  // X nella prima riga: toggle done (stopPropagation per non aprire modal)
+  root.querySelectorAll('.td-vital [data-done-key]').forEach(span => {
+    span.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = span.dataset.doneKey;
+      const td  = span.closest('td');
+      if (doneSet.has(key)) {
+        doneSet.delete(key);
+        span.classList.remove('done');
+        const vital = vitalsMap[td.dataset.key];
+        const hasData = vital && vitalToLines(vital, 99).length > 0;
+        td.style.background = hasData ? 'var(--accent-dim)' : '#F59E0B09';
+      } else {
+        doneSet.add(key);
+        span.classList.add('done');
+        td.style.background = '#EF444418';
+      }
+      saveDone();
+    });
+  });
+
+  // Celle vitali: apri modal al click sulla cella (non sulla X)
   root.querySelectorAll('.td-vital').forEach(td => {
     td.addEventListener('click', () => {
       openModal(td.dataset.pid, +td.dataset.hour, patNames[td.dataset.pid] || '');
