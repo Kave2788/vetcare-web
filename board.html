@@ -859,6 +859,7 @@ function updatePickSummary() {
 
 document.getElementById('pick-done').addEventListener('click', () => {
   saveChecks();
+  updateExamCells();
   pickPop.classList.remove('show');
   if (pickKey) {
     const td = document.querySelector(`[data-pick="${pickKey}"]`);
@@ -877,9 +878,21 @@ document.getElementById('exam-close').addEventListener('click', () => {
   document.getElementById('exam-modal').classList.remove('show');
 });
 
+// Aggiorna celle eco/prelievi quando vengono salvati i dati
+function updateExamCells() {
+  document.querySelectorAll('.exam-cell').forEach(cell => {
+    const hasData = checks[cell.dataset.examKey] && checks[cell.dataset.examKey].length > 0;
+    const span = cell.querySelector('.check-empty');
+    if (span) {
+      span.textContent = hasData ? '✅' : '+';
+    }
+  });
+}
+
 pickPop.addEventListener('click', e => {
   if (e.target === pickPop) {
     saveChecks();
+    updateExamCells();
     pickPop.classList.remove('show');
     if (pickKey) {
       const td = document.querySelector(`[data-pick="${pickKey}"]`);
