@@ -951,7 +951,7 @@ function computeLayout(nRows) {
 
   // Altezza riga: se le righe sono poche lascia crescere di più
   let rowH = Math.floor(avail / (nRows + 1));
-  rowH = Math.max(24, Math.min(42, rowH));
+  rowH = Math.max(18, Math.min(42, rowH));
 
   const isMobile = portrait;
   const KG_W   = isMobile ? Math.max(12, Math.min(14, Math.floor(lw * 0.02))) : Math.max(20, Math.min(26, Math.floor(lw * 0.03)));
