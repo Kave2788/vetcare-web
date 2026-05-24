@@ -105,17 +105,17 @@
 
       const fd = new FormData(e.target);
       const patient = {
-        name:        fd.get('name').trim(),
-        species:     fd.get('species'),
-        breed:       fd.get('breed').trim(),
-        age:         fd.get('age').trim(),
-        sex:         fd.get('sex'),
-        owner:       fd.get('owner').trim(),
-        owner_phone: fd.get('owner_phone').trim(),
-        food:        fd.get('food').trim(),
-        allergies:   fd.get('allergies').trim(),
-        reason:      fd.get('reason').trim(),
-        status:      fd.get('status'),
+        name:        fd.get('name')?.trim() || '',
+        species:     fd.get('species') || 'Cane',
+        breed:       fd.get('breed')?.trim() || null,
+        age:         fd.get('age')?.trim() || null,
+        sex:         fd.get('sex') || 'M',
+        owner:       fd.get('owner')?.trim() || null,
+        owner_phone: fd.get('owner_phone')?.trim() || null,
+        food:        fd.get('food')?.trim() || null,
+        allergies:   fd.get('allergies')?.trim() || null,
+        reason:      fd.get('reason')?.trim() || null,
+        status:      fd.get('status') || 'stable',
         admitted_at: new Date().toISOString(),
       };
 
@@ -123,6 +123,7 @@
         await addPatient(patient);
         window.location.href = 'index.html';
       } catch (err) {
+        console.error('Errore salvataggio:', err);
         toast('Errore: ' + err.message);
         btn.disabled = false;
         btn.textContent = 'Ammetti paziente';
