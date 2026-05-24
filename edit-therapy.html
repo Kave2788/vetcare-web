@@ -321,7 +321,8 @@
       setVal('notes', therapy.notes);
 
       const drug = drugs.find(d => d.nome.toLowerCase() === therapy.drug.toLowerCase());
-      if (drug) { selectedDrug = drug; showInfo(drug); calcDose(); }
+      if (drug) { selectedDrug = drug; showInfo(drug); }
+      calcDose();
     }
     init();
 
