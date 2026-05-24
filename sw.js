@@ -1,19 +1,20 @@
-const CACHE = 'vetcare-v22';
+const CACHE = 'vetcare-v23';
+const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/patient.html',
-  '/new-patient.html',
-  '/edit-patient.html',
-  '/add-vitals.html',
-  '/edit-vitals.html',
-  '/add-therapy.html',
-  '/edit-therapy.html',
-  '/style.css',
-  '/db.js',
-  '/board.html',
-  '/drugs.json',
-  '/diets.json'
+  basePath + '/',
+  basePath + '/index.html',
+  basePath + '/patient.html',
+  basePath + '/new-patient.html',
+  basePath + '/edit-patient.html',
+  basePath + '/add-vitals.html',
+  basePath + '/edit-vitals.html',
+  basePath + '/add-therapy.html',
+  basePath + '/edit-therapy.html',
+  basePath + '/style.css',
+  basePath + '/db.js',
+  basePath + '/board.html',
+  basePath + '/drugs.json',
+  basePath + '/diets.json'
 ];
 
 self.addEventListener('install', e => {
