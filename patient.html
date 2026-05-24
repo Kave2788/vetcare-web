@@ -32,13 +32,6 @@
   </style>
 </head>
 <body>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    });
-  }
-</script>
   <div class="topbar">
     <a class="back" href="index.html">Ricoverati</a>
     <h1 id="page-title">Scheda paziente</h1>
@@ -92,6 +85,12 @@
 
     let patient = null;
 
+    function escapeHtml(text) {
+      if (!text) return '';
+      const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
+      return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
     function toast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -127,15 +126,38 @@
     // ── Header ────────────────────────────────────────────────────────────────
     function renderHeader() {
       const color = STATUS_COLOR[patient.status];
-      document.getElementById('patient-header').innerHTML = `
-        <div class="patient-header" style="border-bottom-color:${color}55">
-          <div class="emoji">${SPECIES_EMOJI[patient.species] ?? '🐾'}</div>
-          <div class="info">
-            <div class="pname">${patient.name}</div>
-            <div class="psub">${patient.species}${patient.breed ? ' · ' + patient.breed : ''}</div>
-          </div>
-          <span class="badge ${patient.status}">${STATUS_LABEL[patient.status]}</span>
-        </div>`;
+      const div = document.createElement('div');
+      div.className = 'patient-header';
+      div.style.borderBottomColor = color + '55';
+
+      const emoji = document.createElement('div');
+      emoji.className = 'emoji';
+      emoji.textContent = SPECIES_EMOJI[patient.species] ?? '🐾';
+
+      const info = document.createElement('div');
+      info.className = 'info';
+
+      const pname = document.createElement('div');
+      pname.className = 'pname';
+      pname.textContent = patient.name;
+
+      const psub = document.createElement('div');
+      psub.className = 'psub';
+      psub.textContent = patient.species + (patient.breed ? ' · ' + patient.breed : '');
+
+      const badge = document.createElement('span');
+      badge.className = 'badge ' + patient.status;
+      badge.textContent = STATUS_LABEL[patient.status];
+
+      info.appendChild(pname);
+      info.appendChild(psub);
+      div.appendChild(emoji);
+      div.appendChild(info);
+      div.appendChild(badge);
+
+      const container = document.getElementById('patient-header');
+      container.innerHTML = '';
+      container.appendChild(div);
     }
 
     // ── Vitals ────────────────────────────────────────────────────────────────
@@ -206,10 +228,10 @@
           }
 
           const dietRow = patient.food
-            ? `<div class="data-row"><span class="lbl">Cibo</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.food}</span></div>`
+            ? `<div class="data-row"><span class="lbl">Cibo</span><span class="val" style="white-space:pre-wrap;text-align:right">${escapeHtml(patient.food)}</span></div>`
             : '';
           const allergyRow = patient.allergies
-            ? `<div class="data-row"><span class="lbl">Allergie</span><span class="val" style="white-space:pre-wrap;text-align:right">${patient.allergies}</span></div>`
+            ? `<div class="data-row"><span class="lbl">Allergie</span><span class="val" style="white-space:pre-wrap;text-align:right">${escapeHtml(patient.allergies)}</span></div>`
             : '';
 
           return `
@@ -226,27 +248,24 @@
                 ${enteralRow}
                 ${dietRow}
                 ${allergyRow}
-                ${v.notes ? `<div class="note">📝 ${v.notes}</div>` : ''}
+                ${v.notes ? `<div class="note">📝 ${escapeHtml(v.notes)}</div>` : ''}
               </div>
             </div>`;
           }).join('');
 
         el.innerHTML = patientSection + vitalsHTML + `<a class="fab" href="add-vitals.html?id=${id}">+</a>`;
 
-        // Collapse toggle
-        el.querySelectorAll('.vital-header').forEach(hdr => {
-          hdr.addEventListener('click', e => {
-            if (e.target.closest('.vital-del') || e.target.closest('a')) return;
+        // Event delegation for vitals (collapse toggle & delete)
+        el.addEventListener('click', e => {
+          const hdr = e.target.closest('.vital-header');
+          if (hdr && !e.target.closest('.vital-del') && !e.target.closest('a')) {
             hdr.closest('.vital-card').classList.toggle('open');
-          });
-        });
-
-        // Elimina rilevazione
-        el.querySelectorAll('.vital-del').forEach(btn => {
-          btn.addEventListener('click', e => {
+          }
+          const delBtn = e.target.closest('.vital-del');
+          if (delBtn) {
             e.stopPropagation();
-            const vid = btn.dataset.vid;
-            const card = btn.closest('.vital-card');
+            const vid = delBtn.dataset.vid;
+            const card = delBtn.closest('.vital-card');
             const ts = card.querySelector('.ts').textContent;
             showDialog('Elimina rilevazione', `Eliminare la rilevazione del ${ts}?`, [
               { label: 'Elimina', cls: 'btn-danger', action: async () => {
@@ -258,8 +277,8 @@
               }},
               { label: 'Annulla', cls: 'btn-ghost' }
             ]);
-          });
-        });
+          }
+        }, { passive: true });
 
         document.getElementById('status-select').onchange = async e => {
           const newStatus = e.target.value;
@@ -329,11 +348,11 @@
               <div class="tc-top">
                 <div class="tc-main">
                   <div class="tc-drug">
-                    ${t.drug}
+                    ${escapeHtml(t.drug)}
                     ${rxClass ? `<span class="badge-rx ${rxClass}">${rxShort}</span>` : ''}
                   </div>
                   <div class="tc-sub">${[doseStr, ROUTE_LABELS[t.route] ?? t.route, FREQ_LABELS[t.frequency] ?? t.frequency].filter(Boolean).join(' · ')}</div>
-                  ${t.notes ? `<div class="tc-note">📝 ${t.notes}</div>` : ''}
+                  ${t.notes ? `<div class="tc-note">📝 ${escapeHtml(t.notes)}</div>` : ''}
                 </div>
                 <div class="tc-actions">
                   ${drug ? `<button class="tc-info-btn" data-tid="${t.id}">ℹ info</button>` : ''}
@@ -350,21 +369,20 @@
           (stopped.length > 0 ? `<div class="group-label" style="margin-top:16px">Sospese (${stopped.length})</div>` + stopped.map(therapyCard).join('') : '') +
           `<a class="fab" href="add-therapy.html?id=${id}">+</a>`;
 
-        // Toggle info panel
-        el.querySelectorAll('.tc-info-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const panel = document.getElementById('tip-' + btn.dataset.tid);
+        // Event delegation for therapies
+        const timerMap = new Map();
+        el.addEventListener('click', e => {
+          const infoBtn = e.target.closest('.tc-info-btn');
+          if (infoBtn) {
+            const panel = document.getElementById('tip-' + infoBtn.dataset.tid);
             const open = panel.style.display === 'block';
             panel.style.display = open ? 'none' : 'block';
-            btn.textContent = open ? 'ℹ info' : '✕ chiudi';
-          });
-        });
-
-        // Stop
-        el.querySelectorAll('.therapy-stop').forEach(btn => {
-          btn.onclick = () => {
-            const t = therapies.find(x => x.id === btn.dataset.tid);
-            showDialog('Sospendi terapia', `Sospendere ${t.drug}?`, [
+            infoBtn.textContent = open ? 'ℹ info' : '✕ chiudi';
+          }
+          const stopBtn = e.target.closest('.therapy-stop');
+          if (stopBtn) {
+            const t = therapies.find(x => x.id === stopBtn.dataset.tid);
+            showDialog('Sospendi terapia', `Sospendere ${escapeHtml(t.drug)}?`, [
               { label: 'Sospendi', cls: 'btn-danger', action: async () => {
                 await stopTherapy(t.id);
                 toast('Terapia sospesa');
@@ -372,15 +390,14 @@
               }},
               { label: 'Annulla', cls: 'btn-ghost' }
             ]);
-          };
+          }
         });
 
-        // Long press elimina
-        el.querySelectorAll('.therapy-card').forEach(card => {
-          let timer;
-          const start = () => { timer = setTimeout(() => {
+        // Long press elimina (delegation)
+        const start = card => {
+          const timer = setTimeout(() => {
             const t = therapies.find(x => x.id === card.dataset.tid);
-            showDialog('Elimina terapia', `Eliminare ${t.drug} definitivamente?`, [
+            showDialog('Elimina terapia', `Eliminare ${escapeHtml(t.drug)} definitivamente?`, [
               { label: 'Elimina', cls: 'btn-danger', action: async () => {
                 await deleteTherapy(t.id);
                 toast('Terapia eliminata');
@@ -388,13 +405,33 @@
               }},
               { label: 'Annulla', cls: 'btn-ghost' }
             ]);
-          }, 600); };
-          const cancel = () => clearTimeout(timer);
-          card.addEventListener('touchstart', start, { passive: true });
-          card.addEventListener('touchend', cancel);
-          card.addEventListener('mousedown', start);
-          card.addEventListener('mouseup', cancel);
-          card.addEventListener('mouseleave', cancel);
+          }, 600);
+          timerMap.set(card, timer);
+        };
+        const cancel = card => {
+          const timer = timerMap.get(card);
+          if (timer) clearTimeout(timer);
+          timerMap.delete(card);
+        };
+        el.addEventListener('touchstart', e => {
+          const card = e.target.closest('.therapy-card');
+          if (card) start(card);
+        }, { passive: true });
+        el.addEventListener('touchend', e => {
+          const card = e.target.closest('.therapy-card');
+          if (card) cancel(card);
+        });
+        el.addEventListener('mousedown', e => {
+          const card = e.target.closest('.therapy-card');
+          if (card) start(card);
+        });
+        el.addEventListener('mouseup', e => {
+          const card = e.target.closest('.therapy-card');
+          if (card) cancel(card);
+        });
+        el.addEventListener('mouseleave', e => {
+          const card = e.target.closest('.therapy-card');
+          if (card) cancel(card);
         });
 
       } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }

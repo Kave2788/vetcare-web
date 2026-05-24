@@ -9,13 +9,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    });
-  }
-</script>
   <div class="topbar">
     <a class="back" id="back-link" href="#">Indietro</a>
     <h1>Modifica anagrafica</h1>
@@ -26,7 +19,7 @@
       <div class="section-label">Paziente</div>
       <div class="field">
         <label>Nome *</label>
-        <input name="name" placeholder="Es. Fido" required autocomplete="off">
+        <input name="name" placeholder="Es. Fido" required autocomplete="off" minlength="1" maxlength="100">
       </div>
       <div class="field">
         <label>Specie</label>
@@ -38,11 +31,11 @@
       <div class="row">
         <div class="field">
           <label>Razza</label>
-          <input name="breed" placeholder="Es. Labrador" autocomplete="off">
+          <input name="breed" placeholder="Es. Labrador" autocomplete="off" maxlength="50">
         </div>
         <div class="field">
           <label>Età</label>
-          <input name="age" placeholder="Es. 4a" autocomplete="off">
+          <input name="age" placeholder="Es. 4a" autocomplete="off" maxlength="20">
         </div>
       </div>
       <div class="field">
@@ -56,21 +49,21 @@
       <div class="section-label">Proprietario</div>
       <div class="field">
         <label>Nome proprietario</label>
-        <input name="owner" placeholder="Mario Rossi" autocomplete="off">
+        <input name="owner" placeholder="Mario Rossi" autocomplete="off" maxlength="100">
       </div>
       <div class="field">
         <label>Telefono</label>
-        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off">
+        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off" pattern="[0-9+\s\-()]*" maxlength="20">
       </div>
 
       <div class="section-label">Dieta e allergie</div>
       <div class="field">
         <label>Cibo</label>
-        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…"></textarea>
+        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…" maxlength="500"></textarea>
       </div>
       <div class="field">
         <label>Allergie</label>
-        <textarea name="allergies" placeholder="Es. pollame, nichel…"></textarea>
+        <textarea name="allergies" placeholder="Es. pollame, nichel…" maxlength="500"></textarea>
       </div>
 
       <div class="section-label">Ricovero</div>
@@ -80,7 +73,7 @@
       </div>
       <div class="field">
         <label>Motivo del ricovero</label>
-        <textarea name="reason" placeholder="Descrivi brevemente il motivo…"></textarea>
+        <textarea name="reason" placeholder="Descrivi brevemente il motivo…" maxlength="500"></textarea>
       </div>
 
       <div style="margin-top:16px">
@@ -121,7 +114,12 @@
         document.querySelector('textarea[name="reason"]').value = patient.reason || '';
         if (patient.admitted_at) {
           const dt = new Date(patient.admitted_at);
-          const localDt = dt.toISOString().slice(0,16);
+          const year = dt.getFullYear();
+          const month = String(dt.getMonth() + 1).padStart(2, '0');
+          const date = String(dt.getDate()).padStart(2, '0');
+          const hours = String(dt.getHours()).padStart(2, '0');
+          const mins = String(dt.getMinutes()).padStart(2, '0');
+          const localDt = `${year}-${month}-${date}T${hours}:${mins}`;
           document.querySelector('input[name="admitted_at"]').value = localDt;
         }
       } catch(e) {

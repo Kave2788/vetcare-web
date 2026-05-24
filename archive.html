@@ -11,13 +11,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    });
-  }
-</script>
   <div class="topbar">
     <a class="back-btn" href="index.html" title="Indietro">←</a>
     <h1>Archivio Pazienti</h1>

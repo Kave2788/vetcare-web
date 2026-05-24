@@ -9,13 +9,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(reg => reg.unregister());
-    });
-  }
-</script>
   <div class="topbar">
     <a class="back" href="index.html">Indietro</a>
     <h1>Nuovo paziente</h1>
@@ -26,7 +19,7 @@
       <div class="section-label">Paziente</div>
       <div class="field">
         <label>Nome *</label>
-        <input name="name" placeholder="Es. Fido" required autocomplete="off">
+        <input name="name" placeholder="Es. Fido" required autocomplete="off" minlength="1" maxlength="100">
       </div>
       <div class="field">
         <label>Specie</label>
@@ -38,11 +31,11 @@
       <div class="row">
         <div class="field">
           <label>Razza</label>
-          <input name="breed" placeholder="Es. Labrador" autocomplete="off">
+          <input name="breed" placeholder="Es. Labrador" autocomplete="off" maxlength="50">
         </div>
         <div class="field">
           <label>Età</label>
-          <input name="age" placeholder="Es. 4a" autocomplete="off">
+          <input name="age" placeholder="Es. 4a" autocomplete="off" maxlength="20">
         </div>
       </div>
       <div class="field">
@@ -60,23 +53,23 @@
       </div>
       <div class="field">
         <label>Telefono</label>
-        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off">
+        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off" pattern="[0-9+\s\-()]*" maxlength="20">
       </div>
 
       <div class="section-label">Dieta e allergie</div>
       <div class="field">
         <label>Cibo</label>
-        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…"></textarea>
+        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…" maxlength="500"></textarea>
       </div>
       <div class="field">
         <label>Allergie</label>
-        <textarea name="allergies" placeholder="Es. pollame, nichel…"></textarea>
+        <textarea name="allergies" placeholder="Es. pollame, nichel…" maxlength="500"></textarea>
       </div>
 
       <div class="section-label">Ricovero</div>
       <div class="field">
         <label>Motivo del ricovero</label>
-        <textarea name="reason" placeholder="Descrivi brevemente il motivo…"></textarea>
+        <textarea name="reason" placeholder="Descrivi brevemente il motivo…" maxlength="500"></textarea>
       </div>
       <div class="field">
         <label>Stato iniziale</label>
