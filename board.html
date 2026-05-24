@@ -1178,14 +1178,19 @@ async function render() {
   root.innerHTML = '<div class="spinner"></div>';
 
   let patients;
-  try { patients = await loadPatients(); }
+  try {
+    patients = await loadPatients();
+    console.log('✅ Pazienti caricati:', patients.length, patients);
+  }
   catch(e) {
+    console.error('❌ Errore loadPatients:', e.message);
     root.innerHTML = `<div class="empty-board"><div class="et">Errore connessione</div><div class="eh">${e.message}</div></div>`;
     return;
   }
 
   patientsData = patients;
   const active = patients.filter(p => p.status !== 'discharged');
+  console.log('✅ Pazienti attivi:', active.length, active);
   if (active.length === 0) {
     root.innerHTML = `<div class="empty-board"><div class="ei">🐾</div><div class="et">Nessun paziente ricoverato</div></div>`;
     return;
