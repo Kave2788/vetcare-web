@@ -262,63 +262,64 @@
 
     // ── Calcolo dose ──────────────────────────────────────────────────────────
     function calcDose() {
-      if (!selectedDrug) return;
       const kg    = parseFloat(document.getElementById('calc-weight').value);
       const dose  = parseFloat(document.getElementById('dose-input').value);
       const unit  = document.getElementById('unit-select').value;
       const freq  = document.getElementById('freq-select').value;
       const box   = document.getElementById('dose-calc-box');
-      const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
-      const dbDose = selectedDrug.dosaggio?.[spKey];
-      const cls   = ageClass(ageMonths, patient?.species?.toLowerCase());
-      const isCritical = patient?.status === 'critical';
-      const drugNameLower = selectedDrug.nome.toLowerCase();
 
       const isPerKg = /\/kg$/.test(unit);
       const notes = [];
       let boxClass = 'ok';
-
-      // Avvertenze età
-      if (cls === 'pediatrico') {
-        if (PEDIATRIC_CI.some(d => drugNameLower.includes(d))) {
-          notes.push({ type:'danger', text:'⛔ Controindicato in animali in accrescimento (< 6 mesi).' });
-          boxClass = 'danger';
-        } else if (PEDIATRIC_RED.some(d => drugNameLower.includes(d))) {
-          notes.push({ type:'warn', text:'⚠️ Pediatrico: valutare riduzione del 25–30% della dose e monitoraggio stretto.' });
-          boxClass = 'warn';
-        } else {
-          notes.push({ type:'warn', text:'⚠️ Animale < 6 mesi: verificare sicurezza del farmaco in questa fascia d\'età.' });
-          if (boxClass === 'ok') boxClass = 'warn';
-        }
-      } else if (cls === 'geriatrico') {
-        if (GERIATRIC_RED.some(d => drugNameLower.includes(d))) {
-          notes.push({ type:'warn', text:'⚠️ Geriatrico: considerare riduzione del 20–25% e monitoraggio renale/epatico.' });
-          if (boxClass === 'ok') boxClass = 'warn';
-        }
-      }
-
-      // Avvertenze stato critico
-      if (isCritical && CRITICAL_CAUTION.some(d => drugNameLower.includes(d))) {
-        notes.push({ type:'danger', text:'⛔ Paziente critico: questo farmaco è a rischio in caso di ipovolemia/ipotensione.' });
-        boxClass = 'danger';
-      }
-
-      // Range terapeutico
-      if (dbDose && dose) {
-        if (dose < dbDose.min) {
-          notes.push({ type:'warn', text:`⚠️ Dose inferiore al range (min ${dbDose.min} ${dbDose.unita}).` });
-          if (boxClass === 'ok') boxClass = 'warn';
-        } else if (dose > dbDose.max) {
-          notes.push({ type:'danger', text:`⛔ Dose superiore al range (max ${dbDose.max} ${dbDose.unita}).` });
-          boxClass = 'danger';
-        }
-      }
-
-      box.className = `dose-calc-box ${boxClass}`;
-
       let resultText = '';
       let detailText = '';
 
+      // Avvertenze e range solo se il farmaco è selezionato
+      if (selectedDrug) {
+        const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
+        const dbDose = selectedDrug.dosaggio?.[spKey];
+        const cls   = ageClass(ageMonths, patient?.species?.toLowerCase());
+        const isCritical = patient?.status === 'critical';
+        const drugNameLower = selectedDrug.nome.toLowerCase();
+
+        // Avvertenze età
+        if (cls === 'pediatrico') {
+          if (PEDIATRIC_CI.some(d => drugNameLower.includes(d))) {
+            notes.push({ type:'danger', text:'⛔ Controindicato in animali in accrescimento (< 6 mesi).' });
+            boxClass = 'danger';
+          } else if (PEDIATRIC_RED.some(d => drugNameLower.includes(d))) {
+            notes.push({ type:'warn', text:'⚠️ Pediatrico: valutare riduzione del 25–30% della dose e monitoraggio stretto.' });
+            boxClass = 'warn';
+          } else {
+            notes.push({ type:'warn', text:'⚠️ Animale < 6 mesi: verificare sicurezza del farmaco in questa fascia d\'età.' });
+            if (boxClass === 'ok') boxClass = 'warn';
+          }
+        } else if (cls === 'geriatrico') {
+          if (GERIATRIC_RED.some(d => drugNameLower.includes(d))) {
+            notes.push({ type:'warn', text:'⚠️ Geriatrico: considerare riduzione del 20–25% e monitoraggio renale/epatico.' });
+            if (boxClass === 'ok') boxClass = 'warn';
+          }
+        }
+
+        // Avvertenze stato critico
+        if (isCritical && CRITICAL_CAUTION.some(d => drugNameLower.includes(d))) {
+          notes.push({ type:'danger', text:'⛔ Paziente critico: questo farmaco è a rischio in caso di ipovolemia/ipotensione.' });
+          boxClass = 'danger';
+        }
+
+        // Range terapeutico
+        if (dbDose && dose) {
+          if (dose < dbDose.min) {
+            notes.push({ type:'warn', text:`⚠️ Dose inferiore al range (min ${dbDose.min} ${dbDose.unita}).` });
+            if (boxClass === 'ok') boxClass = 'warn';
+          } else if (dose > dbDose.max) {
+            notes.push({ type:'danger', text:`⛔ Dose superiore al range (max ${dbDose.max} ${dbDose.unita}).` });
+            boxClass = 'danger';
+          }
+        }
+      }
+
+      // Calcolo dose (con o senza farmaco selezionato)
       if (isPerKg && kg > 0 && dose > 0) {
         const total = +(dose * kg).toFixed(3);
         const baseUnit = unit.replace('/kg','');
@@ -332,7 +333,7 @@
         detailText = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
       }
 
-      // Calcolo ml/h per dosi in ml
+      // Calcolo ml/h per dosi in ml (anche senza farmaco selezionato)
       if (dose > 0 && unit.includes('ml')) {
         const freqMap = { mattina:2, sera:2, sid:1, bid:2, tid:3, qid:4, q8h:3, q6h:4 };
         const timesPerDay = freqMap[freq];
@@ -344,14 +345,15 @@
         }
       }
 
+      box.className = `dose-calc-box ${boxClass}`;
       document.getElementById('dcb-result').textContent = resultText;
       document.getElementById('dcb-detail').textContent = detailText;
-
       document.getElementById('dcb-notes').innerHTML = notes.map(n =>
         `<div class="${n.type === 'danger' ? 'dcb-danger' : 'dcb-note'}">${n.text}</div>`
       ).join('');
 
-      box.style.display = 'block';
+      if (resultText) box.style.display = 'block';
+      else box.style.display = 'none';
     }
 
     document.getElementById('calc-weight').addEventListener('input', calcDose);
