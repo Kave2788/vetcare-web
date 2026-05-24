@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Modifica anagrafica — VetCare</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" id="back-link" href="#">Indietro</a>
+    <h1>Modifica anagrafica</h1>
+  </div>
+
+  <div class="page">
+    <form id="form">
+      <div class="section-label">Paziente</div>
+      <div class="field">
+        <label>Nome *</label>
+        <input name="name" placeholder="Es. Fido" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Specie</label>
+        <select name="species">
+          <option value="Cane">🐕 Cane</option>
+          <option value="Gatto">🐈 Gatto</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Razza</label>
+          <input name="breed" placeholder="Es. Labrador" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Età</label>
+          <input name="age" placeholder="Es. 4a" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label>Sesso</label>
+        <select name="sex">
+          <option value="M">Maschio</option>
+          <option value="F">Femmina</option>
+        </select>
+      </div>
+
+      <div class="section-label">Proprietario</div>
+      <div class="field">
+        <label>Nome proprietario</label>
+        <input name="owner" placeholder="Mario Rossi" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Telefono</label>
+        <input name="owner_phone" type="tel" placeholder="+39 333 0000000" autocomplete="off">
+      </div>
+
+      <div class="section-label">Dieta e allergie</div>
+      <div class="field">
+        <label>Cibo</label>
+        <textarea name="food" placeholder="Es. crocchette Royal Canin, umido…"></textarea>
+      </div>
+      <div class="field">
+        <label>Allergie</label>
+        <textarea name="allergies" placeholder="Es. pollame, nichel…"></textarea>
+      </div>
+
+      <div class="section-label">Ricovero</div>
+      <div class="field">
+        <label>Motivo del ricovero</label>
+        <textarea name="reason" placeholder="Descrivi brevemente il motivo…"></textarea>
+      </div>
+
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary" id="submit-btn">Salva modifiche</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { loadPatient, updatePatientFields } from './db.js';
+
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) location.href = 'index.html';
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Carica i dati del paziente e popola il form
+    async function loadForm() {
+      try {
+        const patient = await loadPatient(id);
+        document.getElementById('back-link').href = `patient.html?id=${id}`;
+        document.querySelector('input[name="name"]').value = patient.name || '';
+        document.querySelector('select[name="species"]').value = patient.species || 'Cane';
+        document.querySelector('input[name="breed"]').value = patient.breed || '';
+        document.querySelector('input[name="age"]').value = patient.age || '';
+        document.querySelector('select[name="sex"]').value = patient.sex || 'M';
+        document.querySelector('input[name="owner"]').value = patient.owner || '';
+        document.querySelector('input[name="owner_phone"]').value = patient.owner_phone || '';
+        document.querySelector('textarea[name="food"]').value = patient.food || '';
+        document.querySelector('textarea[name="allergies"]').value = patient.allergies || '';
+        document.querySelector('textarea[name="reason"]').value = patient.reason || '';
+      } catch(e) {
+        toast('Errore nel caricamento: ' + e.message);
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio…';
+
+      const fd = new FormData(e.target);
+      const updates = {
+        name:        fd.get('name').trim(),
+        species:     fd.get('species'),
+        breed:       fd.get('breed').trim(),
+        age:         fd.get('age').trim(),
+        sex:         fd.get('sex'),
+        owner:       fd.get('owner').trim(),
+        owner_phone: fd.get('owner_phone').trim(),
+        food:        fd.get('food').trim(),
+        allergies:   fd.get('allergies').trim(),
+        reason:      fd.get('reason').trim(),
+      };
+
+      try {
+        await updatePatientFields(id, updates);
+        window.location.href = `patient.html?id=${id}`;
+      } catch (err) {
+        toast('Errore: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Salva modifiche';
+      }
+    });
+
+    loadForm();
+  </script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

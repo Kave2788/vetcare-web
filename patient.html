@@ -408,7 +408,10 @@
       ];
 
       el.innerHTML = `
-        <div class="section-label">Dati anagrafici</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="section-label">Dati anagrafici</div>
+          <a href="edit-patient.html?id=${id}" style="font-size:16px;text-decoration:none;opacity:0.5">✏️</a>
+        </div>
         <div class="card">
           ${rows.map(([l,v]) => `<div class="data-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>`).join('')}
         </div>`;
