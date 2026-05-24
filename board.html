@@ -422,6 +422,14 @@
   </style>
 </head>
 <body>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister());
+    });
+  }
+</script>
+
 <div id="page-wrap">
   <div class="topbar">
     <a class="back" href="index.html">Indietro</a>

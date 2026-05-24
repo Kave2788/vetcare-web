@@ -53,6 +53,13 @@
   </style>
 </head>
 <body>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister());
+    });
+  }
+</script>
   <div class="topbar">
     <a class="back" id="back-link" href="#">Indietro</a>
     <h1>Nuova terapia</h1>

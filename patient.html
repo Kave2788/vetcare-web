@@ -32,6 +32,13 @@
   </style>
 </head>
 <body>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister());
+    });
+  }
+</script>
   <div class="topbar">
     <a class="back" href="index.html">Ricoverati</a>
     <h1 id="page-title">Scheda paziente</h1>

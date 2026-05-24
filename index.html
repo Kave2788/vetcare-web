@@ -11,6 +11,14 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => reg.unregister());
+      });
+    }
+  </script>
+
   <div class="topbar">
     <h1>VetCare — Ricoverati</h1>
     <a class="archive-btn" href="archive.html" title="Archivio">📁</a>
