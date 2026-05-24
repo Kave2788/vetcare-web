@@ -166,7 +166,7 @@ export const STATUS_COLOR = { stable: '#10B981', critical: '#EF4444', discharged
 export const SPECIES_EMOJI = { Cane: '🐕', Gatto: '🐈' };
 
 export const ROUTE_LABELS = { oral:'Orale', iv:'Endovenosa', im:'Intramuscolo', sc:'Sottocutanea', topical:'Topica', other:'Altra' };
-export const FREQ_LABELS   = { sid:'1×/die', bid:'2×/die', tid:'3×/die', qid:'4×/die', q8h:'Ogni 8 h', q6h:'Ogni 6 h', prn:'Al bisogno', once:'Dose unica' };
+export const FREQ_LABELS   = { mattina:'Mattina', sera:'Sera', sid:'1×/die', bid:'2×/die', tid:'3×/die', qid:'4×/die', q8h:'Ogni 8 h', q6h:'Ogni 6 h', prn:'Al bisogno', once:'Dose unica' };
 export const RESP_LABELS   = { eupnea:'Eupnea', dyspnea_insp:'Dispnea (inspiratoria)', dyspnea_esp:'Dispnea (espiratoria)', dyspnea_mixed:'Dispnea (mista)', dyspnea_restr:'Dispnea (pattern restrittivo)', dyspnea_obstr:'Dispnea (pattern ostruttivo)', orthopnea:'Ortopnea', tachypnea:'Tachipnea', bradypnea:'Bradipnea', polypnea:'Polipnea' };
 export const DEHYD_LABELS  = { lt5:'<5%', p5:'5%', p6:'6%', p7:'7%', p8:'8%', p9:'9%', p10:'10%' };
 export const SENS_LABELS   = { normale:'Normale', depresso:'Depresso', eccitato:'Eccitato' };

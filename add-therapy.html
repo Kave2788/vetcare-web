@@ -110,9 +110,10 @@
         <div class="field">
           <label>Unità</label>
           <select name="unit" id="unit-select">
+            <option value="ml">ml</option>
+            <option value="ml/kg">ml/kg</option>
             <option value="mg/kg">mg/kg</option>
             <option value="mg">mg</option>
-            <option value="ml">ml</option>
             <option value="mcg/kg">mcg/kg</option>
             <option value="mcg">mcg</option>
             <option value="UI/kg">UI/kg</option>
@@ -141,6 +142,8 @@
       <div class="field">
         <label>Frequenza</label>
         <select name="frequency" id="freq-select">
+          <option value="mattina">Mattina</option>
+          <option value="sera">Sera</option>
           <option value="sid">1×/die</option>
           <option value="bid" selected>2×/die</option>
           <option value="tid">3×/die</option>
@@ -263,6 +266,7 @@
       const kg    = parseFloat(document.getElementById('calc-weight').value);
       const dose  = parseFloat(document.getElementById('dose-input').value);
       const unit  = document.getElementById('unit-select').value;
+      const freq  = document.getElementById('freq-select').value;
       const box   = document.getElementById('dose-calc-box');
       const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
       const dbDose = selectedDrug.dosaggio?.[spKey];
@@ -312,18 +316,36 @@
 
       box.className = `dose-calc-box ${boxClass}`;
 
+      let resultText = '';
+      let detailText = '';
+
       if (isPerKg && kg > 0 && dose > 0) {
         const total = +(dose * kg).toFixed(3);
         const baseUnit = unit.replace('/kg','');
-        document.getElementById('dcb-result').textContent = `Dose totale: ${total} ${baseUnit}`;
-        document.getElementById('dcb-detail').textContent = `${dose} ${unit} × ${kg} kg`;
+        resultText = `Dose totale: ${total} ${baseUnit}`;
+        detailText = `${dose} ${unit} × ${kg} kg`;
       } else if (dose > 0) {
-        document.getElementById('dcb-result').textContent = `Dose: ${dose} ${unit}`;
-        document.getElementById('dcb-detail').textContent = isPerKg && !kg ? 'Inserisci il peso per calcolare il totale' : '';
+        resultText = `Dose: ${dose} ${unit}`;
+        detailText = isPerKg && !kg ? 'Inserisci il peso per calcolare il totale' : '';
       } else {
-        document.getElementById('dcb-result').textContent = '';
-        document.getElementById('dcb-detail').textContent = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
+        resultText = '';
+        detailText = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
       }
+
+      // Calcolo ml/h per dosi in ml
+      if (dose > 0 && unit.includes('ml')) {
+        const freqMap = { mattina:2, sera:2, sid:1, bid:2, tid:3, qid:4, q8h:3, q6h:4 };
+        const timesPerDay = freqMap[freq];
+        if (timesPerDay) {
+          const dailyTotal = dose * timesPerDay;
+          const mlPerHour = +(dailyTotal / 24).toFixed(2);
+          if (resultText) resultText += ` → ${mlPerHour} ml/h`;
+          else resultText = `${mlPerHour} ml/h`;
+        }
+      }
+
+      document.getElementById('dcb-result').textContent = resultText;
+      document.getElementById('dcb-detail').textContent = detailText;
 
       document.getElementById('dcb-notes').innerHTML = notes.map(n =>
         `<div class="${n.type === 'danger' ? 'dcb-danger' : 'dcb-note'}">${n.text}</div>`
@@ -335,6 +357,7 @@
     document.getElementById('calc-weight').addEventListener('input', calcDose);
     document.getElementById('dose-input').addEventListener('input', calcDose);
     document.getElementById('unit-select').addEventListener('change', calcDose);
+    document.getElementById('freq-select').addEventListener('change', calcDose);
 
     // ── Autocomplete ──────────────────────────────────────────────────────────
     const input   = document.getElementById('drug-input');

@@ -107,9 +107,10 @@
         <div class="field">
           <label>Unità</label>
           <select name="unit" id="unit-select">
+            <option value="ml">ml</option>
+            <option value="ml/kg">ml/kg</option>
             <option value="mg/kg">mg/kg</option>
             <option value="mg">mg</option>
-            <option value="ml">ml</option>
             <option value="mcg/kg">mcg/kg</option>
             <option value="mcg">mcg</option>
             <option value="UI/kg">UI/kg</option>
@@ -137,6 +138,8 @@
       <div class="field">
         <label>Frequenza</label>
         <select name="frequency" id="freq-select">
+          <option value="mattina">Mattina</option>
+          <option value="sera">Sera</option>
           <option value="sid">1×/die</option>
           <option value="bid">2×/die</option>
           <option value="tid">3×/die</option>
@@ -200,6 +203,7 @@
       const kg   = parseFloat(document.getElementById('calc-weight').value);
       const dose = parseFloat(document.getElementById('dose-input').value);
       const unit = document.getElementById('unit-select').value;
+      const freq = document.getElementById('freq-select').value;
       const box  = document.getElementById('dose-calc-box');
       const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
       const dbDose = selectedDrug.dosaggio?.[spKey];
@@ -221,16 +225,29 @@
         else if (dose > dbDose.max) { notes.push({type:'danger', text:`⛔ Sopra il range (max ${dbDose.max} ${dbDose.unita}).`}); boxClass='danger'; }
       }
       box.className = `dose-calc-box ${boxClass}`;
+      let result = '', detail = '';
       if (isPerKg && kg > 0 && dose > 0) {
-        document.getElementById('dcb-result').textContent = `Dose totale: ${+(dose*kg).toFixed(3)} ${unit.replace('/kg','')}`;
-        document.getElementById('dcb-detail').textContent = `${dose} ${unit} × ${kg} kg`;
+        result = `Dose totale: ${+(dose*kg).toFixed(3)} ${unit.replace('/kg','')}`;
+        detail = `${dose} ${unit} × ${kg} kg`;
       } else if (dose > 0) {
-        document.getElementById('dcb-result').textContent = `Dose: ${dose} ${unit}`;
-        document.getElementById('dcb-detail').textContent = isPerKg && !kg ? 'Inserisci il peso per calcolare il totale' : '';
+        result = `Dose: ${dose} ${unit}`;
+        detail = isPerKg && !kg ? 'Inserisci il peso per calcolare il totale' : '';
       } else {
-        document.getElementById('dcb-result').textContent = '';
-        document.getElementById('dcb-detail').textContent = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
+        result = '';
+        detail = isPerKg ? 'Inserisci dose e peso' : 'Inserisci la dose';
       }
+      if (dose > 0 && unit.includes('ml')) {
+        const freqMap = { mattina:2, sera:2, sid:1, bid:2, tid:3, qid:4, q8h:3, q6h:4 };
+        const timesPerDay = freqMap[freq];
+        if (timesPerDay) {
+          const dailyTotal = dose * timesPerDay;
+          const mlPerHour = +(dailyTotal / 24).toFixed(2);
+          if (result) result += ` → ${mlPerHour} ml/h`;
+          else result = `${mlPerHour} ml/h`;
+        }
+      }
+      document.getElementById('dcb-result').textContent = result;
+      document.getElementById('dcb-detail').textContent = detail;
       document.getElementById('dcb-notes').innerHTML = notes.map(n => `<div class="${n.type==='danger'?'dcb-danger':'dcb-note'}">${n.text}</div>`).join('');
       box.style.display = 'block';
     }
@@ -289,6 +306,7 @@
       document.getElementById('calc-weight').addEventListener('input', calcDose);
       document.getElementById('dose-input').addEventListener('input', calcDose);
       document.getElementById('unit-select').addEventListener('change', calcDose);
+      document.getElementById('freq-select').addEventListener('change', calcDose);
 
       // Carica terapia
       const therapies = await loadTherapies(pid);

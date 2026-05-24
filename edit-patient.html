@@ -68,6 +68,10 @@
 
       <div class="section-label">Ricovero</div>
       <div class="field">
+        <label>Data ricovero</label>
+        <input name="admitted_at" type="datetime-local">
+      </div>
+      <div class="field">
         <label>Motivo del ricovero</label>
         <textarea name="reason" placeholder="Descrivi brevemente il motivo…"></textarea>
       </div>
@@ -108,6 +112,11 @@
         document.querySelector('textarea[name="food"]').value = patient.food || '';
         document.querySelector('textarea[name="allergies"]').value = patient.allergies || '';
         document.querySelector('textarea[name="reason"]').value = patient.reason || '';
+        if (patient.admitted_at) {
+          const dt = new Date(patient.admitted_at);
+          const localDt = dt.toISOString().slice(0,16);
+          document.querySelector('input[name="admitted_at"]').value = localDt;
+        }
       } catch(e) {
         toast('Errore nel caricamento: ' + e.message);
       }
@@ -132,6 +141,11 @@
         allergies:   fd.get('allergies').trim(),
         reason:      fd.get('reason').trim(),
       };
+
+      const admittedAt = fd.get('admitted_at');
+      if (admittedAt) {
+        updates.admitted_at = new Date(admittedAt).toISOString();
+      }
 
       try {
         await updatePatientFields(id, updates);
