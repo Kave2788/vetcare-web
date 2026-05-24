@@ -1,19 +1,19 @@
 const CACHE = 'vetcare-v22';
 const ASSETS = [
-  '/vetcare-web/',
-  '/vetcare-web/index.html',
-  '/vetcare-web/patient.html',
-  '/vetcare-web/new-patient.html',
-  '/vetcare-web/edit-patient.html',
-  '/vetcare-web/add-vitals.html',
-  '/vetcare-web/edit-vitals.html',
-  '/vetcare-web/add-therapy.html',
-  '/vetcare-web/edit-therapy.html',
-  '/vetcare-web/style.css',
-  '/vetcare-web/db.js',
-  '/vetcare-web/board.html',
-  '/vetcare-web/drugs.json',
-  '/vetcare-web/diets.json'
+  '/',
+  '/index.html',
+  '/patient.html',
+  '/new-patient.html',
+  '/edit-patient.html',
+  '/add-vitals.html',
+  '/edit-vitals.html',
+  '/add-therapy.html',
+  '/edit-therapy.html',
+  '/style.css',
+  '/db.js',
+  '/board.html',
+  '/drugs.json',
+  '/diets.json'
 ];
 
 self.addEventListener('install', e => {
