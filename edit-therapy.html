@@ -96,6 +96,12 @@
         <div id="dcb-notes"></div>
       </div>
 
+      <div class="dose-calc-box" id="ml-calc-box" style="display:none;">
+        <div class="dcb-result" id="ml-result"></div>
+        <div class="dcb-detail" id="ml-detail"></div>
+        <div id="ml-notes"></div>
+      </div>
+
       <div class="drug-info-box" id="drug-info"></div>
 
       <div class="section-label">Dosaggio</div>
@@ -174,7 +180,7 @@
     if (!pid || !tid) location.href = 'index.html';
     document.getElementById('back-link').href = `patient.html?id=${pid}`;
 
-    let drugs = [], patient = null, ageMonths = null, selectedDrug = null;
+    let drugs = [], medicinesDB = [], patient = null, ageMonths = null, selectedDrug = null;
 
     const PEDIATRIC_CI  = ['enrofloxacina','marbofloxacina','doxiciclina'];
     const PEDIATRIC_RED = ['meloxicam','carprofene','ketoprofene','furosemide'];
@@ -198,6 +204,53 @@
       if (species?.includes('gatt') ? months >= 120 : months >= 84) return 'geriatrico';
       return 'adulto';
     }
+
+    function findDrugInJson(drugName) {
+      return medicinesDB.find(m => m.nome.toLowerCase() === drugName.toLowerCase());
+    }
+
+    function calcMl() {
+      const kg = parseFloat(document.getElementById('calc-weight').value);
+      const drugName = document.getElementById('drug-input').value.trim();
+      const mlBox = document.getElementById('ml-calc-box');
+
+      if (!drugName || kg <= 0) {
+        mlBox.style.display = 'none';
+        return;
+      }
+
+      const medicine = findDrugInJson(drugName);
+      if (!medicine) {
+        mlBox.style.display = 'none';
+        return;
+      }
+
+      if (!medicine.calcolabile || !medicine.concentrazione_mg_ml) {
+        document.getElementById('ml-result').textContent = '⚠️ Concentrazione non disponibile';
+        document.getElementById('ml-detail').textContent = 'Verifica manualmente il flacone per il calcolo dei ml';
+        document.getElementById('ml-notes').innerHTML = '';
+        mlBox.className = 'dose-calc-box warn';
+        mlBox.style.display = 'block';
+        return;
+      }
+
+      const dosageMgKg = medicine.dosaggio_mg_kg;
+      if (!dosageMgKg) {
+        mlBox.style.display = 'none';
+        return;
+      }
+
+      const doseTotalMg = dosageMgKg * kg;
+      const mlCalc = doseTotalMg / medicine.concentrazione_mg_ml;
+      const mlRounded = mlCalc.toFixed(2);
+
+      document.getElementById('ml-result').textContent = `Dose in ml: ${mlRounded} ml`;
+      document.getElementById('ml-detail').textContent = `(${dosageMgKg} mg/kg × ${kg} kg) ÷ ${medicine.concentrazione_mg_ml} mg/ml = ${mlRounded} ml`;
+      document.getElementById('ml-notes').innerHTML = '';
+      mlBox.className = 'dose-calc-box ok';
+      mlBox.style.display = 'block';
+    }
+
     function calcDose() {
       const kg   = parseFloat(document.getElementById('calc-weight').value);
       const dose = parseFloat(document.getElementById('dose-input').value);
@@ -276,10 +329,16 @@
     }
 
     async function init() {
-      [drugs, patient] = await Promise.all([
-        fetch('drugs.json').then(r => r.json()).catch(() => []),
-        loadPatient(pid)
+      const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
+      let medicinesJSON;
+      [medicinesJSON, patient] = await Promise.all([
+        fetch(basePath + '/vetcare_medicines.json').then(r => r.json()).catch(e => { console.error('JSON load error:', e); return {}; }),
+        loadPatient(pid).catch(e => { console.error('Patient load error:', e); return null; })
       ]);
+
+      drugs = medicinesJSON.medicines || [];
+      medicinesDB = drugs;
+      console.log('Medicines loaded:', drugs.length, drugs.length > 0 ? 'OK' : 'EMPTY');
 
       // Età e stato
       ageMonths = parseAgeMonths(patient.age);
@@ -308,7 +367,7 @@
         }
       } catch {}
 
-      document.getElementById('calc-weight').addEventListener('input', calcDose);
+      document.getElementById('calc-weight').addEventListener('input', () => { calcDose(); calcMl(); });
       document.getElementById('dose-input').addEventListener('input', calcDose);
       document.getElementById('unit-select').addEventListener('change', calcDose);
       document.getElementById('freq-select').addEventListener('change', calcDose);
@@ -328,6 +387,7 @@
       const drug = drugs.find(d => d.nome.toLowerCase() === therapy.drug.toLowerCase());
       if (drug) { selectedDrug = drug; showInfo(drug); }
       calcDose();
+      calcMl();
     }
     init();
 
@@ -342,10 +402,16 @@
       const q = input.value.trim().toLowerCase();
       if (q.length < 2) { sugg.style.display = 'none'; return; }
 
+      if (!drugs || drugs.length === 0) {
+        console.warn('drugs array is empty or not loaded');
+        sugg.style.display = 'none';
+        return;
+      }
+
       const matches = drugs.filter(d =>
         d.nome.toLowerCase().includes(q) ||
-        d.principio_attivo.toLowerCase().includes(q) ||
-        d.categoria.toLowerCase().includes(q)
+        (d.principio_attivo && d.principio_attivo.toLowerCase().includes(q)) ||
+        (d.categoria && d.categoria.toLowerCase().includes(q))
       ).slice(0, 10);
 
       if (!matches.length) { sugg.style.display = 'none'; return; }
@@ -354,9 +420,10 @@
       sugg.innerHTML = matches.map((d, i) => {
         const rxClass = RX_CLASS[d.prescrizione] || 'ricetta';
         const rxShort = RX_SHORT[d.prescrizione] || d.prescrizione;
+        const subText = (d.principio_attivo || '—') + ' · ' + (d.categoria || '—');
         return `<div class="drug-item" data-idx="${i}">
           <span class="di-name">${d.nome} <span class="badge-rx ${rxClass}">${rxShort}</span></span>
-          <span class="di-sub">${d.principio_attivo} · ${d.categoria}</span>
+          <span class="di-sub">${subText}</span>
         </div>`;
       }).join('');
       sugg._matches = matches;
@@ -389,36 +456,48 @@
       fillForm(drug);
       showInfo(drug);
       calcDose();
+      calcMl();
     }
 
     function fillForm(drug) {
-      const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
-      const dose  = drug.dosaggio?.[spKey];
-      if (!dose) return;
-      document.getElementById('dose-input').value = dose.min;
-      const unitSel = document.getElementById('unit-select');
-      for (let o of unitSel.options) { if (o.value === dose.unita) { unitSel.value = dose.unita; break; } }
-      const via = dose.via?.[0];
-      if (via && ROUTE_MAP[via]) document.getElementById('route-select').value = ROUTE_MAP[via];
-      if (dose.frequenza && FREQ_MAP[dose.frequenza]) document.getElementById('freq-select').value = FREQ_MAP[dose.frequenza];
+      // Dosaggio
+      if (drug.dosaggio_mg_kg) {
+        document.getElementById('dose-input').value = drug.dosaggio_mg_kg;
+        document.getElementById('unit-select').value = 'mg/kg';
+      }
+
+      // Via di somministrazione
+      if (drug.via) {
+        const viaStr = drug.via.toLowerCase();
+        let selectedRoute = 'oral';
+        if (viaStr.includes('endoven')) selectedRoute = 'iv';
+        else if (viaStr.includes('intramuscolo') || viaStr.includes('intramuscolare') || viaStr.includes('im')) selectedRoute = 'im';
+        else if (viaStr.includes('sottocutan') || viaStr.includes('sc')) selectedRoute = 'sc';
+        else if (viaStr.includes('topica')) selectedRoute = 'topical';
+        document.getElementById('route-select').value = selectedRoute;
+      }
+
+      // Frequenza
+      if (drug.dosaggio_testo) {
+        const text = drug.dosaggio_testo.toUpperCase();
+        let freq = 'sid';
+        if (text.includes('BID') || text.includes('2X')) freq = 'bid';
+        else if (text.includes('TID') || text.includes('3X')) freq = 'tid';
+        else if (text.includes('QID') || text.includes('4X')) freq = 'qid';
+        else if (text.includes('OGNI 6') || text.includes('Q6')) freq = 'q6h';
+        else if (text.includes('OGNI 8') || text.includes('Q8')) freq = 'q8h';
+        else if (text.includes('AL BISOGNO') || text.includes('PRN')) freq = 'prn';
+        document.getElementById('freq-select').value = freq;
+      }
     }
 
     function showInfo(drug) {
-      const spKey = patient?.species?.toLowerCase().includes('gatt') ? 'gatto' : 'cane';
-      const dose  = drug.dosaggio?.[spKey];
-      const rxClass = RX_CLASS[drug.prescrizione] || 'ricetta';
-      const rxShort = RX_SHORT[drug.prescrizione] || drug.prescrizione;
-      const doseLabel = dose ? (dose.min === dose.max ? `${dose.min} ${dose.unita}` : `${dose.min}–${dose.max} ${dose.unita}`) : '—';
-      const vieLabel  = dose?.via?.join(', ') || '—';
       infoBox.innerHTML = `
-        <div class="dib-row"><span class="dib-label">Categoria</span><span class="dib-val">${drug.categoria}</span></div>
-        <div class="dib-row"><span class="dib-label">Principio attivo</span><span class="dib-val">${drug.principio_attivo}</span></div>
-        <div class="dib-row"><span class="dib-label">Prescrizione</span><span class="dib-val"><span class="badge-rx ${rxClass}">${rxShort}</span></span></div>
-        <div class="dib-row"><span class="dib-label">Specie</span><span class="dib-val">${drug.specie?.join(', ') || '—'}</span></div>
-        <div class="dib-row"><span class="dib-label">Dosaggio (${spKey})</span><span class="dib-val">${doseLabel}</span></div>
-        <div class="dib-row"><span class="dib-label">Vie</span><span class="dib-val">${vieLabel}</span></div>
-        ${drug.note_cliniche ? `<div class="dib-note">📋 ${drug.note_cliniche}</div>` : ''}
-        ${drug.avvertenze   ? `<div class="dib-warn">⚠️ ${drug.avvertenze}</div>`   : ''}
+        <div class="dib-row"><span class="dib-label">Categoria</span><span class="dib-val">${drug.categoria || '—'}</span></div>
+        <div class="dib-row"><span class="dib-label">Dosaggio</span><span class="dib-val">${drug.dosaggio_testo || '—'}</span></div>
+        <div class="dib-row"><span class="dib-label">Via</span><span class="dib-val">${drug.via || '—'}</span></div>
+        <div class="dib-row"><span class="dib-label">Specie</span><span class="dib-val">${drug.specie || '—'}</span></div>
+        ${drug.note ? `<div class="dib-note">📋 ${drug.note}</div>` : ''}
       `;
       infoBox.style.display = 'block';
     }

@@ -13,7 +13,7 @@ const ASSETS = [
   basePath + '/style.css',
   basePath + '/db.js',
   basePath + '/board.html',
-  basePath + '/drugs.json',
+  basePath + '/vetcare_medicines.json',
   basePath + '/diets.json'
 ];
 

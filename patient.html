@@ -296,7 +296,8 @@
 
     // ── Therapies ─────────────────────────────────────────────────────────────
     let drugsDB = [];
-    fetch('drugs.json').then(r => r.json()).then(d => { drugsDB = d; }).catch(() => {});
+    const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
+    fetch(basePath + '/vetcare_medicines.json').then(r => r.json()).then(d => { drugsDB = d.medicines || []; }).catch(() => {});
 
     const RX_CLASS = { 'Senza obbligo di prescrizione':'libre', 'Ricetta ripetibile':'ricetta', 'Ricetta in triplice copia non ripetibile':'triplice', 'Ricetta ministeriale':'ministeriale', 'Uso ospedaliero':'ministeriale' };
     const RX_SHORT = { 'Senza obbligo di prescrizione':'OTC', 'Ricetta ripetibile':'RR', 'Ricetta in triplice copia non ripetibile':'RNR', 'Ricetta ministeriale':'Stupefacente', 'Uso ospedaliero':'Osp.' };
