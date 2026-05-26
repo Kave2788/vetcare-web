@@ -1172,8 +1172,9 @@ async function renderPickSheet() {
 
   updatePickSummary();
 
-  document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
-    opt.addEventListener('click', async () => {
+  if (pickType !== 'eco') {
+    document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
+      opt.addEventListener('click', async () => {
       const k   = opt.dataset.k;
       const leaf = opt.dataset.leaf === '1';
       const hasSub = opt.dataset.hasSub === '1';
@@ -1197,8 +1198,9 @@ async function renderPickSheet() {
       if (pickSubCat && pickType === 'prev') {
         // Refresh macro badges richiede re-render (non facciamo nulla, l'utente vede il sub)
       }
+      });
     });
-  });
+  }
 }
 
 async function openPickPop(key, type) {
