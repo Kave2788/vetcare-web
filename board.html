@@ -1070,7 +1070,9 @@ async function openEcoForm(patientId, hour, ecoOpt) {
       findings: null,
       notes: null
     });
-    await renderPickSheet();
+    pickPop.classList.remove('show');
+    await render();
+    startRealtime();
     toast(`${ecoOpt.l} aggiunta`);
   } catch(err) {
     toast('Errore: ' + err.message);
@@ -1120,7 +1122,10 @@ async function renderPickSheet() {
           if (!confirm('Elimina questa ecografia?')) return;
           try {
             await deleteEcho(ecoId);
-            await renderPickSheet();
+            pickPop.classList.remove('show');
+            await render();
+            startRealtime();
+            toast('Ecografia eliminata');
           } catch(err) {
             toast('Errore: ' + err.message);
           }
