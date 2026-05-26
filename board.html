@@ -1107,7 +1107,10 @@ async function renderPickSheet() {
 
     // Inizializza checks[pickKey] con le eco attualmente nel database
     if (!checks[pickKey] || checks[pickKey].length === 0) {
-      checks[pickKey] = ECO_OPTS.filter(o => ecosMap[o.fullName?.toLowerCase()]).map(o => o.k);
+      checks[pickKey] = ECO_OPTS.filter(o => {
+        // Cerca sia fullName che label (per compatibilità con dati vecchi)
+        return ecosMap[o.fullName?.toLowerCase()] || ecosMap[o.l?.toLowerCase()];
+      }).map(o => o.k);
     }
     sel = checks[pickKey];
 
@@ -1224,12 +1227,15 @@ document.getElementById('pick-done').addEventListener('click', async () => {
     for (const ecoOpt of ecoOpts) {
       const optKey = ecoOpt.k;
       const fullNameLower = ecoOpt.fullName?.toLowerCase();
-      if (ecosMap[fullNameLower] && !currentSelection.includes(optKey)) {
+      const labelLower = ecoOpt.l?.toLowerCase();
+      const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
+      const ecoId = ecosIdMap[fullNameLower] || ecosIdMap[labelLower];
+
+      if (isInDb && !currentSelection.includes(optKey)) {
         // Elimina
-        const id = ecosIdMap[fullNameLower];
-        if (id) {
+        if (ecoId) {
           try {
-            await deleteEcho(id);
+            await deleteEcho(ecoId);
           } catch(e) {
             console.warn('Error deleting echo:', e);
           }
@@ -1242,7 +1248,10 @@ document.getElementById('pick-done').addEventListener('click', async () => {
       const ecoOpt = ecoOpts.find(o => o.k === optKey);
       if (!ecoOpt) continue;
       const fullNameLower = ecoOpt.fullName?.toLowerCase();
-      if (!ecosMap[fullNameLower]) {
+      const labelLower = ecoOpt.l?.toLowerCase();
+      const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
+
+      if (!isInDb) {
         // Aggiunge
         try {
           const d = new Date();
