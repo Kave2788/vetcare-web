@@ -1061,15 +1061,60 @@ function labelForKey(type, k) {
 let pickKey = null, pickType = null, pickSubCat = null;
 const pickPop = document.getElementById('pick-pop');
 
-function renderPickSheet() {
+async function renderPickSheet() {
   const sel = checks[pickKey] || [];
 
   if (pickType === 'eco') {
-    document.getElementById('pick-title').textContent = 'Ecografia';
-    document.getElementById('pick-opts').innerHTML = ECO_OPTS.map(o => `
+    document.getElementById('pick-title').textContent = 'Ecografie';
+
+    // Carica le eco registrate nel database per questa ora/paziente
+    const [, patientId, hour] = pickKey.split('_');
+    const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
+    const ecosByHour = echos ? echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour)) : [];
+
+    // Mostra le eco già registrate con bottone delete
+    let html = '';
+    if (ecosByHour.length > 0) {
+      html += '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:8px">ECOGRAFIE REGISTRATE</div>';
+      html += ecosByHour.map(echo => {
+        const abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase();
+        return `
+          <div class="pop-opt" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:6px">
+            <span style="flex:1;text-align:left">${echo.type || 'N/A'} <span style="color:var(--text3);font-size:11px">${abbr}</span></span>
+            <button class="eco-delete-btn" data-echo-id="${echo.id}" data-patient-id="${patientId}" data-hour="${hour}" style="width:32px;height:32px;border:none;border-radius:6px;background:#EF444418;color:#EF4444;cursor:pointer;font-weight:700;font-size:16px;padding:0;display:flex;align-items:center;justify-content:center">×</button>
+          </div>
+        `;
+      }).join('');
+      html += '</div>';
+    }
+
+    // Opzioni per aggiungere eco
+    html += '<div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:8px">AGGIUNGI</div>';
+    html += ECO_OPTS.map(o => `
       <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}" data-leaf="1">
         <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
       </div>`).join('');
+
+    document.getElementById('pick-opts').innerHTML = html;
+
+    // Event listener per bottoni delete
+    document.querySelectorAll('.eco-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm('Elimina questa ecografia?')) return;
+
+        try {
+          await deleteEcho(btn.dataset.echoId);
+          const patId = btn.dataset.patientId;
+          const h = parseInt(btn.dataset.hour);
+          // Ricarica il modal
+          await renderPickSheet();
+        } catch(err) {
+          toast('Errore: ' + err.message);
+        }
+      });
+    });
+
   } else if (!pickSubCat) {
     // Livello macro
     document.getElementById('pick-title').textContent = 'Prelievi';
@@ -1093,23 +1138,23 @@ function renderPickSheet() {
       <div class="pop-opt ${sel.includes(s.k) ? 'sel' : ''}" data-k="${s.k}" data-leaf="1">
         <span class="pop-chk">${sel.includes(s.k) ? '✓' : ''}</span>${s.l}
       </div>`).join('');
-    document.getElementById('pick-back').addEventListener('click', () => {
+    document.getElementById('pick-back').addEventListener('click', async () => {
       pickSubCat = null;
-      renderPickSheet();
+      await renderPickSheet();
     });
   }
 
   updatePickSummary();
 
   document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
-    opt.addEventListener('click', () => {
+    opt.addEventListener('click', async () => {
       const k   = opt.dataset.k;
       const leaf = opt.dataset.leaf === '1';
       const hasSub = opt.dataset.hasSub === '1';
 
       if (hasSub) {
         pickSubCat = k;
-        renderPickSheet();
+        await renderPickSheet();
         return;
       }
       if (!leaf) return;
@@ -1130,11 +1175,11 @@ function renderPickSheet() {
   });
 }
 
-function openPickPop(key, type) {
+async function openPickPop(key, type) {
   pickKey = key;
   pickType = type;
   pickSubCat = null;
-  renderPickSheet();
+  await renderPickSheet();
   pickPop.classList.add('show');
 }
 
@@ -1808,56 +1853,28 @@ async function render() {
   });
 
   // Click su abbreviazioni ecografie per completarle
-  // Click su abbreviazioni eco per completarle (rosso), long-press per eliminarle
+  // Click su abbreviazioni eco per flaggarle (rosso) o aprire modal per gestirle
   root.querySelectorAll('.eco-abbr-label').forEach(span => {
-    let longPressTimer = null;
-
-    span.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      longPressTimer = setTimeout(async () => {
-        const key = span.dataset.key;
-        if (!key) return;
-        const [ecoKey, abbr] = key.split('_').slice(-2);
-
-        if (!confirm(`Elimina questa ecografia (${abbr})?`)) return;
-
-        try {
-          // Trova e elimina l'eco dalla tabella echos
-          const [patientId, , echoType] = key.match(/eco_(\d+)_/) ? key.match(/eco_(\d+)_/) : [null];
-          // Carica l'eco corrispondente e eliminala
-          const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
-          if (!error && echos) {
-            const echoToDelete = echos.find(e =>
-              new Date(e.examined_at).getHours() === parseInt(key.split('_')[2]) &&
-              ECO_INITIALS_MAP[e.type?.toLowerCase()] === abbr
-            );
-            if (echoToDelete) {
-              await deleteEcho(echoToDelete.id);
-              delete checks[`eco_${patientId}_${key.split('_')[2]}`];
-              await render();
-              startRealtime();
-              toast('Ecografia eliminata');
-            }
-          }
-        } catch(e) {
-          toast('Errore: ' + e.message);
-        }
-      }, 500);
-    });
-
-    span.addEventListener('mouseup', () => {
-      clearTimeout(longPressTimer);
-    });
-
-    span.addEventListener('mouseleave', () => {
-      clearTimeout(longPressTimer);
-    });
-
     span.addEventListener('click', async (e) => {
       e.stopPropagation();
       const key = span.dataset.key;
       if (!key) return;
 
+      // Doppio click: apri il modal per gestire (eliminare) l'eco
+      // Click singolo: segna come fatto (rosso)
+      const lastClick = span.dataset.lastClick || 0;
+      const now = Date.now();
+      const isDoubleClick = now - lastClick < 300;
+      span.dataset.lastClick = now;
+
+      if (isDoubleClick) {
+        // Doppio click: apri modal per gestire
+        const ecoKey = `eco_${key.split('_')[1]}_${key.split('_')[2]}`;
+        openPickPop(ecoKey, 'eco');
+        return;
+      }
+
+      // Click singolo: segna come fatto
       if (!echoFlags[key]) echoFlags[key] = { done: false };
 
       if (echoFlags[key].done) {
@@ -1869,47 +1886,6 @@ async function render() {
         span.style.color = '#EF4444';
         span.style.textDecoration = 'underline';
       }
-    });
-
-    // Touch events per mobile
-    let touchTimer = null;
-    span.addEventListener('touchstart', (e) => {
-      e.stopPropagation();
-      touchTimer = setTimeout(async () => {
-        const key = span.dataset.key;
-        if (!key) return;
-
-        if (!confirm(`Elimina questa ecografia?`)) return;
-
-        try {
-          const patientId = key.split('_')[1];
-          const hour = parseInt(key.split('_')[2]);
-          const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
-          if (!error && echos) {
-            const echoToDelete = echos.find(e =>
-              new Date(e.examined_at).getHours() === hour &&
-              ECO_INITIALS_MAP[e.type?.toLowerCase()] === span.textContent
-            );
-            if (echoToDelete) {
-              await deleteEcho(echoToDelete.id);
-              delete checks[`eco_${patientId}_${hour}`];
-              await render();
-              startRealtime();
-              toast('Ecografia eliminata');
-            }
-          }
-        } catch(e) {
-          toast('Errore: ' + e.message);
-        }
-      }, 500);
-    });
-
-    span.addEventListener('touchend', () => {
-      clearTimeout(touchTimer);
-    });
-
-    span.addEventListener('touchcancel', () => {
-      clearTimeout(touchTimer);
     });
   });
 }
