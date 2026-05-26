@@ -1083,7 +1083,7 @@ let pickKey = null, pickType = null, pickSubCat = null, pickEcosMap = null;
 const pickPop = document.getElementById('pick-pop');
 
 async function renderPickSheet() {
-  const sel = checks[pickKey] || [];
+  let sel = checks[pickKey] || [];
 
   if (pickType === 'eco') {
     document.getElementById('pick-title').textContent = 'Ecografie';
@@ -1895,15 +1895,15 @@ async function render() {
 
     // Click su cella eco per aprire il picker
     if (pickKey?.startsWith('eco_')) {
-      td.addEventListener('click', e => {
+      td.addEventListener('click', async (e) => {
         e.stopPropagation();
-        openPickPop(pickKey, 'eco');
+        await openPickPop(pickKey, 'eco');
       });
     } else if (examKey) {
       // Click su cella prelievi
-      td.addEventListener('click', e => {
+      td.addEventListener('click', async (e) => {
         e.stopPropagation();
-        openPickPop(examKey, td.dataset.type);
+        await openPickPop(examKey, td.dataset.type);
       });
     }
   });
