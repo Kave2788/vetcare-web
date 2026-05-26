@@ -1516,7 +1516,7 @@ function updateDrugCellUI(pid, hour) {
   } else {
     cell.style.removeProperty('background');
   }
-  cell.querySelector('.cell-inner').innerHTML = `<span style="font-size:var(--cell-font);font-weight:700">${doneCount}/${drugsForHour.length}</span>`;
+  cell.querySelector('.cell-inner').innerHTML = `<span style="font-size:calc(var(--cell-font) * 1.3);font-weight:700">${doneCount}/${drugsForHour.length}</span>`;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -1800,7 +1800,7 @@ async function render() {
           return `<td class="td-hour" style="position:relative"><div class="cell-inner" style="display:flex;align-items:center;justify-content:center"><span class="td-drug-add-btn check-empty" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer">+</span></div></td>`;
         }
 
-        return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:var(--cell-font);font-weight:700">${drugCount}</span></div></td>`;
+        return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:calc(var(--cell-font) * 1.3);font-weight:700">${drugCount}</span></div></td>`;
       }).join('');
 
       const therapyLabel = `<td class="td-label" style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Terapie</td>`;
