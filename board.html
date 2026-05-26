@@ -1105,13 +1105,11 @@ async function renderPickSheet() {
       ecosIdMap[key] = e.id;
     });
 
-    // Inizializza checks[pickKey] con le eco attualmente nel database
-    if (!checks[pickKey] || checks[pickKey].length === 0) {
-      checks[pickKey] = ECO_OPTS.filter(o => {
-        // Cerca sia fullName che label (per compatibilità con dati vecchi)
-        return ecosMap[o.fullName?.toLowerCase()] || ecosMap[o.l?.toLowerCase()];
-      }).map(o => o.k);
-    }
+    // SEMPRE reinizializza checks[pickKey] dalle eco nel database
+    checks[pickKey] = ECO_OPTS.filter(o => {
+      // Cerca sia fullName che label (per compatibilità con dati vecchi)
+      return ecosMap[o.fullName?.toLowerCase()] || ecosMap[o.l?.toLowerCase()];
+    }).map(o => o.k);
     sel = checks[pickKey];
 
     // Salva info per pick-done (con ECO_OPTS per il mapping)
