@@ -950,7 +950,10 @@ function hourToISO(h) {
 
 // ── ECO / PRELIEVI multi-select ───────────────────────────────────────────────
 
-const ECO_OPTS = [{ k:'add', l:'Addome' }, { k:'card', l:'Cardio' }];
+const ECO_OPTS = [
+  { k:'add', l:'Addome', fullName:'Addominale' },
+  { k:'card', l:'Cardio', fullName:'Cardiaca' }
+];
 const ECO_INITIALS_MAP = {
   'addominale': 'A', 'Addominale': 'A', 'addome': 'A', 'add': 'A', 'abd': 'A',
   'cardiaca': 'C', 'Cardiaca': 'C', 'cardio': 'C', 'card': 'C',
@@ -1093,7 +1096,7 @@ async function renderPickSheet() {
     const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
     const ecosByHour = echos ? echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour)) : [];
 
-    // Crea mappe per le eco registrate
+    // Crea mappe per le eco registrate basate sul fullName
     const ecosMap = {};
     const ecosIdMap = {};
     ecosByHour.forEach(e => {
@@ -1104,12 +1107,12 @@ async function renderPickSheet() {
 
     // Inizializza checks[pickKey] con le eco attualmente nel database
     if (!checks[pickKey] || checks[pickKey].length === 0) {
-      checks[pickKey] = ECO_OPTS.filter(o => ecosMap[o.k?.toLowerCase()]).map(o => o.k);
+      checks[pickKey] = ECO_OPTS.filter(o => ecosMap[o.fullName?.toLowerCase()]).map(o => o.k);
     }
     sel = checks[pickKey];
 
-    // Salva info per pick-done
-    pickEcosMap = { patientId, hour, ecosMap, ecosIdMap };
+    // Salva info per pick-done (con ECO_OPTS per il mapping)
+    pickEcosMap = { patientId, hour, ecosMap, ecosIdMap, ecoOpts: ECO_OPTS };
 
     // Mostra le opzioni eco con flag basato su checks[pickKey]
     document.getElementById('pick-opts').innerHTML = ECO_OPTS.map(o => {
@@ -1214,15 +1217,16 @@ function updatePickSummary() {
 document.getElementById('pick-done').addEventListener('click', async () => {
   // Se è un modal per eco, elabora add/delete prima di salvare
   if (pickType === 'eco' && pickEcosMap) {
-    const { patientId, hour, ecosMap, ecosIdMap } = pickEcosMap;
+    const { patientId, hour, ecosMap, ecosIdMap, ecoOpts } = pickEcosMap;
     const currentSelection = checks[pickKey] || [];
-    const ecoOptKeys = ECO_OPTS.map(o => o.k);
 
     // Trova le eco da eliminare (erano nel DB, non sono più selezionate)
-    for (const optKey of ecoOptKeys) {
-      if (ecosMap[optKey?.toLowerCase()] && !currentSelection.includes(optKey)) {
+    for (const ecoOpt of ecoOpts) {
+      const optKey = ecoOpt.k;
+      const fullNameLower = ecoOpt.fullName?.toLowerCase();
+      if (ecosMap[fullNameLower] && !currentSelection.includes(optKey)) {
         // Elimina
-        const id = ecosIdMap[optKey?.toLowerCase()];
+        const id = ecosIdMap[fullNameLower];
         if (id) {
           try {
             await deleteEcho(id);
@@ -1235,23 +1239,23 @@ document.getElementById('pick-done').addEventListener('click', async () => {
 
     // Trova le eco da aggiungere (non erano nel DB, sono state selezionate)
     for (const optKey of currentSelection) {
-      if (!ecosMap[optKey?.toLowerCase()]) {
+      const ecoOpt = ecoOpts.find(o => o.k === optKey);
+      if (!ecoOpt) continue;
+      const fullNameLower = ecoOpt.fullName?.toLowerCase();
+      if (!ecosMap[fullNameLower]) {
         // Aggiunge
-        const ecoOpt = ECO_OPTS.find(o => o.k === optKey);
-        if (ecoOpt) {
-          try {
-            const d = new Date();
-            d.setHours(hour, 0, 0, 0);
-            await addEcho({
-              patient_id: patientId,
-              type: ecoOpt.l,
-              examined_at: d.toISOString(),
-              findings: null,
-              notes: null
-            });
-          } catch(e) {
-            console.warn('Error adding echo:', e);
-          }
+        try {
+          const d = new Date();
+          d.setHours(hour, 0, 0, 0);
+          await addEcho({
+            patient_id: patientId,
+            type: ecoOpt.fullName,
+            examined_at: d.toISOString(),
+            findings: null,
+            notes: null
+          });
+        } catch(e) {
+          console.warn('Error adding echo:', e);
         }
       }
     }
