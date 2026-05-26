@@ -599,7 +599,7 @@
 <script type="module">
 import {
   db, loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
-  addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho,
+  addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho, addEcho,
   SPECIES_EMOJI, STATUS_COLOR, FREQ_LABELS
 } from './db.js';
 
@@ -1058,6 +1058,25 @@ function labelForKey(type, k) {
   return (allPrevItems().find(o => o.k === k) || {}).l || k;
 }
 
+async function openEcoForm(patientId, hour, ecoOpt) {
+  const d = new Date();
+  d.setHours(hour, 0, 0, 0);
+
+  try {
+    await addEcho({
+      patient_id: patientId,
+      type: ecoOpt.l,
+      examined_at: d.toISOString(),
+      findings: null,
+      notes: null
+    });
+    await renderPickSheet();
+    toast(`${ecoOpt.l} aggiunta`);
+  } catch(err) {
+    toast('Errore: ' + err.message);
+  }
+}
+
 let pickKey = null, pickType = null, pickSubCat = null;
 const pickPop = document.getElementById('pick-pop');
 
@@ -1072,45 +1091,42 @@ async function renderPickSheet() {
     const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
     const ecosByHour = echos ? echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour)) : [];
 
-    // Mostra le eco già registrate con bottone delete
-    let html = '';
-    if (ecosByHour.length > 0) {
-      html += '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)"><div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:8px">ECOGRAFIE REGISTRATE</div>';
-      html += ecosByHour.map(echo => {
-        const abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase();
-        return `
-          <div class="pop-opt" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:6px">
-            <span style="flex:1;text-align:left">${echo.type || 'N/A'} <span style="color:var(--text3);font-size:11px">${abbr}</span></span>
-            <button class="eco-delete-btn" data-echo-id="${echo.id}" data-patient-id="${patientId}" data-hour="${hour}" style="width:32px;height:32px;border:none;border-radius:6px;background:#EF444418;color:#EF4444;cursor:pointer;font-weight:700;font-size:16px;padding:0;display:flex;align-items:center;justify-content:center">×</button>
-          </div>
-        `;
-      }).join('');
-      html += '</div>';
-    }
+    // Crea una mappa echoId -> echo per le eco registrate
+    const ecosMap = {};
+    ecosByHour.forEach(e => {
+      ecosMap[e.type?.toLowerCase()] = e.id;
+    });
 
-    // Opzioni per aggiungere eco
-    html += '<div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:8px">AGGIUNGI</div>';
-    html += ECO_OPTS.map(o => `
-      <div class="pop-opt ${sel.includes(o.k) ? 'sel' : ''}" data-k="${o.k}" data-leaf="1">
-        <span class="pop-chk">${sel.includes(o.k) ? '✓' : ''}</span>${o.l}
-      </div>`).join('');
+    // Mostra le opzioni eco: se sono nel database, mostrale come checked
+    document.getElementById('pick-opts').innerHTML = ECO_OPTS.map(o => {
+      // Controlla se questa eco è già nel database
+      const isRegistered = !!ecosMap[o.k?.toLowerCase()];
+      return `
+        <div class="pop-opt ${isRegistered ? 'sel' : ''}" data-k="${o.k}" data-leaf="1" data-is-registered="${isRegistered ? '1' : ''}">
+          <span class="pop-chk">${isRegistered ? '✓' : ''}</span>${o.l}
+        </div>`;
+    }).join('');
 
-    document.getElementById('pick-opts').innerHTML = html;
+    document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
+      const k = opt.dataset.k;
+      const isRegistered = opt.dataset.isRegistered === '1';
+      const ecoId = ecosMap[k?.toLowerCase()];
 
-    // Event listener per bottoni delete
-    document.querySelectorAll('.eco-delete-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      opt.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (!confirm('Elimina questa ecografia?')) return;
 
-        try {
-          await deleteEcho(btn.dataset.echoId);
-          const patId = btn.dataset.patientId;
-          const h = parseInt(btn.dataset.hour);
-          // Ricarica il modal
-          await renderPickSheet();
-        } catch(err) {
-          toast('Errore: ' + err.message);
+        if (isRegistered) {
+          // Se è registrata, deselezionando la elimina
+          if (!confirm('Elimina questa ecografia?')) return;
+          try {
+            await deleteEcho(ecoId);
+            await renderPickSheet();
+          } catch(err) {
+            toast('Errore: ' + err.message);
+          }
+        } else {
+          // Se non è registrata, aggiungila
+          openEcoForm(patientId, hour, o);
         }
       });
     });
