@@ -1291,6 +1291,7 @@ document.getElementById('pick-done').addEventListener('click', async () => {
 
   // Ricarica il board per mostrare i cambiamenti
   if (pickType === 'eco') {
+    delete checks[pickKey]; // Ripulisci i flag così la prossima apertura ricaria dal DB
     await render();
     startRealtime();
   }
