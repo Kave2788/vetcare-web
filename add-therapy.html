@@ -299,7 +299,7 @@
       statusEl.textContent = { stable:'Stabile', critical:'Critico', discharged:'Dimesso' }[patient.status] || patient.status;
       statusEl.className = 'ps-badge ' + (patient.status === 'critical' ? 'ps-critical' : 'ps-stable');
 
-      // Peso dall'ultima rilevazione
+      // Peso dall'ultima rilevazione o dal paziente
       try {
         const vitals = await loadVitals(pid);
         const latest = vitals.find(v => v.weight != null);
@@ -307,6 +307,9 @@
           document.getElementById('calc-weight').value = latest.weight;
           const d = new Date(latest.recorded_at);
           document.getElementById('weight-source').textContent = `da rilevazione ${d.toLocaleDateString('it-IT')}`;
+        } else if (patient.weight) {
+          document.getElementById('calc-weight').value = patient.weight;
+          document.getElementById('weight-source').textContent = 'dal paziente';
         }
       } catch {}
     }

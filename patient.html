@@ -445,6 +445,7 @@
         ['Specie', patient.species],
         ['Razza', patient.breed || '—'],
         ['Età', patient.age || '—'],
+        ['Peso', patient.weight ? patient.weight + ' kg' : '—'],
         ['Sesso', patient.sex === 'M' ? 'Maschio' : 'Femmina'],
         ['Proprietario', patient.owner || '—'],
         ['Telefono', patient.owner_phone || '—'],
