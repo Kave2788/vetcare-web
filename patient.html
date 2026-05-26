@@ -29,6 +29,30 @@
       cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0;
     }
     .vital-del:active { color: var(--critical); }
+
+    /* Echo card */
+    .echo-card {
+      background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 8px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .echo-card:active { background: var(--bg3); }
+    .ec-top { display: flex; gap: 10px; align-items: flex-start; }
+    .ec-main { flex: 1; }
+    .ec-type {
+      font-weight: 500; font-size: 15px; color: var(--text1); margin-bottom: 2px;
+    }
+    .ec-sub {
+      font-size: 12px; color: var(--text3); margin-bottom: 6px;
+    }
+    .ec-note {
+      font-size: 13px; color: var(--text2); margin-top: 6px; white-space: pre-wrap;
+    }
+    .ec-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .echo-delete {
+      background: none; border: none; color: var(--text3); font-size: 16px;
+      cursor: pointer; padding: 4px; line-height: 1; flex-shrink: 0;
+    }
+    .echo-delete:active { color: var(--critical); }
   </style>
 </head>
 <body>
@@ -43,12 +67,16 @@
     <div class="tabs" style="max-width:480px;margin:0 auto;">
       <div class="tab active" data-tab="info">Anagrafica</div>
       <div class="tab" data-tab="vitals">Scheda</div>
+      <div class="tab" data-tab="echos">Eco</div>
       <div class="tab" data-tab="therapies">Terapie</div>
     </div>
   </div>
 
   <div class="page">
     <div class="tab-content" id="tab-vitals">
+      <div class="spinner"></div>
+    </div>
+    <div class="tab-content" id="tab-echos">
       <div class="spinner"></div>
     </div>
     <div class="tab-content" id="tab-therapies">
@@ -71,8 +99,8 @@
 
   <script type="module">
     import {
-      loadPatient, loadVitals, loadTherapies,
-      updatePatientStatus, updatePatientFields, stopTherapy, deleteTherapy, deleteVital,
+      loadPatient, loadVitals, loadTherapies, loadEchos,
+      updatePatientStatus, updatePatientFields, stopTherapy, deleteTherapy, deleteVital, deleteEcho,
       fmtDate, fmtDateTime,
       STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI,
       ROUTE_LABELS, FREQ_LABELS,
@@ -294,6 +322,107 @@
       } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }
     }
 
+    // ── Ecographies ───────────────────────────────────────────────────────────
+    async function renderEchos() {
+      const el = document.getElementById('tab-echos');
+      el.innerHTML = '<div class="spinner"></div>';
+      try {
+        const echos = await loadEchos(id);
+        if (echos.length === 0) {
+          el.innerHTML = `
+            <div class="empty">
+              <div class="ei">🔍</div>
+              <div class="et">Nessuna ecografia</div>
+              <div class="eh">Premi + per aggiungere un'ecografia</div>
+            </div>
+            <a class="fab" href="add-echo.html?id=${id}">+</a>`;
+          return;
+        }
+
+        function echoCard(e) {
+          return `
+            <div class="echo-card" data-eid="${e.id}">
+              <div class="ec-top">
+                <div class="ec-main">
+                  <div class="ec-type">${escapeHtml(e.type)}</div>
+                  <div class="ec-sub">${fmtDateTime(e.examined_at)}</div>
+                  ${e.findings ? `<div class="ec-note">📋 ${escapeHtml(e.findings)}</div>` : ''}
+                  ${e.notes ? `<div class="ec-note">📝 ${escapeHtml(e.notes)}</div>` : ''}
+                </div>
+                <div class="ec-actions">
+                  <a href="edit-echo.html?id=${id}&eid=${e.id}" style="font-size:15px;text-decoration:none;opacity:0.5">✏️</a>
+                  <button class="echo-delete" data-eid="${e.id}" title="Elimina" style="background:none;border:none;color:#EF4444;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0">🗑</button>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        el.innerHTML =
+          `<div class="group-label">Ecografie (${echos.length})</div>` +
+          echos.map(echoCard).join('') +
+          `<a class="fab" href="add-echo.html?id=${id}">+</a>`;
+
+        // Event delegation for echos
+        const timerMap = new Map();
+        el.addEventListener('click', e => {
+          const deleteBtn = e.target.closest('.echo-delete');
+          if (deleteBtn) {
+            const echo = echos.find(x => x.id === deleteBtn.dataset.eid);
+            showDialog('Elimina ecografia', `Eliminare l'ecografia del ${fmtDateTime(echo.examined_at)}?`, [
+              { label: 'Elimina', cls: 'btn-danger', action: async () => {
+                await deleteEcho(echo.id);
+                toast('Ecografia eliminata');
+                await renderEchos();
+              }},
+              { label: 'Annulla', cls: 'btn-ghost' }
+            ]);
+          }
+        });
+
+        // Long press elimina
+        const start = card => {
+          const timer = setTimeout(() => {
+            const echo = echos.find(x => x.id === card.dataset.eid);
+            showDialog('Elimina ecografia', `Eliminare l'ecografia del ${fmtDateTime(echo.examined_at)}?`, [
+              { label: 'Elimina', cls: 'btn-danger', action: async () => {
+                await deleteEcho(echo.id);
+                toast('Ecografia eliminata');
+                await renderEchos();
+              }},
+              { label: 'Annulla', cls: 'btn-ghost' }
+            ]);
+          }, 600);
+          timerMap.set(card, timer);
+        };
+        const cancel = card => {
+          const timer = timerMap.get(card);
+          if (timer) clearTimeout(timer);
+          timerMap.delete(card);
+        };
+        el.addEventListener('touchstart', e => {
+          const card = e.target.closest('.echo-card');
+          if (card) start(card);
+        }, { passive: true });
+        el.addEventListener('touchend', e => {
+          const card = e.target.closest('.echo-card');
+          if (card) cancel(card);
+        });
+        el.addEventListener('mousedown', e => {
+          const card = e.target.closest('.echo-card');
+          if (card) start(card);
+        });
+        el.addEventListener('mouseup', e => {
+          const card = e.target.closest('.echo-card');
+          if (card) cancel(card);
+        });
+        el.addEventListener('mouseleave', e => {
+          const card = e.target.closest('.echo-card');
+          if (card) cancel(card);
+        });
+
+      } catch(e) { el.innerHTML = `<p style="color:var(--text3);padding:20px">${e.message}</p>`; }
+    }
+
     // ── Therapies ─────────────────────────────────────────────────────────────
     let drugsDB = [];
     const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
@@ -358,7 +487,7 @@
                 <div class="tc-actions">
                   ${drug ? `<button class="tc-info-btn" data-tid="${t.id}">ℹ info</button>` : ''}
                   <a href="edit-therapy.html?id=${id}&tid=${t.id}" style="font-size:15px;text-decoration:none;opacity:0.5">✏️</a>
-                  ${t.active ? `<button class="therapy-stop" data-tid="${t.id}" title="Sospendi">✕</button>` : ''}
+                  ${t.active ? `<button class="therapy-stop" data-tid="${t.id}" title="Sospendi">✕</button>` : `<button class="therapy-delete" data-tid="${t.id}" title="Elimina" style="background:none;border:none;color:#EF4444;font-size:16px;cursor:pointer;padding:4px;flex-shrink:0">🗑</button>`}
                 </div>
               </div>
               ${infoPanel}
@@ -387,6 +516,18 @@
               { label: 'Sospendi', cls: 'btn-danger', action: async () => {
                 await stopTherapy(t.id);
                 toast('Terapia sospesa');
+                await renderTherapies();
+              }},
+              { label: 'Annulla', cls: 'btn-ghost' }
+            ]);
+          }
+          const deleteBtn = e.target.closest('.therapy-delete');
+          if (deleteBtn) {
+            const t = therapies.find(x => x.id === deleteBtn.dataset.tid);
+            showDialog('Elimina terapia sospesa', `Eliminare ${escapeHtml(t.drug)} definitivamente?`, [
+              { label: 'Elimina', cls: 'btn-danger', action: async () => {
+                await deleteTherapy(t.id);
+                toast('Terapia eliminata');
                 await renderTherapies();
               }},
               { label: 'Annulla', cls: 'btn-ghost' }
@@ -471,6 +612,7 @@
         document.getElementById('page-title').textContent = patient.name;
         renderHeader();
         await renderVitals();
+        await renderEchos();
         await renderTherapies();
         renderInfo();
       } catch(e) {

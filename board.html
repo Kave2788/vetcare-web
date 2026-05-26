@@ -952,7 +952,14 @@ function hourToISO(h) {
 
 const ECO_OPTS = [
   { k:'add', l:'Addome', fullName:'Addominale' },
-  { k:'card', l:'Cardio', fullName:'Cardiaca' }
+  { k:'card', l:'Cardio', fullName:'Cardiaca' },
+  { k:'pol', l:'Polm', fullName:'Polmonare' },
+  { k:'ren', l:'Ren', fullName:'Renale' },
+  { k:'epat', l:'Epar', fullName:'Epatica' },
+  { k:'art', l:'Art', fullName:'Articolare' },
+  { k:'musc', l:'Musc', fullName:'Muscolare' },
+  { k:'tir', l:'Tir', fullName:'Tiroidea' },
+  { k:'oft', l:'Oft', fullName:'Oftalmico' }
 ];
 const ECO_INITIALS_MAP = {
   'addominale': 'A', 'Addominale': 'A', 'addome': 'A', 'add': 'A', 'abd': 'A',
@@ -1037,17 +1044,17 @@ function allPrevItems() {
   return items;
 }
 
-const ECO_INITIALS = { add: 'A', card: 'C' };
-
 function renderPickCell(key) {
   const sel = checks[key] || [];
   const isEco = key.startsWith('eco');
 
   if (isEco) {
     if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
-    const labels = sel.map(abbr => {
-      const isDone = echoFlags[`${key}_${abbr}`]?.done || false;
-      return `<span class="eco-abbr-label" data-key="${key}_${abbr}" style="color:${isDone ? '#EF4444' : 'currentColor'};font-weight:700;cursor:pointer">${abbr}</span>`;
+    const labels = sel.map(optKey => {
+      const ecoOpt = ECO_OPTS.find(o => o.k === optKey);
+      const displayAbbr = ecoOpt ? ECO_INITIALS_MAP[ecoOpt.fullName?.toLowerCase()] || ecoOpt.k : optKey;
+      const isDone = echoFlags[`${key}_${optKey}`]?.done || false;
+      return `<span class="eco-abbr-label" data-key="${key}_${optKey}" style="color:${isDone ? '#EF4444' : 'currentColor'};font-weight:700;cursor:pointer">${displayAbbr}</span>`;
     }).join('+');
     return `<div class="check-cell">${labels}</div>`;
   }

@@ -114,6 +114,39 @@ export async function deleteVital(id) {
   if (error) throw error;
 }
 
+// ── Ecografie ───────────────────────────────────────────────────────────────
+
+export async function loadEchos(patientId) {
+  const { data, error } = await db
+    .from('echos')
+    .select('*')
+    .eq('patient_id', patientId)
+    .order('examined_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addEcho(echo) {
+  const { error } = await db.from('echos').insert(echo);
+  if (error) throw error;
+}
+
+export async function loadEcho(id) {
+  const { data, error } = await db.from('echos').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateEcho(id, fields) {
+  const { error } = await db.from('echos').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteEcho(id) {
+  const { error } = await db.from('echos').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ── Terapie ──────────────────────────────────────────────────────────────────
 
 export async function loadTherapies(patientId) {
