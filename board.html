@@ -1079,7 +1079,7 @@ async function openEcoForm(patientId, hour, ecoOpt) {
   }
 }
 
-let pickKey = null, pickType = null, pickSubCat = null;
+let pickKey = null, pickType = null, pickSubCat = null, pickEcosMap = null;
 const pickPop = document.getElementById('pick-pop');
 
 async function renderPickSheet() {
@@ -1093,46 +1093,47 @@ async function renderPickSheet() {
     const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
     const ecosByHour = echos ? echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour)) : [];
 
-    // Crea una mappa echoId -> echo per le eco registrate
+    // Crea mappe per le eco registrate
     const ecosMap = {};
+    const ecosIdMap = {};
     ecosByHour.forEach(e => {
-      ecosMap[e.type?.toLowerCase()] = e.id;
+      const key = e.type?.toLowerCase();
+      ecosMap[key] = true;
+      ecosIdMap[key] = e.id;
     });
 
-    // Mostra le opzioni eco: se sono nel database, mostrale come checked
+    // Inizializza checks[pickKey] con le eco attualmente nel database
+    if (!checks[pickKey] || checks[pickKey].length === 0) {
+      checks[pickKey] = ECO_OPTS.filter(o => ecosMap[o.k?.toLowerCase()]).map(o => o.k);
+    }
+    sel = checks[pickKey];
+
+    // Salva info per pick-done
+    pickEcosMap = { patientId, hour, ecosMap, ecosIdMap };
+
+    // Mostra le opzioni eco con flag basato su checks[pickKey]
     document.getElementById('pick-opts').innerHTML = ECO_OPTS.map(o => {
-      // Controlla se questa eco è già nel database
-      const isRegistered = !!ecosMap[o.k?.toLowerCase()];
+      const isSelected = sel.includes(o.k);
       return `
-        <div class="pop-opt ${isRegistered ? 'sel' : ''}" data-k="${o.k}" data-leaf="1" data-is-registered="${isRegistered ? '1' : ''}">
-          <span class="pop-chk">${isRegistered ? '✓' : ''}</span>${o.l}
+        <div class="pop-opt ${isSelected ? 'sel' : ''}" data-k="${o.k}" data-leaf="1">
+          <span class="pop-chk">${isSelected ? '✓' : ''}</span>${o.l}
         </div>`;
     }).join('');
 
     document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
       const k = opt.dataset.k;
-      const isRegistered = opt.dataset.isRegistered === '1';
-      const ecoId = ecosMap[k?.toLowerCase()];
-
-      opt.addEventListener('click', async (e) => {
+      opt.addEventListener('click', (e) => {
         e.stopPropagation();
-
-        if (isRegistered) {
-          // Se è registrata, deselezionando la elimina
-          if (!confirm('Elimina questa ecografia?')) return;
-          try {
-            await deleteEcho(ecoId);
-            pickPop.classList.remove('show');
-            await render();
-            startRealtime();
-            toast('Ecografia eliminata');
-          } catch(err) {
-            toast('Errore: ' + err.message);
-          }
+        // Toggle selection
+        if (sel.includes(k)) {
+          sel = sel.filter(x => x !== k);
         } else {
-          // Se non è registrata, aggiungila
-          openEcoForm(patientId, hour, o);
+          sel = [...sel, k];
         }
+        checks[pickKey] = sel;
+        opt.classList.toggle('sel', sel.includes(k));
+        opt.querySelector('.pop-chk').textContent = sel.includes(k) ? '✓' : '';
+        updatePickSummary();
       });
     });
 
@@ -1210,7 +1211,52 @@ function updatePickSummary() {
   document.getElementById('pick-summary').textContent = labels.join(', ');
 }
 
-document.getElementById('pick-done').addEventListener('click', () => {
+document.getElementById('pick-done').addEventListener('click', async () => {
+  // Se è un modal per eco, elabora add/delete prima di salvare
+  if (pickType === 'eco' && pickEcosMap) {
+    const { patientId, hour, ecosMap, ecosIdMap } = pickEcosMap;
+    const currentSelection = checks[pickKey] || [];
+    const ecoOptKeys = ECO_OPTS.map(o => o.k);
+
+    // Trova le eco da eliminare (erano nel DB, non sono più selezionate)
+    for (const optKey of ecoOptKeys) {
+      if (ecosMap[optKey?.toLowerCase()] && !currentSelection.includes(optKey)) {
+        // Elimina
+        const id = ecosIdMap[optKey?.toLowerCase()];
+        if (id) {
+          try {
+            await deleteEcho(id);
+          } catch(e) {
+            console.warn('Error deleting echo:', e);
+          }
+        }
+      }
+    }
+
+    // Trova le eco da aggiungere (non erano nel DB, sono state selezionate)
+    for (const optKey of currentSelection) {
+      if (!ecosMap[optKey?.toLowerCase()]) {
+        // Aggiunge
+        const ecoOpt = ECO_OPTS.find(o => o.k === optKey);
+        if (ecoOpt) {
+          try {
+            const d = new Date();
+            d.setHours(hour, 0, 0, 0);
+            await addEcho({
+              patient_id: patientId,
+              type: ecoOpt.l,
+              examined_at: d.toISOString(),
+              findings: null,
+              notes: null
+            });
+          } catch(e) {
+            console.warn('Error adding echo:', e);
+          }
+        }
+      }
+    }
+  }
+
   saveChecks();
   updateExamCells();
   pickPop.classList.remove('show');
@@ -1238,7 +1284,14 @@ document.getElementById('pick-done').addEventListener('click', () => {
       });
     }
   }
-  pickKey = null; pickSubCat = null;
+
+  // Ricarica il board per mostrare i cambiamenti
+  if (pickType === 'eco') {
+    await render();
+    startRealtime();
+  }
+
+  pickKey = null; pickSubCat = null; pickEcosMap = null;
 });
 
 // Exam modal close button
