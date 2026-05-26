@@ -1205,6 +1205,7 @@ async function openPickPop(key, type) {
   pickKey = key;
   pickType = type;
   pickSubCat = null;
+  document.getElementById('exam-modal').classList.remove('show');
   await renderPickSheet();
   pickPop.classList.add('show');
 }
