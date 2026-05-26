@@ -286,14 +286,14 @@
       border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
     }
 
-    /* Drugs modal */
-    #drugs-modal {
+    /* Therapies modal */
+    #therapies-modal {
       display: none; position: absolute; inset: 0; z-index: 100;
       background: rgba(0,0,0,.6);
       align-items: flex-end; justify-content: center;
     }
-    #drugs-modal.show { display: flex; }
-    .drugs-sheet {
+    #therapies-modal.show { display: flex; }
+    .therapies-sheet {
       background: var(--bg2); border: 1px solid var(--border);
       border-radius: 18px 18px 0 0;
       padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
@@ -302,25 +302,17 @@
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
-    .drugs-list {
-      display: flex; flex-direction: column; gap: 10px;
-      margin-bottom: 16px;
-      max-height: min(50vh, calc(100vh - 180px));
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+    .tm-header { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
+    .tm-list {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 16px; max-height: 50vh; overflow-y: auto;
     }
-    .drug-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px; border: 1px solid var(--border); border-radius: 8px;
-      background: var(--card); cursor: pointer;
+    .tm-item {
+      padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); cursor: pointer; font-size: 13px;
     }
-    .drug-item input[type="checkbox"] {
-      cursor: pointer;
-    }
-    .drug-item label {
-      flex: 1; cursor: pointer;
-      font-size: 14px; font-weight: 600;
-    }
+    .tm-item-drug { font-weight: 600; color: var(--text1); }
+    .tm-item-dose { font-size: 11px; color: var(--text3); margin-top: 4px; }
 
     /* Exam modal */
     #exam-modal {
@@ -526,12 +518,69 @@
     </div>
   </div>
 
-  <div id="drugs-modal">
-    <div class="drugs-sheet">
-      <div class="pick-handle"></div>
-      <div class="pop-title" id="drugs-title">Terapie</div>
-      <div class="drugs-list" id="drugs-list"></div>
-      <button class="pop-done" id="drugs-close">Chiudi</button>
+  <div id="therapies-modal">
+    <div class="therapies-sheet">
+      <div class="tm-header" id="tm-title">Terapie ore X:00</div>
+      <div class="tm-list" id="tm-list"></div>
+      <button id="tm-add-btn" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:12px">+ Aggiungi terapia</button>
+      <div id="tm-form-container" style="display:none;border-top:1px solid var(--border);padding-top:16px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="position:relative">
+            <label style="font-size:11px;color:var(--text3);font-weight:700">Farmaco</label>
+            <input id="tm-drug" type="text" placeholder="Es. Meloxicam" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+            <div id="tm-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:6px;margin-top:2px;max-height:200px;overflow-y:auto;z-index:1000"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700">Peso (kg)</label>
+              <input id="tm-weight" type="number" placeholder="es. 15.5" step="0.1" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700">Dose</label>
+              <input id="tm-dose" type="number" placeholder="10" step="any" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700">Unità</label>
+              <select id="tm-unit" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+                <option value="mg/kg">mg/kg</option>
+                <option value="mg">mg</option>
+                <option value="ml">ml</option>
+                <option value="ml/kg">ml/kg</option>
+                <option value="compresse">compresse</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text3);font-weight:700">Via</label>
+              <select id="tm-route" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+                <option value="oral">Orale</option>
+                <option value="iv">Endovenosa</option>
+                <option value="im">Intramuscolo</option>
+                <option value="sc">Sottocutanea</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text3);font-weight:700">Frequenza</label>
+            <select id="tm-frequency" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);box-sizing:border-box">
+              <option value="once">Una volta (8:00)</option>
+              <option value="bid">Due volte (8:00, 20:00)</option>
+              <option value="tid">Tre volte (8:00, 14:00, 20:00)</option>
+              <option value="qid">Quattro volte (8:00, 12:00, 16:00, 20:00)</option>
+              <option value="q8h">Ogni 8h (8:00, 16:00)</option>
+              <option value="q6h">Ogni 6h (8:00, 14:00, 20:00)</option>
+              <option value="sid">Una volta mattina (8:00)</option>
+            </select>
+          </div>
+          <div id="tm-calc-result" style="display:none;padding:8px;background:#10B98112;border-radius:6px;font-size:12px;color:var(--stable);font-weight:600;text-align:center"></div>
+          <div style="display:flex;gap:8px">
+            <button id="tm-cancel" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text2);cursor:pointer;font-weight:600">Annulla</button>
+            <button id="tm-save" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600">Salva</button>
+          </div>
+        </div>
+      </div>
+      <button class="pop-done" id="tm-close">Chiudi</button>
     </div>
   </div>
 
@@ -550,7 +599,8 @@
 <script type="module">
 import {
   db, loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
-  SPECIES_EMOJI, STATUS_COLOR
+  addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho,
+  SPECIES_EMOJI, STATUS_COLOR, FREQ_LABELS
 } from './db.js';
 
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
@@ -566,9 +616,27 @@ let checks = {};
 
 let doneSet = new Set();
 function todayKey() { return new Date().toISOString().slice(0,10); }
-async function saveDone() {
+async function saveDone(keyToDelete = null) {
   // Salva in Supabase
   const today = todayKey();
+
+  // Se viene passato un key da cancellare, lo elimina
+  if (keyToDelete) {
+    const parts = keyToDelete.split('_');
+    if (parts.length >= 5) {
+      const [, , pid, tidx, hour] = parts;
+      try {
+        await db.from('drug_administrations').delete()
+          .eq('patient_id', pid)
+          .eq('therapy_index', parseInt(tidx))
+          .eq('hour', parseInt(hour))
+          .eq('date', today);
+      } catch(e) { console.warn('deleteDone error:', e); }
+    }
+    return;
+  }
+
+  // Altrimenti salva tutti i flag
   for (const key of doneSet) {
     const parts = key.split('_');
     if (parts.length < 5) continue;
@@ -606,79 +674,11 @@ async function saveChecks() {
 
 let vitalsMap = {};
 let drugSchedule = {};
+let weightMap = {};
 
 function cellKey(pid, h) { return `${pid}_h${h}`; }
 
-// Drugs modal
 let patientsData = [];
-let currentDrugsModal = { pid: null, hour: null, drugs: [] };
-
-function openDrugsModal(pid, hour) {
-  // Trova i farmaci per questa ora/paziente
-  const patient = patientsData.find(p => p.id === pid);
-  if (!patient) return;
-
-  const drugs = (patient.therapies || []).filter(t => {
-    const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
-    return freqSet.has(hour);
-  });
-
-  currentDrugsModal = { pid, hour, drugs };
-  const modal = document.getElementById('drugs-modal');
-  const list = document.getElementById('drugs-list');
-
-  list.innerHTML = drugs.map((t, i) => {
-    const doneKey = `done_${todayKey()}_${pid}_${i}_${hour}`;
-    const isDone = doneSet.has(doneKey);
-    return `
-      <div class="drug-item">
-        <input type="checkbox" id="drug-${i}" ${isDone ? 'checked' : ''}>
-        <label for="drug-${i}">${t.drug}</label>
-      </div>
-    `;
-  }).join('');
-
-  // Aggiungi click handler ai checkbox
-  list.querySelectorAll('input[type="checkbox"]').forEach((cb, i) => {
-    cb.addEventListener('change', () => {
-      // Trova l'indice globale del farmaco tra tutti i farmaci del paziente
-      const globalIdx = patientsData.find(p => p.id === pid).therapies.findIndex(t => t.drug === drugs[i].drug);
-      const doneKey = `done_${todayKey()}_${pid}_${globalIdx}_${hour}`;
-      if (cb.checked) {
-        doneSet.add(doneKey);
-      } else {
-        doneSet.delete(doneKey);
-      }
-      saveDone();
-      updateDrugsCellColor(pid, hour);
-    });
-  });
-
-  modal.classList.add('show');
-}
-
-function updateDrugsCellColor(pid, hour) {
-  const cell = document.querySelector(`[data-drug-cell="drugs_${todayKey()}_${pid}_${hour}"]`);
-  if (!cell) return;
-
-  // Trova i farmaci per questa cella
-  const patient = patientsData.find(p => p.id === pid);
-  if (!patient) return;
-
-  const drugs = patient.therapies.filter(t => {
-    const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
-    return freqSet.has(hour);
-  });
-
-  if (drugs.length === 0) return;
-
-  // Controlla se tutti i farmaci sono flaggati
-  const allDone = drugs.every(t => {
-    const globalIdx = patient.therapies.findIndex(th => th.drug === t.drug);
-    return doneSet.has(`done_${todayKey()}_${pid}_${globalIdx}_${hour}`);
-  });
-  cell.style.background = allDone ? '#EF4444CC' : '';
-}
 
 function openExamModal(examKey, type) {
   const data = checks[examKey] || [];
@@ -690,6 +690,252 @@ function openExamModal(examKey, type) {
   list.innerHTML = data.map(item => `<div class="exam-item">${item}</div>`).join('');
 
   modal.classList.add('show');
+}
+
+let currentTherapiesModal = { pid: null, hour: null };
+
+function openTherapiesModal(pid, hour) {
+  hour = parseInt(hour);
+  if (isNaN(hour) || hour < 0 || hour > 23) hour = 8;
+
+  currentTherapiesModal = { pid, hour };
+  const patient = patientsData.find(p => p.id === pid);
+  if (!patient) return;
+
+  const drugs = (patient.therapies || []).filter(t => {
+    const freqSet = new Set(getFreqHours(t.frequency).filter(h => HOURS.includes(h)));
+    return freqSet.has(hour);
+  });
+
+  document.getElementById('tm-title').textContent = `Terapie ore ${hour}:00`;
+  const list = document.getElementById('tm-list');
+
+  if (drugs.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">Nessuna terapia per quest\'ora</div>';
+  } else {
+    const allDrugs = (patient.therapies || []).filter(t => t.active);
+    list.innerHTML = drugs.map((t, i) => {
+      const today = todayKey();
+      const drugIdx = allDrugs.indexOf(t);
+      const doneKey = `done_${today}_${pid}_${drugIdx}_${hour}`;
+      const isDone = doneSet.has(doneKey);
+      const bgColor = isDone ? '#10B98122' : 'transparent';
+      const textColor = isDone ? 'var(--stable)' : 'var(--text1)';
+      return `
+        <div class="tm-item" style="display:flex;align-items:center;gap:12px;background:${bgColor}" data-done-key="${doneKey}" data-therapy-id="${t.id}" data-pid="${pid}" data-hour="${hour}" data-drug-idx="${drugIdx}">
+          <div style="width:20px;height:20px;border:2px solid ${isDone ? 'var(--stable)' : 'var(--border)'};border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            ${isDone ? '<span style="color:var(--stable);font-weight:700;font-size:14px">✓</span>' : ''}
+          </div>
+          <div style="flex:1;cursor:pointer">
+            <div class="tm-item-drug" style="color:${textColor}">${t.drug || 'N/A'}</div>
+            <div class="tm-item-dose">${t.dose || '—'} ${t.unit || ''}</div>
+          </div>
+          <button class="tm-delete-btn" style="flex-shrink:0;width:32px;height:32px;border:none;border-radius:6px;background:#EF444418;color:#EF4444;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;font-weight:700;padding:0">×</button>
+        </div>
+      `;
+    }).join('');
+
+    // Event listener per marcare farmaci come somministrati
+    list.querySelectorAll('.tm-item').forEach(item => {
+      const checkbox = item.querySelector('[style*="border-radius:6px"]');
+      const deleteBtn = item.querySelector('.tm-delete-btn');
+
+      checkbox.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const doneKey = item.dataset.doneKey;
+        const pid = item.dataset.pid;
+        const hour = parseInt(item.dataset.hour);
+        if (!doneKey || !pid || isNaN(hour)) return;
+
+        const textEl = item.querySelector('.tm-item-drug');
+
+        if (doneSet.has(doneKey)) {
+          doneSet.delete(doneKey);
+          item.style.background = 'transparent';
+          checkbox.innerHTML = '';
+          textEl.style.color = 'var(--text1)';
+          await saveDone(doneKey); // Cancella da Supabase
+        } else {
+          doneSet.add(doneKey);
+          item.style.background = '#10B98122';
+          checkbox.innerHTML = '<span style="color:var(--stable);font-weight:700;font-size:14px">✓</span>';
+          textEl.style.color = 'var(--stable)';
+          await saveDone(); // Salva il nuovo flag
+        }
+
+        updateDrugCellUI(pid, hour);
+      });
+
+      deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!confirm('Elimina questa terapia?')) return;
+
+        const therapyId = item.dataset.therapyId;
+        try {
+          await deleteTherapy(therapyId);
+          const patient = patientsData.find(p => p.id === currentTherapiesModal.pid);
+          if (patient.therapies) {
+            patient.therapies = patient.therapies.filter(t => t.id !== therapyId);
+          }
+          openTherapiesModal(currentTherapiesModal.pid, currentTherapiesModal.hour);
+          toast('Terapia eliminata');
+        } catch(e) {
+          toast('Errore: ' + e.message);
+        }
+      });
+    });
+  }
+
+  document.getElementById('tm-form-container').style.display = 'none';
+  document.getElementById('therapies-modal').classList.add('show');
+}
+
+function openTherapyForm() {
+  const patient = patientsData.find(p => p.id === currentTherapiesModal.pid);
+  const hour = currentTherapiesModal.hour;
+
+  // Aggiorna il titolo del modal
+  document.getElementById('tm-title').textContent = `Terapie ore ${hour}:00`;
+
+  document.getElementById('tm-drug').value = '';
+  document.getElementById('tm-weight').value = weightMap[currentTherapiesModal.pid] || '';
+  document.getElementById('tm-dose').value = '';
+  document.getElementById('tm-unit').value = 'mg/kg';
+  document.getElementById('tm-route').value = 'oral';
+
+  // Aggiorna dropdown frequenza con opzione per l'ora specifica
+  const freqSelect = document.getElementById('tm-frequency');
+  const customOpts = freqSelect.querySelectorAll('option[data-custom="true"]');
+  customOpts.forEach(opt => opt.remove());
+
+  const customOpt = document.createElement('option');
+  customOpt.value = `hour_${hour}`;
+  customOpt.textContent = `Solo ore ${hour}:00`;
+  customOpt.dataset.custom = 'true';
+  freqSelect.insertBefore(customOpt, freqSelect.firstChild);
+  freqSelect.value = `hour_${hour}`;
+
+  document.getElementById('tm-calc-result').style.display = 'none';
+  document.getElementById('tm-form-container').style.display = 'block';
+  document.getElementById('tm-drug').focus();
+}
+
+function closeTherapyForm() {
+  document.getElementById('tm-form-container').style.display = 'none';
+}
+
+function calcDose() {
+  const dose = parseFloat(document.getElementById('tm-dose').value);
+  const weight = parseFloat(document.getElementById('tm-weight').value);
+  const unit = document.getElementById('tm-unit').value;
+  const resultEl = document.getElementById('tm-calc-result');
+
+  if (!dose || !weight || dose <= 0 || weight <= 0) {
+    resultEl.style.display = 'none';
+    return;
+  }
+
+  if (unit.includes('/kg')) {
+    const total = +(dose * weight).toFixed(2);
+    const baseUnit = unit.replace('/kg', '');
+    resultEl.textContent = `Dose totale: ${total} ${baseUnit}`;
+    resultEl.style.display = 'block';
+  } else {
+    resultEl.style.display = 'none';
+  }
+}
+
+let medicinesDB = [];
+
+async function loadMedicines() {
+  try {
+    const res = await fetch('./vetcare_medicines.json');
+    const data = await res.json();
+    medicinesDB = data.medicines || [];
+  } catch(e) {
+    console.warn('Medicinali non caricati', e);
+  }
+}
+
+function showDrugAutocomplete(query) {
+  const ac = document.getElementById('tm-autocomplete');
+  if (!query.trim()) {
+    ac.style.display = 'none';
+    return;
+  }
+  const filtered = medicinesDB.filter(m =>
+    m.nome.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 10);
+
+  if (filtered.length === 0) {
+    ac.style.display = 'none';
+    return;
+  }
+
+  ac.innerHTML = filtered.map(m => `
+    <div style="padding:10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px" data-drug-id="${m.id}">
+      <div style="font-weight:600">${m.nome}</div>
+      <div style="font-size:11px;color:var(--text3)">${m.dosaggio_testo}</div>
+    </div>
+  `).join('');
+
+  ac.style.display = 'block';
+
+  ac.querySelectorAll('div[data-drug-id]').forEach(el => {
+    el.addEventListener('click', () => selectDrug(el.dataset.drugId));
+  });
+}
+
+function selectDrug(drugId) {
+  const med = medicinesDB.find(m => m.id === drugId);
+  if (!med) return;
+
+  document.getElementById('tm-drug').value = med.nome;
+  document.getElementById('tm-dose').value = med.dosaggio_mg_kg || '';
+  document.getElementById('tm-unit').value = 'mg/kg';
+  document.getElementById('tm-route').value = med.via.toLowerCase().includes('oral') || med.via.toLowerCase().includes('os') ? 'oral' : 'iv';
+
+  document.getElementById('tm-autocomplete').style.display = 'none';
+  calcDose();
+}
+
+async function saveTherapy() {
+  const pid = currentTherapiesModal.pid;
+  const hour = currentTherapiesModal.hour;
+  const drug = document.getElementById('tm-drug').value.trim();
+  const dose = parseFloat(document.getElementById('tm-dose').value);
+  const unit = document.getElementById('tm-unit').value;
+  const route = document.getElementById('tm-route').value;
+  const frequency = document.getElementById('tm-frequency').value;
+  const weight = parseFloat(document.getElementById('tm-weight').value);
+
+  if (!drug || !dose || !weight) {
+    toast('Inserisci farmaco, dose e peso');
+    return;
+  }
+
+  try {
+    // Se il peso è diverso da quello registrato, aggiorna il paziente
+    if (!weightMap[pid] || weightMap[pid] !== weight) {
+      await db.from('patients').update({ weight }).eq('id', pid);
+      weightMap[pid] = weight;
+    }
+
+    await addTherapy({ patient_id: pid, drug, dose, unit, route, active: true, frequency });
+    const patient = patientsData.find(p => p.id === pid);
+    if (!patient.therapies) patient.therapies = [];
+    patient.therapies.push({ drug, dose, unit, route, active: true, frequency });
+    closeTherapyForm();
+
+    // Re-renderizza il board per aggiornare le celle
+    await render();
+    startRealtime();
+
+    openTherapiesModal(pid, hour);
+    toast('Terapia aggiunta e peso registrato');
+  } catch(e) {
+    toast('Errore: ' + e.message);
+  }
 }
 
 function toast(msg) {
@@ -705,6 +951,18 @@ function hourToISO(h) {
 // ── ECO / PRELIEVI multi-select ───────────────────────────────────────────────
 
 const ECO_OPTS = [{ k:'add', l:'Addome' }, { k:'card', l:'Cardio' }];
+const ECO_INITIALS_MAP = {
+  'addominale': 'A', 'Addominale': 'A', 'addome': 'A', 'add': 'A', 'abd': 'A',
+  'cardiaca': 'C', 'Cardiaca': 'C', 'cardio': 'C', 'card': 'C',
+  'polmonare': 'P', 'Polmonare': 'P', 'polmoni': 'P', 'polm': 'P',
+  'renale': 'R', 'Renale': 'R', 'reni': 'R', 'ren': 'R',
+  'epatica': 'E', 'Epatica': 'E', 'fegato': 'E', 'epat': 'E',
+  'articolare': 'Ar', 'Articolare': 'Ar', 'articolazioni': 'Ar', 'art': 'Ar',
+  'muscolare': 'M', 'Muscolare': 'M', 'muscoli': 'M', 'musc': 'M',
+  'tiroidea': 'T', 'Tiroidea': 'T', 'tiroide': 'T', 'tir': 'T',
+  'oftalmico': 'Ot', 'Oftalmico': 'Ot', 'occhio': 'Ot', 'oft': 'Ot',
+};
+let echoFlags = {};
 
 const PREV_CATS = [
   { k:'emo',    l:'Emocromo DM61',       sub: null },
@@ -780,12 +1038,18 @@ const ECO_INITIALS = { add: 'A', card: 'C' };
 
 function renderPickCell(key) {
   const sel = checks[key] || [];
-  if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
   const isEco = key.startsWith('eco');
+
   if (isEco) {
-    const labels = sel.map(k => ECO_INITIALS[k] || k[0].toUpperCase()).join('+');
-    return `<div class="check-cell"><span class="check-badge">${labels}</span></div>`;
+    if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
+    const labels = sel.map(abbr => {
+      const isDone = echoFlags[`${key}_${abbr}`]?.done || false;
+      return `<span class="eco-abbr-label" data-key="${key}_${abbr}" style="color:${isDone ? '#EF4444' : 'currentColor'};font-weight:700;cursor:pointer">${abbr}</span>`;
+    }).join('+');
+    return `<div class="check-cell">${labels}</div>`;
   }
+
+  if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
   return `<div class="check-cell"><span class="check-badge">✓${sel.length > 1 ? sel.length : ''}</span></div>`;
 }
 
@@ -886,20 +1150,58 @@ document.getElementById('pick-done').addEventListener('click', () => {
   pickPop.classList.remove('show');
   if (pickKey) {
     const td = document.querySelector(`[data-pick="${pickKey}"]`);
-    if (td) td.innerHTML = renderPickCell(pickKey);
+    if (td) {
+      td.innerHTML = renderPickCell(pickKey);
+      // Aggiungi event listener alle nuove abbreviazioni
+      td.querySelectorAll('.eco-abbr-label').forEach(span => {
+        span.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const key = span.dataset.key;
+          if (!key) return;
+          if (!echoFlags[key]) echoFlags[key] = { done: false };
+          if (echoFlags[key].done) {
+            echoFlags[key].done = false;
+            span.style.color = 'currentColor';
+            span.style.textDecoration = 'none';
+          } else {
+            echoFlags[key].done = true;
+            span.style.color = '#EF4444';
+            span.style.textDecoration = 'underline';
+          }
+        });
+      });
+    }
   }
   pickKey = null; pickSubCat = null;
-});
-
-// Drugs modal close button
-document.getElementById('drugs-close').addEventListener('click', () => {
-  document.getElementById('drugs-modal').classList.remove('show');
 });
 
 // Exam modal close button
 document.getElementById('exam-close').addEventListener('click', () => {
   document.getElementById('exam-modal').classList.remove('show');
 });
+
+// Therapies modal close button
+document.getElementById('tm-close').addEventListener('click', () => {
+  document.getElementById('therapies-modal').classList.remove('show');
+});
+
+// Drug autocomplete
+document.getElementById('tm-drug').addEventListener('input', (e) => {
+  showDrugAutocomplete(e.target.value);
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#tm-drug') && !e.target.closest('#tm-autocomplete')) {
+    document.getElementById('tm-autocomplete').style.display = 'none';
+  }
+});
+
+// Therapies form events
+document.getElementById('tm-add-btn').addEventListener('click', openTherapyForm);
+document.getElementById('tm-cancel').addEventListener('click', closeTherapyForm);
+document.getElementById('tm-save').addEventListener('click', saveTherapy);
+document.getElementById('tm-dose').addEventListener('input', calcDose);
+document.getElementById('tm-weight').addEventListener('input', calcDose);
 
 // Aggiorna celle eco/prelievi quando vengono salvati i dati
 function updateExamCells() {
@@ -1052,6 +1354,38 @@ function updateCellUI(key) {
   td.style.background = hasData ? 'var(--accent-dim)' : '';
 }
 
+function updateDrugCellUI(pid, hour) {
+  const patient = patientsData.find(p => p.id === pid);
+  if (!patient) return;
+
+  const drugs = (patient.therapies||[]).filter(t => t.active);
+  const today = todayKey();
+  const cellKey = `drugs_${today}_${pid}_${hour}`;
+  const cell = document.querySelector(`[data-drug-cell="${cellKey}"]`);
+  if (!cell) return;
+
+  const drugsForHour = drugs.filter((t, i) => {
+    const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+    return freqSet.has(hour);
+  });
+
+  if (drugsForHour.length === 0) return;
+
+  const doneCount = drugsForHour.filter((t, i) => {
+    const drugIdx = drugs.indexOf(t);
+    return doneSet.has(`done_${today}_${pid}_${drugIdx}_${hour}`);
+  }).length;
+
+  const allDone = doneCount === drugsForHour.length;
+
+  if (allDone) {
+    cell.style.background = '#EF4444CC';
+  } else {
+    cell.style.removeProperty('background');
+  }
+  cell.querySelector('.cell-inner').innerHTML = `<span style="font-size:var(--cell-font);font-weight:700">${doneCount}/${drugsForHour.length}</span>`;
+}
+
 // ── Modal ──────────────────────────────────────────────────────────────────
 
 let activePid = null, activeHour = null, activeKey = null, activeLayout = null;
@@ -1166,13 +1500,21 @@ const FREQ_HOURS = {
   q8h:[8,16], q6h:[8,14,20], once:[8], prn:[],
 };
 
+function getFreqHours(frequency) {
+  if (frequency && frequency.startsWith('hour_')) {
+    const h = parseInt(frequency.split('_')[1]);
+    return (!isNaN(h) && HOURS.includes(h)) ? [h] : [];
+  }
+  return FREQ_HOURS[frequency] || [];
+}
+
 async function render() {
   const root = document.getElementById('board-root');
   root.innerHTML = '<div class="spinner"></div>';
 
   let patients;
   try {
-    patients = await loadPatients();
+    [patients] = await Promise.all([loadPatients(), loadMedicines()]);
     console.log('✅ Pazienti caricati:', patients.length, patients);
   }
   catch(e) {
@@ -1222,7 +1564,29 @@ async function render() {
     if (!examsError && examsData) {
       examsData.forEach(exam => {
         const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
-        checks[key] = exam.data || [];
+        if (exam.type === 'eco') {
+          // Per eco, applica abbreviazioni
+          checks[key] = (exam.data || []).map(item => {
+            return ECO_INITIALS_MAP[item?.toLowerCase()] || ECO_INITIALS_MAP[item] || item?.charAt(0).toUpperCase() || item;
+          });
+        } else {
+          checks[key] = exam.data || [];
+        }
+      });
+    }
+
+    // Carica ecografie da tabella echos e le aggiunge a checks
+    const { data: echosData, error: echosError } = await db.from('echos').select('*').in('patient_id', ids);
+    if (!echosError && echosData) {
+      echosData.forEach(echo => {
+        const hour = new Date(echo.examined_at).getHours();
+        const key = `eco_${echo.patient_id}_${hour}`;
+        if (!checks[key]) checks[key] = [];
+        // Abbreviazione del tipo di eco
+        let abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase() || 'X';
+        if (!checks[key].includes(abbr)) {
+          checks[key].push(abbr);
+        }
       });
     }
   } catch(e) { console.warn('loadTodayVitals error:', e); }
@@ -1283,7 +1647,7 @@ async function render() {
       const drugsByHour = {};
       HOURS.forEach(h => { drugsByHour[h] = []; });
       drugs.forEach((t, i) => {
-        const freqSet = new Set((FREQ_HOURS[t.frequency]||[]).filter(h => HOURS.includes(h)));
+        const freqSet = new Set(getFreqHours(t.frequency).filter(h => HOURS.includes(h)));
         freqSet.forEach(h => {
           drugsByHour[h].push({ drug: t.drug, emoji: drugEmojis[i % drugEmojis.length], idx: i, ci: i % 6 });
         });
@@ -1292,15 +1656,16 @@ async function render() {
       // Crea celle orarie con tutti i farmaci per ora
       const drugCells = HOURS.map(h => {
         const drugsForHour = drugsByHour[h];
-        if (drugsForHour.length === 0) {
-          return `<td class="td-hour"><div class="cell-inner"></div></td>`;
-        }
+        const drugCount = drugsForHour.length;
 
-        // Calcola se tutti i farmaci sono flaggati
-        const allDone = drugsForHour.every(d => doneSet.has(`done_${todayKey()}_${p.id}_${d.idx}_${h}`));
+        // Calcola se tutti i farmaci sono flaggati (se presenti)
+        const allDone = drugCount > 0 && drugsForHour.every(d => doneSet.has(`done_${todayKey()}_${p.id}_${d.idx}_${h}`));
         const cellKey = `drugs_${todayKey()}_${p.id}_${h}`;
         const bg = allDone ? 'background:#EF4444CC' : '';
-        const drugCount = drugsForHour.length;
+
+        if (drugCount === 0) {
+          return `<td class="td-hour" style="position:relative"><div class="cell-inner" style="display:flex;align-items:center;justify-content:center"><span class="td-drug-add-btn check-empty" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer">+</span></div></td>`;
+        }
 
         return `<td class="td-hour td-drug-cell" data-drug-cell="${cellKey}" data-pid="${p.id}" data-hour="${h}" style="${bg};cursor:pointer;position:relative"><div class="cell-inner"><span style="font-size:var(--cell-font);font-weight:700">${drugCount}</span></div></td>`;
       }).join('');
@@ -1314,12 +1679,12 @@ async function render() {
       drugRow = `<tr class="${rowClass} drug-row">${nameCell}${therapyLabel}${emptyCells}</tr>`;
     }
 
-    // Righe Eco e Prelievi
+    // Riga Ecografie
     const ecoRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Eco</td>${HOURS.map(h => {
       const ecoKey = `eco_${p.id}_${h}`;
-      const hasData = checks[ecoKey] && checks[ecoKey].length > 0;
-      return `<td class="td-check exam-cell" data-exam-key="${ecoKey}" data-type="eco" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer"><div class="check-cell"><span class="check-empty">${hasData ? '✅' : '+'}</span></div></td>`;
+      return `<td class="td-check" data-pick="${ecoKey}" style="cursor:pointer">${renderPickCell(ecoKey)}</td>`;
     }).join('')}</tr>`;
+
     const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => {
       const prevKey = `prev_${p.id}_${h}`;
       const hasData = checks[prevKey] && checks[prevKey].length > 0;
@@ -1344,7 +1709,7 @@ async function render() {
 
   // X nella prima riga: toggle done (stopPropagation per non aprire modal)
   root.querySelectorAll('.td-vital [data-done-key]').forEach(span => {
-    span.addEventListener('click', e => {
+    span.addEventListener('click', async (e) => {
       e.stopPropagation();
       const key = span.dataset.doneKey;
       const td  = span.closest('td');
@@ -1354,12 +1719,13 @@ async function render() {
         const vital = vitalsMap[td.dataset.key];
         const hasData = vital && vitalToLines(vital).length > 0;
         td.style.background = hasData ? 'var(--accent-dim)' : '#F59E0B09';
+        await saveDone(key);
       } else {
         doneSet.add(key);
         span.classList.add('done');
         td.style.background = '#EF444418';
+        await saveDone();
       }
-      saveDone();
     });
   });
 
@@ -1367,7 +1733,17 @@ async function render() {
   root.querySelectorAll('.td-drug-cell').forEach(cell => {
     cell.addEventListener('click', e => {
       e.stopPropagation();
-      openDrugsModal(cell.dataset.pid, parseInt(cell.dataset.hour));
+      openTherapiesModal(cell.dataset.pid, parseInt(cell.dataset.hour));
+    });
+  });
+
+  // Click su bottone "+" per aggiungere terapia
+  root.querySelectorAll('.td-drug-add-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      currentTherapiesModal = { pid: btn.dataset.pid, hour: parseInt(btn.dataset.hour) };
+      openTherapyForm();
+      document.getElementById('therapies-modal').classList.add('show');
     });
   });
 
@@ -1390,28 +1766,150 @@ async function render() {
   });
 
   root.querySelectorAll('.td-check').forEach(td => {
-    const key = td.dataset.examKey;
-    td.innerHTML = renderPickCell(key);
-    td.addEventListener('click', e => {
-      e.stopPropagation();
-      openPickPop(td.dataset.examKey, td.dataset.type);
-    });
+    const pickKey = td.dataset.pick;
+    const examKey = td.dataset.examKey;
+    const key = pickKey || examKey;
+
+    if (!td.innerHTML || !td.innerHTML.includes('eco-abbr-label')) {
+      td.innerHTML = renderPickCell(key);
+    }
+
+    // Click su cella eco per aprire il picker
+    if (pickKey?.startsWith('eco_')) {
+      td.addEventListener('click', e => {
+        e.stopPropagation();
+        openPickPop(pickKey, 'eco');
+      });
+    } else if (examKey) {
+      // Click su cella prelievi
+      td.addEventListener('click', e => {
+        e.stopPropagation();
+        openPickPop(examKey, td.dataset.type);
+      });
+    }
   });
 
   root.querySelectorAll('.td-drug-x').forEach(td => {
-    td.addEventListener('click', () => {
+    td.addEventListener('click', async () => {
       const key = td.dataset.doneKey;
       const span = td.querySelector('.cell-drug');
       if (doneSet.has(key)) {
         doneSet.delete(key);
         span.classList.remove('done');
         td.style.background = '#F59E0B09';
+        await saveDone(key);
       } else {
         doneSet.add(key);
         span.classList.add('done');
         td.style.background = '#EF444418';
+        await saveDone();
       }
-      saveDone();
+    });
+  });
+
+  // Click su abbreviazioni ecografie per completarle
+  // Click su abbreviazioni eco per completarle (rosso), long-press per eliminarle
+  root.querySelectorAll('.eco-abbr-label').forEach(span => {
+    let longPressTimer = null;
+
+    span.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      longPressTimer = setTimeout(async () => {
+        const key = span.dataset.key;
+        if (!key) return;
+        const [ecoKey, abbr] = key.split('_').slice(-2);
+
+        if (!confirm(`Elimina questa ecografia (${abbr})?`)) return;
+
+        try {
+          // Trova e elimina l'eco dalla tabella echos
+          const [patientId, , echoType] = key.match(/eco_(\d+)_/) ? key.match(/eco_(\d+)_/) : [null];
+          // Carica l'eco corrispondente e eliminala
+          const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
+          if (!error && echos) {
+            const echoToDelete = echos.find(e =>
+              new Date(e.examined_at).getHours() === parseInt(key.split('_')[2]) &&
+              ECO_INITIALS_MAP[e.type?.toLowerCase()] === abbr
+            );
+            if (echoToDelete) {
+              await deleteEcho(echoToDelete.id);
+              delete checks[`eco_${patientId}_${key.split('_')[2]}`];
+              await render();
+              startRealtime();
+              toast('Ecografia eliminata');
+            }
+          }
+        } catch(e) {
+          toast('Errore: ' + e.message);
+        }
+      }, 500);
+    });
+
+    span.addEventListener('mouseup', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    span.addEventListener('mouseleave', () => {
+      clearTimeout(longPressTimer);
+    });
+
+    span.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const key = span.dataset.key;
+      if (!key) return;
+
+      if (!echoFlags[key]) echoFlags[key] = { done: false };
+
+      if (echoFlags[key].done) {
+        echoFlags[key].done = false;
+        span.style.color = 'currentColor';
+        span.style.textDecoration = 'none';
+      } else {
+        echoFlags[key].done = true;
+        span.style.color = '#EF4444';
+        span.style.textDecoration = 'underline';
+      }
+    });
+
+    // Touch events per mobile
+    let touchTimer = null;
+    span.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      touchTimer = setTimeout(async () => {
+        const key = span.dataset.key;
+        if (!key) return;
+
+        if (!confirm(`Elimina questa ecografia?`)) return;
+
+        try {
+          const patientId = key.split('_')[1];
+          const hour = parseInt(key.split('_')[2]);
+          const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
+          if (!error && echos) {
+            const echoToDelete = echos.find(e =>
+              new Date(e.examined_at).getHours() === hour &&
+              ECO_INITIALS_MAP[e.type?.toLowerCase()] === span.textContent
+            );
+            if (echoToDelete) {
+              await deleteEcho(echoToDelete.id);
+              delete checks[`eco_${patientId}_${hour}`];
+              await render();
+              startRealtime();
+              toast('Ecografia eliminata');
+            }
+          }
+        } catch(e) {
+          toast('Errore: ' + e.message);
+        }
+      }, 500);
+    });
+
+    span.addEventListener('touchend', () => {
+      clearTimeout(touchTimer);
+    });
+
+    span.addEventListener('touchcancel', () => {
+      clearTimeout(touchTimer);
     });
   });
 }
