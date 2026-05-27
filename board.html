@@ -1450,10 +1450,9 @@ document.getElementById('tm-weight').addEventListener('input', calcDose);
 // Aggiorna celle eco/prelievi quando vengono salvati i dati
 function updateExamCells() {
   document.querySelectorAll('.exam-cell').forEach(cell => {
-    const hasData = checks[cell.dataset.examKey] && checks[cell.dataset.examKey].length > 0;
-    const span = cell.querySelector('.check-empty');
-    if (span) {
-      span.textContent = hasData ? '✅' : '+';
+    const key = cell.dataset.examKey;
+    if (key) {
+      cell.innerHTML = renderPickCell(key);
     }
   });
 }
