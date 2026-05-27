@@ -1057,7 +1057,7 @@ function renderPickCell(key) {
   }).length;
   const completed = sel.filter(item => {
     if (typeof item === 'string') return false;
-    return item.completed === true;
+    return item.selected === true && item.completed === true;
   }).length;
   if (selected === 0) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
   const isAllDone = completed === selected && selected > 0;
