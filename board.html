@@ -629,7 +629,7 @@ async function saveDone(keyToDelete = null) {
           .eq('therapy_index', parseInt(tidx))
           .eq('hour', parseInt(hour))
           .eq('date', today);
-      } catch(e) { console.warn('deleteDone error:', e); }
+      } catch(e) { /* silent fail */ }
     }
     return;
   }
@@ -1146,6 +1146,7 @@ async function renderPickSheet() {
         opt.classList.toggle('sel', sel.includes(k));
         opt.querySelector('.pop-chk').textContent = sel.includes(k) ? '✓' : '';
         updatePickSummary();
+        updatePickCell(pickKey);
       });
     });
 
@@ -1290,11 +1291,7 @@ function updatePickCell(key) {
   const td = document.querySelector(`[data-exam-key="${key}"]`);
   if (td) {
     const newContent = renderPickCell(key);
-    console.log(`✓ updatePickCell: ${key} → ${newContent}`);
     td.innerHTML = newContent;
-  } else {
-    console.warn(`✗ Cell NOT found for key: ${key}`);
-    console.warn(`Available cells:`, document.querySelectorAll('[data-exam-key]').map(el => el.dataset.examKey));
   }
 }
 
@@ -1320,50 +1317,92 @@ document.getElementById('pick-done').addEventListener('click', async () => {
     const { patientId, hour, ecosMap, ecosIdMap, ecoOpts } = pickEcosMap;
     const currentSelection = checks[pickKey] || [];
 
-    // Trova le eco da eliminare (erano nel DB, non sono più selezionate)
-    for (const ecoOpt of ecoOpts) {
-      const optKey = ecoOpt.k;
-      const fullNameLower = ecoOpt.fullName?.toLowerCase();
-      const labelLower = ecoOpt.l?.toLowerCase();
-      const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
-      const ecoId = ecosIdMap[fullNameLower] || ecosIdMap[labelLower];
+    // Se tutto è deselezionato, cancella TUTTI gli echos per questa ora/paziente
+    if (currentSelection.length === 0) {
+      try {
+        // Carica tutti gli echos per il paziente
+        const { data: allEchos, error: loadError } = await db.from('echos').select('*').eq('patient_id', patientId);
+        if (!loadError && allEchos && allEchos.length > 0) {
+          // Filtra quelli per questa ora
+          const echosToDelete = allEchos.filter(e => {
+            const eHour = new Date(e.examined_at).getHours();
+            return eHour === parseInt(hour);
+          });
 
-      if (isInDb && !currentSelection.includes(optKey)) {
-        // Elimina
-        if (ecoId) {
+          // Cancella uno per uno
+          for (const echo of echosToDelete) {
+            try {
+              await deleteEcho(echo.id);
+            } catch(e) {
+              // silent fail
+            }
+          }
+        }
+
+        // IMPORTANTE: Cancella ANCHE da exams table per eco
+        await db.from('exams').delete()
+          .eq('patient_id', patientId)
+          .eq('type', 'eco')
+          .eq('hour', parseInt(hour))
+          .eq('date', todayKey());
+      } catch(e) {
+        // silent fail
+      }
+    } else {
+      // Altrimenti, elimina selettivamente
+      // Trova le eco da eliminare (erano nel DB, non sono più selezionate)
+      for (const ecoOpt of ecoOpts) {
+        const optKey = ecoOpt.k;
+        const fullNameLower = ecoOpt.fullName?.toLowerCase();
+        const labelLower = ecoOpt.l?.toLowerCase();
+        const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
+        const ecoId = ecosIdMap[fullNameLower] || ecosIdMap[labelLower];
+
+        if (isInDb && !currentSelection.includes(optKey)) {
+          // Elimina
+          if (ecoId) {
+            try {
+              await deleteEcho(ecoId);
+            } catch(e) {
+              console.warn('Error deleting echo:', e);
+            }
+          }
+        }
+      }
+
+      // Trova le eco da aggiungere (non erano nel DB, sono state selezionate)
+      for (const optKey of currentSelection) {
+        const ecoOpt = ecoOpts.find(o => o.k === optKey);
+        if (!ecoOpt) continue;
+        const fullNameLower = ecoOpt.fullName?.toLowerCase();
+        const labelLower = ecoOpt.l?.toLowerCase();
+        const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
+
+        if (!isInDb) {
+          // Aggiunge
           try {
-            await deleteEcho(ecoId);
+            const d = new Date();
+            d.setHours(hour, 0, 0, 0);
+            await addEcho({
+              patient_id: patientId,
+              type: ecoOpt.fullName,
+              examined_at: d.toISOString(),
+              findings: null,
+              notes: null
+            });
           } catch(e) {
-            console.warn('Error deleting echo:', e);
+            console.warn('Error adding echo:', e);
           }
         }
       }
     }
+  }
 
-    // Trova le eco da aggiungere (non erano nel DB, sono state selezionate)
-    for (const optKey of currentSelection) {
-      const ecoOpt = ecoOpts.find(o => o.k === optKey);
-      if (!ecoOpt) continue;
-      const fullNameLower = ecoOpt.fullName?.toLowerCase();
-      const labelLower = ecoOpt.l?.toLowerCase();
-      const isInDb = ecosMap[fullNameLower] || ecosMap[labelLower];
-
-      if (!isInDb) {
-        // Aggiunge
-        try {
-          const d = new Date();
-          d.setHours(hour, 0, 0, 0);
-          await addEcho({
-            patient_id: patientId,
-            type: ecoOpt.fullName,
-            examined_at: d.toISOString(),
-            findings: null,
-            notes: null
-          });
-        } catch(e) {
-          console.warn('Error adding echo:', e);
-        }
-      }
+  // PULIZIA per eco: se vuoto, ripulisci checks
+  if (pickKey && pickType === 'eco') {
+    const ecoSel = checks[pickKey] || [];
+    if (ecoSel.length === 0) {
+      delete checks[pickKey];
     }
   }
 
@@ -1375,8 +1414,16 @@ document.getElementById('pick-done').addEventListener('click', async () => {
       const keep = item.selected === true || item.completed === true;
       return keep;
     });
-    // Se l'array è vuoto, eliminalo completamente
+    // Se l'array è vuoto, cancella da Supabase
     if (checks[pickKey].length === 0) {
+      const [type, pid, hour] = pickKey.split('_');
+      if (type && pid && hour) {
+        try {
+          await db.from('exams').delete().eq('patient_id', pid).eq('type', type).eq('hour', parseInt(hour)).eq('date', todayKey());
+        } catch(e) {
+          // silent fail
+        }
+      }
       delete checks[pickKey];
     }
   }
@@ -1409,11 +1456,9 @@ document.getElementById('pick-done').addEventListener('click', async () => {
     }
   }
 
-  // Ricarica il board per mostrare i cambiamenti
+  // Per eco, solo aggiorna la cella (non ricaricare tutto)
   if (pickType === 'eco') {
-    delete checks[pickKey]; // Ripulisci i flag così la prossima apertura ricaria dal DB
-    await render();
-    startRealtime();
+    delete checks[pickKey];
   }
 
   pickKey = null; pickSubCat = null; pickEcosMap = null;
@@ -1449,9 +1494,18 @@ document.getElementById('tm-weight').addEventListener('input', calcDose);
 
 // Aggiorna celle eco/prelievi quando vengono salvati i dati
 function updateExamCells() {
+  // Aggiorna prelievi
   document.querySelectorAll('.exam-cell').forEach(cell => {
     const key = cell.dataset.examKey;
     if (key) {
+      cell.innerHTML = renderPickCell(key);
+    }
+  });
+
+  // Aggiorna eco
+  document.querySelectorAll('[data-pick]').forEach(cell => {
+    const key = cell.dataset.pick;
+    if (key && key.startsWith('eco_')) {
       cell.innerHTML = renderPickCell(key);
     }
   });
@@ -1778,6 +1832,10 @@ async function render() {
   vitalsMap = {};
   let weightMap = {};
   doneSet = new Set();
+  // PULISCI TUTTI i checks eco prima di ricaricare (evita dati fantasma da exams)
+  Object.keys(checks).forEach(k => {
+    if (k.startsWith('eco_')) delete checks[k];
+  });
   try {
     const ids = active.map(p => p.id);
     const today = todayKey();
@@ -1806,30 +1864,30 @@ async function render() {
     const { data: examsData, error: examsError } = await db.from('exams').select('*').in('patient_id', ids).eq('date', today);
     if (!examsError && examsData) {
       examsData.forEach(exam => {
-        const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
+        const rawData = exam.data || [];
+        // Salta i record con data vuota
+        if (!rawData || rawData.length === 0) return;
+        // Salta eco da exams (carica SOLO da echos table)
         if (exam.type === 'eco') {
-          // Per eco, applica abbreviazioni
-          checks[key] = (exam.data || []).map(item => {
-            return ECO_INITIALS_MAP[item?.toLowerCase()] || ECO_INITIALS_MAP[item] || item?.charAt(0).toUpperCase() || item;
-          });
-        } else {
-          // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
-          const rawData = exam.data || [];
-          checks[key] = rawData
-            .filter(item => {
-              // Rimuovi emoji verdi, stringhe vuote, e qualunque cosa non valida
-              if (!item) return false;
-              if (typeof item === 'string' && item.length === 0) return false;
-              if (item === '✅' || item === '✓' || item === '☑' || item === '☑️') return false; // Rimuovi emoji verdi
-              return true;
-            })
-            .map(item => {
-              if (typeof item === 'string') {
-                return { k: item, selected: true, completed: false };
-              }
-              return item;
-            });
+          return;
         }
+
+        const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
+        // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
+        checks[key] = rawData
+          .filter(item => {
+            // Rimuovi emoji verdi, stringhe vuote, e qualunque cosa non valida
+            if (!item) return false;
+            if (typeof item === 'string' && item.length === 0) return false;
+            if (item === '✅' || item === '✓' || item === '☑' || item === '☑️') return false; // Rimuovi emoji verdi
+            return true;
+          })
+          .map(item => {
+            if (typeof item === 'string') {
+              return { k: item, selected: true, completed: false };
+            }
+            return item;
+          });
       });
     }
 
