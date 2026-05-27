@@ -1051,7 +1051,17 @@ function renderPickCell(key) {
   }
 
   if (!sel.length) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
-  return `<div class="check-cell"><span class="check-badge">✓${sel.length > 1 ? sel.length : ''}</span></div>`;
+  const selected = sel.filter(item => {
+    if (typeof item === 'string') return true;
+    return item.selected === true;
+  }).length;
+  const completed = sel.filter(item => {
+    if (typeof item === 'string') return false;
+    return item.completed === true;
+  }).length;
+  if (selected === 0) return `<div class="check-cell"><span class="check-empty">+</span></div>`;
+  const isAllDone = completed === selected && selected > 0;
+  return `<div class="check-cell"><span class="check-badge" style="color:${isAllDone ? '#EF4444' : 'var(--text1)'};font-weight:700">${completed}/${selected}</span></div>`;
 }
 
 function labelForKey(type, k) {
@@ -1144,24 +1154,47 @@ async function renderPickSheet() {
     document.getElementById('pick-title').textContent = 'Prelievi';
     document.getElementById('pick-opts').innerHTML = PREV_CATS.map(c => {
       const hasSubs = !!c.sub;
-      const subSel  = hasSubs ? c.sub.filter(s => sel.includes(s.k)).length : 0;
-      const isSel   = !hasSubs && sel.includes(c.k);
+      const subSel  = hasSubs ? c.sub.filter(s => {
+        const item = sel.find(x => (typeof x === 'string' ? x === s.k : x.k === s.k));
+        return item && (typeof item === 'string' || item.selected === true);
+      }).length : 0;
+      const item = sel.find(x => (typeof x === 'string' ? x === c.k : x.k === c.k));
+      const isSelected = item && (typeof item === 'string' || item.selected === true);
+      const isCompleted = item && typeof item === 'object' && item.completed === true;
       const badge   = subSel > 0 ? `<span class="sub-count">${subSel}</span>` : '';
-      return `<div class="pop-opt ${isSel ? 'sel' : ''}" data-k="${c.k}" data-has-sub="${hasSubs ? '1' : ''}" data-leaf="${!hasSubs ? '1' : ''}">
-        <span class="pop-chk">${isSel ? '✓' : ''}</span>
-        <span style="flex:1">${c.l}</span>
-        ${badge}${hasSubs ? '<span class="pop-arrow">›</span>' : ''}
-      </div>`;
+
+      if (hasSubs) {
+        // Con sub-categorie: mostra singolo checkbox e freccia
+        return `<div class="pop-opt ${isSelected ? 'sel' : ''}" data-k="${c.k}" data-has-sub="1" data-leaf="0">
+          <span class="pop-chk">${isSelected ? '✓' : ''}</span>
+          <span style="flex:1">${c.l}</span>
+          ${badge}<span class="pop-arrow">›</span>
+        </div>`;
+      } else {
+        // Senza sub-categorie: mostra due checkbox (selezionato e completato)
+        return `<div class="pop-opt ${isSelected ? 'sel' : ''}" data-k="${c.k}" data-has-sub="0" data-leaf="1" style="display:flex;align-items:center;gap:8px">
+          <span class="pop-chk-sel" data-k="${c.k}" style="cursor:pointer;user-select:none;font-weight:700;font-size:18px;flex-shrink:0" title="Seleziona">${isSelected ? '☑️' : '☐️'}</span>
+          <span class="pop-chk-done" data-k="${c.k}" style="cursor:pointer;user-select:none;font-weight:700;font-size:18px;flex-shrink:0" title="Fatto">${isCompleted ? '✅' : '⭕'}</span>
+          <span style="flex:1">${c.l}</span>
+        </div>`;
+      }
     }).join('');
   } else {
     // Livello sub
     const cat = PREV_CATS.find(c => c.k === pickSubCat);
     document.getElementById('pick-title').innerHTML =
       `<span class="pick-back" id="pick-back">‹</span> ${cat.l}`;
-    document.getElementById('pick-opts').innerHTML = cat.sub.map(s => `
-      <div class="pop-opt ${sel.includes(s.k) ? 'sel' : ''}" data-k="${s.k}" data-leaf="1">
-        <span class="pop-chk">${sel.includes(s.k) ? '✓' : ''}</span>${s.l}
-      </div>`).join('');
+    document.getElementById('pick-opts').innerHTML = cat.sub.map(s => {
+      const item = sel.find(x => (typeof x === 'string' ? x === s.k : x.k === s.k));
+      const isSelected = item && (typeof item === 'string' || item.selected === true);
+      const isCompleted = item && typeof item === 'object' && item.completed === true;
+      return `
+      <div class="pop-opt ${isSelected ? 'sel' : ''}" data-k="${s.k}" data-leaf="1" style="display:flex;align-items:center;gap:8px">
+        <span class="pop-chk-sel" data-k="${s.k}" style="cursor:pointer;user-select:none;font-weight:700;font-size:18px;flex-shrink:0" title="Seleziona">${isSelected ? '☑️' : '☐️'}</span>
+        <span class="pop-chk-done" data-k="${s.k}" style="cursor:pointer;user-select:none;font-weight:700;font-size:18px;flex-shrink:0" title="Fatto">${isCompleted ? '✅' : '⭕'}</span>
+        <span style="flex:1">${s.l}</span>
+      </div>`;
+    }).join('');
     document.getElementById('pick-back').addEventListener('click', async () => {
       pickSubCat = null;
       await renderPickSheet();
@@ -1172,30 +1205,68 @@ async function renderPickSheet() {
 
   if (pickType !== 'eco') {
     document.getElementById('pick-opts').querySelectorAll('.pop-opt').forEach(opt => {
+      // Click sul checkbox selezionato
+      const selBtn = opt.querySelector('.pop-chk-sel');
+      if (selBtn) {
+        selBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const k = opt.dataset.k;
+          let cur = checks[pickKey] || [];
+          let item = cur.find(x => x.k === k);
+
+          if (item) {
+            if (item.selected) {
+              item.selected = false;
+            } else {
+              item.selected = true;
+            }
+          } else {
+            cur.push({ k, selected: true, completed: false });
+          }
+
+          checks[pickKey] = cur;
+          const isSelected = cur.some(x => x.k === k && x.selected);
+          selBtn.textContent = isSelected ? '☑️' : '☐️';
+          opt.classList.toggle('sel', isSelected);
+          updatePickSummary();
+          updatePickCell(pickKey);
+        });
+      }
+
+      // Click sul checkbox completato
+      const doneBtn = opt.querySelector('.pop-chk-done');
+      if (doneBtn) {
+        doneBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const k = opt.dataset.k;
+          let cur = checks[pickKey] || [];
+          let item = cur.find(x => x.k === k);
+
+          if (item) {
+            item.completed = !item.completed;
+          } else {
+            cur.push({ k, selected: false, completed: true });
+          }
+
+          checks[pickKey] = cur;
+          const isCompleted = cur.some(x => x.k === k && x.completed);
+          doneBtn.textContent = isCompleted ? '✅' : '⭕';
+          updatePickSummary();
+          updatePickCell(pickKey);
+        });
+      }
+
+      // Click sul resto della riga (solo categoria macro con sub)
       opt.addEventListener('click', async () => {
-      const k   = opt.dataset.k;
-      const leaf = opt.dataset.leaf === '1';
-      const hasSub = opt.dataset.hasSub === '1';
+        const k   = opt.dataset.k;
+        const leaf = opt.dataset.leaf === '1';
+        const hasSub = opt.dataset.hasSub === '1';
 
-      if (hasSub) {
-        pickSubCat = k;
-        await renderPickSheet();
-        return;
-      }
-      if (!leaf) return;
-
-      let cur = checks[pickKey] || [];
-      if (cur.includes(k)) cur = cur.filter(x => x !== k);
-      else cur = [...cur, k];
-      checks[pickKey] = cur;
-      opt.classList.toggle('sel', cur.includes(k));
-      opt.querySelector('.pop-chk').textContent = cur.includes(k) ? '✓' : '';
-      updatePickSummary();
-
-      // Aggiorna badge macro se siamo nel sub
-      if (pickSubCat && pickType === 'prev') {
-        // Refresh macro badges richiede re-render (non facciamo nulla, l'utente vede il sub)
-      }
+        if (hasSub) {
+          pickSubCat = k;
+          await renderPickSheet();
+          return;
+        }
       });
     });
   }
@@ -1210,9 +1281,26 @@ async function openPickPop(key, type) {
   pickPop.classList.add('show');
 }
 
+function updatePickCell(key) {
+  const td = document.querySelector(`[data-exam-key="${key}"]`);
+  if (td) {
+    td.innerHTML = renderPickCell(key);
+  }
+}
+
 function updatePickSummary() {
   const sel = checks[pickKey] || [];
-  const labels = sel.map(k => labelForKey(pickType, k));
+  const labels = sel
+    .filter(item => {
+      if (typeof item === 'string') return true;
+      return item.selected === true;
+    })
+    .map(item => {
+      const k = typeof item === 'string' ? item : item.k;
+      const label = labelForKey(pickType, k);
+      const isCompleted = typeof item === 'object' && item.completed;
+      return isCompleted ? `${label} ✓` : label;
+    });
   document.getElementById('pick-summary').textContent = labels.join(', ');
 }
 
@@ -1702,7 +1790,14 @@ async function render() {
             return ECO_INITIALS_MAP[item?.toLowerCase()] || ECO_INITIALS_MAP[item] || item?.charAt(0).toUpperCase() || item;
           });
         } else {
-          checks[key] = exam.data || [];
+          // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
+          const rawData = exam.data || [];
+          checks[key] = rawData.map(item => {
+            if (typeof item === 'string') {
+              return { k: item, selected: true, completed: false };
+            }
+            return item;
+          });
         }
       });
     }
@@ -1819,8 +1914,7 @@ async function render() {
 
     const prevRow = `<tr class="${rowClass} check-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Prel.</td>${HOURS.map(h => {
       const prevKey = `prev_${p.id}_${h}`;
-      const hasData = checks[prevKey] && checks[prevKey].length > 0;
-      return `<td class="td-check exam-cell" data-exam-key="${prevKey}" data-type="prev" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer"><div class="check-cell"><span class="check-empty">${hasData ? '✅' : '+'}</span></div></td>`;
+      return `<td class="td-check exam-cell" data-exam-key="${prevKey}" data-type="prev" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer">${renderPickCell(prevKey)}</td>`;
     }).join('')}</tr>`;
 
     return drugRow + ecoRow + prevRow;
