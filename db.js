@@ -210,3 +210,26 @@ export const FECES_LABELS  = { si:'Sì', no:'No', diarrea:'Diarrea', diarrea_emo
 export const URINE_LABELS  = { si:'Sì', no:'No', stranguria:'Stranguria', ematuria:'Ematuria', itteriche:'Urine itteriche' };
 export const WATER_LABELS  = { si:'Sì', no:'No', a_disposizione:'A disposizione', digiuno_forzato:'Digiuno forzato', digiuno_acqua:'Digiuno forzato anche acqua' };
 export const FOOD_LABELS   = { si:'Sì', no:'No', a_disposizione:'A disposizione', digiuno_forzato:'Digiuno forzato', digiuno_acqua:'Digiuno forzato anche acqua' };
+
+// ── Board Notes ─────────────────────────────────────────────────────────────
+
+export async function loadBoardNotes(patientIds, date) {
+  try {
+    const { data, error } = await db.from('board_notes')
+      .select('*').in('patient_id', patientIds).eq('date', date);
+    return data || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+export async function saveBoardNote(patientId, date, content) {
+  try {
+    await db.from('board_notes').upsert(
+      { patient_id: patientId, date, content, updated_at: new Date().toISOString() },
+      { onConflict: 'patient_id,date' }
+    );
+  } catch(e) {
+    console.warn('saveBoardNote error:', e);
+  }
+}

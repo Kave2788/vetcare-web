@@ -114,7 +114,7 @@
     .board tbody tr.drug-row td { border-top: 1px dashed #1e3a5f88; }
 
     /* Nascondi riga parametri vitali e colonna farmaco */
-    .board tbody tr:not(.drug-row):not(.check-row) { display: none; }
+    .board tbody tr:not(.drug-row):not(.check-row):not(.note-row) { display: none; }
 
     .board tbody td {
       padding: 2px 0;
@@ -408,6 +408,11 @@
     .empty-board .ei { font-size: 40px; margin-bottom: 10px; }
     .empty-board .et { font-size: 15px; font-weight: 700; color: var(--text); }
     .empty-board .eh { font-size: 12px; margin-top: 4px; }
+    #note-modal { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.6); align-items: flex-end; justify-content: center; }
+    #note-modal.show { display: flex; }
+    .note-sheet { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px 18px 0 0; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; }
+    #note-text { width: 100%; min-height: 120px; padding: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; font-family: var(--font); box-sizing: border-box; }
+    #note-text:focus { outline: none; border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -591,12 +596,14 @@
   </div>
 
   <div id="toast"></div>
+  <div id="note-modal"><div class="note-sheet"><div class="pick-handle"></div><div class="pop-title" id="note-title">Note</div><textarea id="note-text" placeholder="Aggiungi nota..."></textarea><div style="display:flex;gap:8px;margin-top:12px"><button id="note-cancel" class="hm-btn cancel">Annulla</button><button id="note-clear" class="hm-btn clear">Elimina</button><button id="note-save" class="hm-btn save">Salva</button></div></div></div>
 </div>
 
 <script type="module">
 import {
   db, loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
   addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho, addEcho,
+  loadBoardNotes, saveBoardNote,
   SPECIES_EMOJI, STATUS_COLOR, FREQ_LABELS
 } from './db.js';
 
@@ -672,6 +679,7 @@ async function saveChecks() {
 let vitalsMap = {};
 let drugSchedule = {};
 let weightMap = {};
+let notesMap = {};
 
 function cellKey(pid, h) { return `${pid}_h${h}`; }
 
@@ -1838,13 +1846,16 @@ async function render() {
   try {
     const ids = active.map(p => p.id);
     const today = todayKey();
-    const [tv, wm, adminData] = await Promise.all([
+    const [tv, wm, adminData, notesData] = await Promise.all([
       loadTodayVitals(ids),
       loadLatestWeights(ids),
-      db.from('drug_administrations').select('*').in('patient_id', ids).eq('date', today)
+      db.from('drug_administrations').select('*').in('patient_id', ids).eq('date', today),
+      loadBoardNotes(ids, today)
     ]);
 
     weightMap = wm;
+    notesMap = {};
+    (notesData || []).forEach(n => { notesMap[n.patient_id] = n.content; });
     tv.forEach(v => {
       const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
@@ -1943,7 +1954,7 @@ async function render() {
     const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
-    const totalSpan = 3;
+    const totalSpan = 4;
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
@@ -2005,7 +2016,10 @@ async function render() {
       return `<td class="td-check exam-cell" data-exam-key="${prevKey}" data-type="prev" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer">${renderPickCell(prevKey)}</td>`;
     }).join('')}</tr>`;
 
-    return drugRow + ecoRow + prevRow;
+    const noteContent = notesMap[p.id];
+    const noteRow = `<tr class="${rowClass} note-row"><td style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Note</td><td colspan="${HOURS.length}" class="td-note" data-pid="${p.id}" style="cursor:pointer;text-align:left;padding:4px 8px;font-size:11px;white-space:pre-wrap;word-break:break-word;color:${noteContent ? 'var(--text)' : 'var(--border)'};min-height:40px;overflow:hidden">${noteContent || '+ aggiungi nota...'}</td></tr>`;
+
+    return drugRow + ecoRow + prevRow + noteRow;
   }).join('');
 
   root.innerHTML = `
@@ -2250,7 +2264,47 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') softRefresh();
 });
 
-render().then(() => startRealtime());
+let currentNotePid = null;
+document.getElementById('note-save').addEventListener('click', async () => {
+  if (!currentNotePid) return;
+  const content = document.getElementById('note-text').value.trim();
+  await saveBoardNote(currentNotePid, todayKey(), content);
+  notesMap[currentNotePid] = content;
+  const td = document.querySelector(`.td-note[data-pid="${currentNotePid}"]`);
+  if (td) { td.textContent = content || '+ aggiungi nota...'; td.style.color = content ? 'var(--text)' : 'var(--border)'; }
+  document.getElementById('note-modal').classList.remove('show');
+  toast('Nota salvata');
+});
+document.getElementById('note-cancel').addEventListener('click', () => { document.getElementById('note-modal').classList.remove('show'); });
+document.getElementById('note-clear').addEventListener('click', async () => {
+  if (!currentNotePid) return;
+  await saveBoardNote(currentNotePid, todayKey(), '');
+  notesMap[currentNotePid] = '';
+  const td = document.querySelector(`.td-note[data-pid="${currentNotePid}"]`);
+  if (td) { td.textContent = '+ aggiungi nota...'; td.style.color = 'var(--border)'; }
+  document.getElementById('note-modal').classList.remove('show');
+  toast('Nota eliminata');
+});
+
+async function attachNoteListeners(root) {
+  root.querySelectorAll('.td-note').forEach(td => {
+    td.addEventListener('click', () => {
+      const pid = td.dataset.pid;
+      const patient = patientsData.find(p => p.id === pid);
+      currentNotePid = pid;
+      document.getElementById('note-title').textContent = `Note — ${patient?.name || ''}`;
+      document.getElementById('note-text').value = notesMap[pid] || '';
+      document.getElementById('note-modal').classList.add('show');
+    });
+  });
+}
+
+async function render2() {
+  await render();
+  attachNoteListeners(document.getElementById('board-root'));
+}
+
+render2().then(() => startRealtime());
 </script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
 </body>
