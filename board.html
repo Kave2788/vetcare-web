@@ -1217,6 +1217,10 @@ async function renderPickSheet() {
           if (item) {
             if (item.selected) {
               item.selected = false;
+              // Se lo deseleziono e non è completato, rimuovilo dall'array
+              if (!item.completed) {
+                cur = cur.filter(x => x.k !== k);
+              }
             } else {
               item.selected = true;
             }
@@ -1282,9 +1286,15 @@ async function openPickPop(key, type) {
 }
 
 function updatePickCell(key) {
+  if (!key) return;
   const td = document.querySelector(`[data-exam-key="${key}"]`);
   if (td) {
-    td.innerHTML = renderPickCell(key);
+    const newContent = renderPickCell(key);
+    console.log(`✓ updatePickCell: ${key} → ${newContent}`);
+    td.innerHTML = newContent;
+  } else {
+    console.warn(`✗ Cell NOT found for key: ${key}`);
+    console.warn(`Available cells:`, document.querySelectorAll('[data-exam-key]').map(el => el.dataset.examKey));
   }
 }
 
@@ -1354,6 +1364,20 @@ document.getElementById('pick-done').addEventListener('click', async () => {
           console.warn('Error adding echo:', e);
         }
       }
+    }
+  }
+
+  // PULIZIA AGGRESSIVA prima di salvare: rimuovi item inutili
+  if (pickKey && pickType === 'prev') {
+    const cur = checks[pickKey] || [];
+    checks[pickKey] = cur.filter(item => {
+      // Mantieni SOLO se: (selezionato) OR (completato)
+      const keep = item.selected === true || item.completed === true;
+      return keep;
+    });
+    // Se l'array è vuoto, eliminalo completamente
+    if (checks[pickKey].length === 0) {
+      delete checks[pickKey];
     }
   }
 
