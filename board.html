@@ -1815,12 +1815,20 @@ async function render() {
         } else {
           // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
           const rawData = exam.data || [];
-          checks[key] = rawData.map(item => {
-            if (typeof item === 'string') {
-              return { k: item, selected: true, completed: false };
-            }
-            return item;
-          });
+          checks[key] = rawData
+            .filter(item => {
+              // Rimuovi emoji verdi, stringhe vuote, e qualunque cosa non valida
+              if (!item) return false;
+              if (typeof item === 'string' && item.length === 0) return false;
+              if (item === '✅' || item === '✓' || item === '☑' || item === '☑️') return false; // Rimuovi emoji verdi
+              return true;
+            })
+            .map(item => {
+              if (typeof item === 'string') {
+                return { k: item, selected: true, completed: false };
+              }
+              return item;
+            });
         }
       });
     }
