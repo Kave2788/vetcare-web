@@ -21,13 +21,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **PWA:** `manifest.json` + `sw.js` (installable as native app, offline fallback for cached assets)
 
 ### Database (Supabase)
-Three main tables with relational structure:
+Four main tables with relational structure:
 
 | Table | Purpose | Key Fields |
 |-------|---------|-----------|
 | **patients** | Animal records | id, name, species, breed, age, weight, status (stable/critical/discharged), admitted_at, owner, notes, food, allergies |
 | **vitals** | Vital signs & clinical observations | patient_id, recorded_at, temp, heart_rate, resp_rate, resp_type, dehydration, sensorium, mucosae, feces, urine, urine_output_ml/hours, enteral_ml, water/food_status, notes |
 | **therapies** | Drug administration | patient_id, drug, dose, unit, route, frequency, started_at, active, notes, prescriber |
+| **echos** | Ultrasound examinations | id, patient_id, type (Addominale, Cardiaca), examined_at, findings, notes, created_at |
 
 ### Key Files
 
@@ -38,7 +39,8 @@ Three main tables with relational structure:
 | **new/edit-patient.html** | Patient add/edit forms | Form input with validation before INSERT/UPDATE |
 | **add/edit-vitals.html** | Vitals entry forms | Dropdown enums for resp_type, dehydration, sensorium, mucosae, feces, urine, water/food_status; auto-calc urine_output (ml/kg/h), enteral RER (70×kg^0.75) |
 | **add/edit-therapy.html** | Therapy management | Drug autocomplete from drugs.json, dose calculator by weight/age/status |
-| **board.html** | Daily shift board (landscape) | Time-based grid (8-20h), patient vitals row + drug rows below, real-time Supabase channel, checkmark-on-click (localStorage per day) |
+| **add/edit-echo.html** | Echo examinations | Type dropdown (Addominale/Cardiaca), datetime picker, findings & notes fields |
+| **board.html** | Daily shift board (landscape) | Time-based grid (8-20h), patient vitals row + drug rows below, real-time updates; modal system for echo/prelievi selection with checkboxes, abbreviations (A, C) with red flag for completion |
 | **db.js** | All Supabase queries + constants | Exports: loadPatients(), addVital(), stopTherapy(), etc. + label enums (STATUS_LABEL, FREQ_LABELS, DEHYD_LABELS, etc.) |
 | **style.css** | Global dark theme | CSS vars (--bg, --card, --accent, etc.), safe-area-inset for iOS, responsive breakpoint @media (max-width: 360px) |
 | **sw.js** | Service worker | Cache v-number (e.g., vetcare-v25), network-first for Supabase requests, cache-first for static assets |
@@ -88,6 +90,13 @@ Then open http://localhost:8000/index.html or just http://localhost:8000 (if you
 3. `add-vitals.html`: add `<select>` field, populate from db.js constants
 4. `patient.html` Scheda tab: display in vitals list
 
+**Add a new echo type:**
+1. Supabase: no schema change needed (type is text field)
+2. `board.html`: add to `ECO_OPTS` array (e.g., `{ k:'pol', l:'Polm', fullName:'Polmonare' }`)
+3. `board.html`: add mapping to `ECO_INITIALS_MAP` (e.g., `'polmonare': 'P'`)
+4. `add-echo.html` & `edit-echo.html`: add `<option>` to type select dropdown
+5. `sw.js`: increment CACHE version to force deployment
+
 **Update service worker cache:**
 - Edit `sw.js` line 1: increment `CACHE = 'vetcare-v26'` (or next version)
 - Add new file to ASSETS array if it's a new static asset
@@ -132,8 +141,25 @@ export async function loadSomething(id) {
 ```
 Errors are thrown (not caught) so calling code can handle with try/catch and toast().
 
+**Echo functions in db.js:**
+- `loadEchos(patientId)` — Load all echoes for a patient, ordered by examined_at DESC
+- `addEcho(echo)` — Insert new echo with patient_id, type, examined_at, findings, notes
+- `loadEcho(id)` — Load single echo record
+- `updateEcho(id, fields)` — Update echo (type, examined_at, findings, notes)
+- `deleteEcho(id)` — Delete echo record
+
 ### Real-Time Board Updates
 `board.html` uses Supabase's `.on('*')` listener on the `board-vitals` channel. On vitals insert/update/delete, the board auto-refreshes the affected patient row. It also re-fetches on page visibility change (tab focus) and has a manual refresh button.
+
+### Board Modal System (Echo & Prelievi)
+The board has a checkbox-based modal system (`.pick-pop`) for selecting echoes and lab tests per hour:
+- **Modal structure:** `.pick-sheet` (scrollable options grid, summary, "Fatto" button)
+- **Positioning:** `position: fixed; inset: 0` to cover full viewport without layering issues
+- **Echo abbreviations:** Mapped via `ECO_INITIALS_MAP` (A=Addominale, C=Cardiaca) and displayed in cells
+- **Flag system:** Echoes can be marked "done" (red) via `echoFlags` object (session-state, not persisted)
+- **Deletion:** Unchecking a checkbox in the modal and clicking "Fatto" deletes the echo from the database
+- **Real-time cell updates:** After modal close, affected cells re-render with updated counts/abbreviations
+- **Modal cleanup:** When opening pick-pop, any other open modals (exam-modal, therapies-modal) are automatically closed to prevent overlaps
 
 ### Form Patterns
 - Always validate before INSERT/UPDATE (non-empty required fields, valid dates)

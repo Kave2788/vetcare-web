@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Modifica ecografia — VetCare</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <a class="back" href="#" onclick="history.back(); return false;">Indietro</a>
+    <h1>Modifica ecografia</h1>
+  </div>
+
+  <div class="page" style="max-width:480px;margin:0 auto">
+    <form id="echo-form" style="padding:20px 0">
+      <div class="field">
+        <label>Tipo di ecografia</label>
+        <select id="type" required>
+          <option value="">-- Seleziona --</option>
+          <option value="Addominale">Addominale</option>
+          <option value="Cardiaca">Cardiaca</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Data e ora</label>
+        <input type="datetime-local" id="examined_at" required>
+      </div>
+
+      <div class="field">
+        <label>Risultati</label>
+        <textarea id="findings" placeholder="Descrizione dei reperti ecografici..." style="min-height:80px"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Note</label>
+        <textarea id="notes" placeholder="Note aggiuntive..." style="min-height:60px"></textarea>
+      </div>
+
+      <button type="submit" class="btn" id="save-btn">Salva modifiche</button>
+    </form>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { loadEcho, updateEcho } from './db.js';
+
+    const patientId = new URLSearchParams(location.search).get('id');
+    const echoId = new URLSearchParams(location.search).get('eid');
+    if (!patientId || !echoId) location.href = 'index.html';
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function formatDateTimeLocal(iso) {
+      const d = new Date(iso);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    }
+
+    // Load echo
+    (async () => {
+      try {
+        const echo = await loadEcho(echoId);
+        document.getElementById('type').value = echo.type || '';
+        document.getElementById('examined_at').value = formatDateTimeLocal(echo.examined_at);
+        document.getElementById('findings').value = echo.findings || '';
+        document.getElementById('notes').value = echo.notes || '';
+      } catch(err) {
+        toast('Errore caricamento: ' + err.message);
+      }
+    })();
+
+    document.getElementById('echo-form').onsubmit = async e => {
+      e.preventDefault();
+
+      const type = document.getElementById('type').value.trim();
+      const examined_at = document.getElementById('examined_at').value;
+      const findings = document.getElementById('findings').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+
+      if (!type || !examined_at) {
+        toast('Compilare i campi obbligatori');
+        return;
+      }
+
+      const btn = document.getElementById('save-btn');
+      btn.disabled = true;
+      btn.textContent = 'Salvataggio...';
+
+      try {
+        await updateEcho(echoId, {
+          type,
+          examined_at: new Date(examined_at).toISOString(),
+          findings: findings || null,
+          notes: notes || null
+        });
+        toast('Ecografia aggiornata');
+        setTimeout(() => history.back(), 500);
+      } catch(err) {
+        toast('Errore: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Salva modifiche';
+      }
+    };
+  </script>
+  <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>

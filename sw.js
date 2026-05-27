@@ -1,4 +1,4 @@
-const CACHE = 'vetcare-v51';
+const CACHE = 'vetcare-v52';
 const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
 const ASSETS = [
   basePath + '/',
