@@ -115,7 +115,6 @@
 
     /* Nascondi riga parametri vitali e colonna farmaco */
     .board tbody tr:not(.drug-row):not(.check-row) { display: none; }
-    .board th.col-ter, .board td.td-ter { display: none; }
 
     .board tbody td {
       padding: 2px 0;
@@ -1990,7 +1989,7 @@ async function render() {
       drugRow = `<tr class="${rowClass} drug-row">${nameCell}${therapyLabel}${drugCells}</tr>`;
     } else {
       // Riga terapie vuota (no drugs)
-      const emptyCells = HOURS.map(h => `<td class="td-hour"><div class="cell-inner"></div></td>`).join('');
+      const emptyCells = HOURS.map(h => `<td class="td-hour"><div class="cell-inner" style="display:flex;align-items:center;justify-content:center"><span class="td-drug-add-btn check-empty" data-pid="${p.id}" data-hour="${h}" style="cursor:pointer">+</span></div></td>`).join('');
       const therapyLabel = `<td class="td-label" style="text-align:left;font-size:10px;color:var(--text3);padding:0 4px">Terapie</td>`;
       drugRow = `<tr class="${rowClass} drug-row">${nameCell}${therapyLabel}${emptyCells}</tr>`;
     }
