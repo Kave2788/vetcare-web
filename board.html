@@ -958,7 +958,9 @@ function hourToISO(h) {
 
 const ECO_OPTS = [
   { k:'add', l:'Addome', fullName:'Addominale' },
-  { k:'card', l:'Cardio', fullName:'Cardiaca' }
+  { k:'card', l:'Cardio', fullName:'Cardiaca' },
+  { k:'tor', l:'Torace', fullName:'Torace' },
+  { k:'vol', l:'Volumi', fullName:'Volumi' }
 ];
 const ECO_INITIALS_MAP = {
   'addominale': 'A', 'Addominale': 'A', 'addome': 'A', 'add': 'A', 'abd': 'A',
@@ -970,6 +972,8 @@ const ECO_INITIALS_MAP = {
   'muscolare': 'M', 'Muscolare': 'M', 'muscoli': 'M', 'musc': 'M',
   'tiroidea': 'T', 'Tiroidea': 'T', 'tiroide': 'T', 'tir': 'T',
   'oftalmico': 'Ot', 'Oftalmico': 'Ot', 'occhio': 'Ot', 'oft': 'Ot',
+  'torace': 'To', 'Torace': 'To', 'toracica': 'To', 'tor': 'To',
+  'volumi': 'V', 'Volumi': 'V', 'volume': 'V', 'vol': 'V',
 };
 let echoFlags = {};
 
@@ -987,6 +991,7 @@ const PREV_CATS = [
     { k:'bio_sam',  l:'Siero Amiloide' },
     { k:'bio_abd',  l:'Acidi Biliari (dig.)' },
     { k:'bio_abp',  l:'Acidi Biliari (pp.)' },
+    { k:'bio_sky',  l:'Skyla' },
   ]},
   { k:'orm',    l:'Ormonali',            sub: [
     { k:'orm_cob',  l:'Cortisolo Basale' },
