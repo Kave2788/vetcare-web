@@ -1608,6 +1608,26 @@ function applyLayout(L) {
   r.setProperty('--topbar-h', L.TOPBAR_H + 'px');
 }
 
+// Restringe le colonne orarie quanto basta a far stare la tabella nello schermo
+// senza scroll laterale. Va chiamata dopo il render: misura la larghezza reale
+// delle colonne fisse (nome + etichetta), che dipende dal contenuto.
+function fitHourColumns() {
+  const nameTd  = document.querySelector('.board td.td-name');
+  const labelTd = document.querySelector('.board td.td-label');
+  if (!nameTd || !labelTd) return;
+  const portrait  = window.innerWidth < window.innerHeight;
+  const sa        = getSafeArea();
+  const safeStart = portrait ? sa.top : sa.left;
+  const lw        = (portrait ? window.innerHeight : window.innerWidth) - safeStart;
+  // offsetWidth e non getBoundingClientRect: ignora la rotazione CSS in portrait
+  const fixed = nameTd.offsetWidth + labelTd.offsetWidth;
+  const w = Math.max(24, Math.floor((lw - fixed - 2) / HOURS.length));
+  const r = document.documentElement.style;
+  r.setProperty('--hour-w', w + 'px');
+  // Allinea l'offset sticky della colonna etichetta alla larghezza reale del nome
+  r.setProperty('--name-w', nameTd.offsetWidth + 'px');
+}
+
 // ── Vitali → testo cella ───────────────────────────────────────────────────
 
 const SHORT = {
@@ -2042,6 +2062,8 @@ async function render() {
       <tbody>${rows}</tbody>
     </table>`;
 
+  fitHourColumns();
+
   // X nella prima riga: toggle done (stopPropagation per non aprire modal)
   root.querySelectorAll('.td-vital [data-done-key]').forEach(span => {
     span.addEventListener('click', async (e) => {
@@ -2187,6 +2209,7 @@ window.addEventListener('resize', () => {
   );
   activeLayout = L;
   applyLayout(L);
+  fitHourColumns();
 });
 
 // ── Realtime sync vitals ──────────────────────────────────────────────────────
