@@ -123,14 +123,19 @@
     }
 
     /* Nome con strip stato */
-    .board tbody td.td-name { text-align: left; }
+    .board tbody td.td-name { text-align: left; vertical-align: top; }
     .name-cell {
-      display: flex; align-items: center; gap: 1px;
-      height: var(--row-h, 42px);
+      display: flex; align-items: stretch; gap: 1px;
+      min-height: var(--row-h, 42px);
+      height: 100%;
       padding: 0 1px;
     }
-    .name-strip { width: 3px; height: 100%; flex-shrink: 0; }
-    .name-info { display: flex; flex-direction: column; gap: 0; overflow: hidden; }
+    .name-strip { width: 3px; flex-shrink: 0; align-self: stretch; }
+    .name-info {
+      display: flex; flex-direction: column; justify-content: center;
+      gap: 8px; overflow: hidden;
+      flex: 1; padding: 0;
+    }
     .name-info .pname {
       font-size: var(--name-font, 12px); font-weight: 700;
       overflow: hidden; text-overflow: ellipsis;
@@ -139,6 +144,26 @@
       font-size: var(--sub-font, 9px); color: var(--text3);
       overflow: hidden; text-overflow: ellipsis;
     }
+    /* Toggle campanello dimissione */
+    .discharge-btn {
+      padding: 0 4px;
+      display: flex; align-items: center; justify-content: flex-start;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .discharge-btn .bell-on {
+      width: 30px; height: 30px;
+      color: #ef4444;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .discharge-btn .bell-on svg { width: 100%; height: 100%; }
+    .discharge-btn .bell-off {
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      color: #4b5563;
+      font-size: 22px; font-weight: 400; line-height: 1;
+    }
+    .discharge-btn:active { opacity: .6; }
 
     /* Celle orarie */
     .board tbody td.td-hour { cursor: pointer; transition: background .1s; position: relative; }
@@ -604,7 +629,7 @@
 import {
   db, loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
   addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho, addEcho,
-  loadBoardNotes, saveBoardNote,
+  loadBoardNotes, saveBoardNote, updatePatientFields,
   SPECIES_EMOJI, STATUS_COLOR, FREQ_LABELS
 } from './db.js';
 
@@ -1982,12 +2007,18 @@ async function render() {
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
     const totalSpan = 4;
+    const dischargeOn = !!p.discharge_pending;
+    const bellSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/><path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727"/><path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727"/></svg>`;
+    const dischargeBtn = `<div class="discharge-btn" data-pid="${p.id}" data-on="${dischargeOn ? '1' : '0'}" aria-label="${dischargeOn ? 'Rimuovi campanello dimissione' : 'Segna dimissione imminente'}">
+      ${dischargeOn ? `<span class="bell-on">${bellSvg}</span>` : `<span class="bell-off">+</span>`}
+    </div>`;
     const nameCell = `<td class="td-name" rowspan="${totalSpan}">
       <div class="name-cell">
         <div class="name-strip" style="background:${color}"></div>
         <div class="name-info">
           <div class="pname" style="padding:0 4px">${emoji} ${p.name}</div>
           <div style="font-size:13px;font-weight:700;color:var(--text1);padding:0 4px">${kg} kg</div>
+          ${dischargeBtn}
         </div>
       </div></td>`;
 
@@ -2063,6 +2094,32 @@ async function render() {
     </table>`;
 
   fitHourColumns();
+
+  // Toggle campanello dimissione imminente
+  root.querySelectorAll('.discharge-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const pid = btn.dataset.pid;
+      const wasOn = btn.dataset.on === '1';
+      const next = !wasOn;
+      btn.dataset.on = next ? '1' : '0';
+      btn.innerHTML = next
+        ? `<span class="bell-on"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/><path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727"/><path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727"/></svg></span>`
+        : `<span class="bell-off">+</span>`;
+      btn.setAttribute('aria-label', next ? 'Rimuovi campanello dimissione' : 'Segna dimissione imminente');
+      try {
+        await updatePatientFields(pid, { discharge_pending: next });
+        const p = patientsData.find(x => x.id === pid);
+        if (p) p.discharge_pending = next;
+      } catch (err) {
+        console.error('Errore toggle discharge_pending:', err);
+        btn.dataset.on = wasOn ? '1' : '0';
+        btn.innerHTML = wasOn
+          ? `<span class="bell-on"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/><path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727"/><path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727"/></svg></span>`
+          : `<span class="bell-off">+</span>`;
+      }
+    });
+  });
 
   // X nella prima riga: toggle done (stopPropagation per non aprire modal)
   root.querySelectorAll('.td-vital [data-done-key]').forEach(span => {
