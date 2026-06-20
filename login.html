@@ -139,10 +139,11 @@
         await signIn(email, password);
         window.location.href = 'index.html';
       } catch(err) {
+        console.error('Login error:', err.code, err.message);
         let msg = 'Credenziali non valide. Riprova.';
         if (err.code === 'auth/too-many-requests') msg = 'Troppi tentativi. Riprova tra qualche minuto.';
         if (err.code === 'auth/network-request-failed') msg = 'Errore di rete. Controlla la connessione.';
-        errEl.textContent = msg;
+        errEl.textContent = msg + ` (${err.code})`;
         btn.disabled = false;
         btn.textContent = 'Accedi';
       }

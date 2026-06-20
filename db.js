@@ -25,12 +25,11 @@ const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
 export const fdb = getFirestore(app);
 export const auth = getAuth(app);
 
-// Sessione persistente in IndexedDB — sopravvive al 7-day ITP di Safari iOS
-setPersistence(auth, browserLocalPersistence).catch(console.warn);
-
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function signIn(email, password) {
+  // Imposta persistenza prima del login — garantisce sessione in IndexedDB
+  await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
   return result.user;
 }
