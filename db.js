@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from './firebase/firebase-app.js';
 import {
-  initializeFirestore, persistentLocalCache,
+  getFirestore,
   collection, query, where,
   getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc,
   doc, onSnapshot
@@ -22,8 +22,7 @@ const FIREBASE_CONFIG = {
 };
 
 const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
-// Persistenza offline: dati cachati in IndexedDB, scritture in coda se offline
-export const fdb = initializeFirestore(app, { localCache: persistentLocalCache() });
+export const fdb = getFirestore(app);
 export const auth = getAuth(app);
 
 // Sessione persistente in IndexedDB — sopravvive al 7-day ITP di Safari iOS
