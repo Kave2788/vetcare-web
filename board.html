@@ -19,6 +19,9 @@
       position: fixed; top: 0; left: 0;
       width: 100vw; height: 100vh;
       display: flex; flex-direction: column;
+      /* landscape: Dynamic Island sul bordo sinistro */
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
     @media (orientation: portrait) {
       #page-wrap {
