@@ -2176,26 +2176,23 @@ async function render() {
   });
 
   root.querySelectorAll('.td-check').forEach(td => {
-    const pickKey = td.dataset.pick;
-    const examKey = td.dataset.examKey;
-    const key = pickKey || examKey;
-
+    const key = td.dataset.pick || td.dataset.examKey;
     if (!td.innerHTML || !td.innerHTML.includes('eco-abbr-label')) {
       td.innerHTML = renderPickCell(key);
     }
+  });
 
-    // Click su cella eco per aprire il picker
+  // Event delegation su root — più robusto di listener per singola cella su iOS
+  root.addEventListener('click', async (e) => {
+    const td = e.target.closest('td.td-check');
+    if (!td) return;
+    e.stopPropagation();
+    const pickKey = td.dataset.pick;
+    const examKey = td.dataset.examKey;
     if (pickKey?.startsWith('eco_')) {
-      td.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await openPickPop(pickKey, 'eco');
-      });
+      await openPickPop(pickKey, 'eco');
     } else if (examKey) {
-      // Click su cella prelievi
-      td.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await openPickPop(examKey, td.dataset.type);
-      });
+      await openPickPop(examKey, td.dataset.type);
     }
   });
 
