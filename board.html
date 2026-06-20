@@ -8,6 +8,8 @@
   <title>Lavagna — VetCare</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
   <link rel="stylesheet" href="style.css">
   <style>
     body { overflow: hidden; width: 100vw; height: 100vh; }
@@ -639,10 +641,13 @@
 
 <script type="module">
 import {
-  db, loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
-  addTherapy, updateTherapy, deleteTherapy, loadEchos, deleteEcho, addEcho,
+  requireAuth,
+  loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
+  addTherapy, deleteTherapy, loadEchos, loadEchosForPatients, deleteEcho, addEcho,
   loadBoardNotes, saveBoardNote, updatePatientFields,
-  SPECIES_EMOJI, STATUS_COLOR, FREQ_LABELS
+  loadDrugAdministrations, saveDrugAdministration, deleteDrugAdministration,
+  loadExams, saveExam, deleteExam, subscribeVitals,
+  SPECIES_EMOJI, STATUS_COLOR
 } from './db.js';
 
 const HOURS = [8,9,10,11,12,13,14,15,16,17,18,19,20];
@@ -659,7 +664,7 @@ let checks = {};
 let doneSet = new Set();
 function todayKey() { return new Date().toISOString().slice(0,10); }
 async function saveDone(keyToDelete = null) {
-  // Salva in Supabase
+  // Salva in Firebase
   const today = todayKey();
 
   // Se viene passato un key da cancellare, lo elimina
@@ -668,11 +673,7 @@ async function saveDone(keyToDelete = null) {
     if (parts.length >= 5) {
       const [, , pid, tidx, hour] = parts;
       try {
-        await db.from('drug_administrations').delete()
-          .eq('patient_id', pid)
-          .eq('therapy_index', parseInt(tidx))
-          .eq('hour', parseInt(hour))
-          .eq('date', today);
+        await deleteDrugAdministration(pid, parseInt(tidx), parseInt(hour), today);
       } catch(e) { /* silent fail */ }
     }
     return;
@@ -684,32 +685,19 @@ async function saveDone(keyToDelete = null) {
     if (parts.length < 5) continue;
     const [, , pid, tidx, hour] = parts;
     try {
-      await db.from('drug_administrations').upsert({
-        patient_id: pid,
-        therapy_index: parseInt(tidx),
-        hour: parseInt(hour),
-        date: today,
-        completed: true
-      }, { onConflict: ['patient_id', 'therapy_index', 'hour', 'date'] });
+      await saveDrugAdministration(pid, parseInt(tidx), parseInt(hour), today);
     } catch(e) { console.warn('saveDone error:', e); }
   }
 }
 async function saveChecks() {
-  // Salva eco e prelievi in Supabase
+  // Salva eco e prelievi in Firebase
   const today = todayKey();
   for (const [key, items] of Object.entries(checks)) {
     const [type, pid, hour] = key.split('_');
     if (!pid || !hour) continue;
 
     try {
-      // Salva come array JSON nella tabella exams
-      await db.from('exams').upsert({
-        patient_id: pid,
-        type: type,
-        hour: parseInt(hour),
-        date: today,
-        data: items
-      }, { onConflict: ['patient_id', 'type', 'hour', 'date'] });
+      await saveExam(type, pid, parseInt(hour), today, items);
     } catch(e) { console.warn('saveChecks error:', e); }
   }
 }
@@ -797,7 +785,7 @@ function openTherapiesModal(pid, hour) {
           item.style.background = 'transparent';
           checkbox.innerHTML = '';
           textEl.style.color = 'var(--text1)';
-          await saveDone(doneKey); // Cancella da Supabase
+          await saveDone(doneKey);
         } else {
           doneSet.add(doneKey);
           item.style.background = '#10B98122';
@@ -960,7 +948,7 @@ async function saveTherapy() {
   try {
     // Se il peso è diverso da quello registrato, aggiorna il paziente
     if (!weightMap[pid] || weightMap[pid] !== weight) {
-      await db.from('patients').update({ weight }).eq('id', pid);
+      await updatePatientFields(pid, { weight });
       weightMap[pid] = weight;
     }
 
@@ -1152,8 +1140,8 @@ async function renderPickSheet() {
 
     // Carica le eco registrate nel database per questa ora/paziente
     const [, patientId, hour] = pickKey.split('_');
-    const { data: echos, error } = await db.from('echos').select('*').eq('patient_id', patientId);
-    const ecosByHour = echos ? echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour)) : [];
+    const echos = await loadEchos(patientId);
+    const ecosByHour = echos.filter(e => new Date(e.examined_at).getHours() === parseInt(hour));
 
     // Crea mappe per le eco registrate basate sul fullName
     const ecosMap = {};
@@ -1372,8 +1360,8 @@ document.getElementById('pick-done').addEventListener('click', async () => {
     if (currentSelection.length === 0) {
       try {
         // Carica tutti gli echos per il paziente
-        const { data: allEchos, error: loadError } = await db.from('echos').select('*').eq('patient_id', patientId);
-        if (!loadError && allEchos && allEchos.length > 0) {
+        const allEchos = await loadEchos(patientId);
+        if (allEchos.length > 0) {
           // Filtra quelli per questa ora
           const echosToDelete = allEchos.filter(e => {
             const eHour = new Date(e.examined_at).getHours();
@@ -1391,11 +1379,7 @@ document.getElementById('pick-done').addEventListener('click', async () => {
         }
 
         // IMPORTANTE: Cancella ANCHE da exams table per eco
-        await db.from('exams').delete()
-          .eq('patient_id', patientId)
-          .eq('type', 'eco')
-          .eq('hour', parseInt(hour))
-          .eq('date', todayKey());
+        await deleteExam('eco', patientId, parseInt(hour), todayKey());
       } catch(e) {
         // silent fail
       }
@@ -1465,12 +1449,12 @@ document.getElementById('pick-done').addEventListener('click', async () => {
       const keep = item.selected === true || item.completed === true;
       return keep;
     });
-    // Se l'array è vuoto, cancella da Supabase
+    // Se l'array è vuoto, cancella da Firebase
     if (checks[pickKey].length === 0) {
       const [type, pid, hour] = pickKey.split('_');
       if (type && pid && hour) {
         try {
-          await db.from('exams').delete().eq('patient_id', pid).eq('type', type).eq('hour', parseInt(hour)).eq('date', todayKey());
+          await deleteExam(type, pid, parseInt(hour), todayKey());
         } catch(e) {
           // silent fail
         }
@@ -1913,7 +1897,7 @@ async function render() {
     const [tv, wm, adminData, notesData] = await Promise.all([
       loadTodayVitals(ids),
       loadLatestWeights(ids),
-      db.from('drug_administrations').select('*').in('patient_id', ids).eq('date', today),
+      loadDrugAdministrations(ids, today),
       loadBoardNotes(ids, today)
     ]);
 
@@ -1927,58 +1911,52 @@ async function render() {
     });
 
     // Popola doneSet con i farmaci amministrati
-    if (adminData.data) {
-      adminData.data.forEach(ad => {
-        const key = `done_${today}_${ad.patient_id}_${ad.therapy_index}_${ad.hour}`;
-        doneSet.add(key);
-      });
-    }
+    adminData.forEach(ad => {
+      const key = `done_${today}_${ad.patient_id}_${ad.therapy_index}_${ad.hour}`;
+      doneSet.add(key);
+    });
 
-    // Carica esami (eco/prelievi) da Supabase
-    const { data: examsData, error: examsError } = await db.from('exams').select('*').in('patient_id', ids).eq('date', today);
-    if (!examsError && examsData) {
-      examsData.forEach(exam => {
-        const rawData = exam.data || [];
-        // Salta i record con data vuota
-        if (!rawData || rawData.length === 0) return;
-        // Salta eco da exams (carica SOLO da echos table)
-        if (exam.type === 'eco') {
-          return;
-        }
+    // Carica esami (eco/prelievi)
+    const examsData = await loadExams(ids, today);
+    examsData.forEach(exam => {
+      const rawData = exam.data || [];
+      // Salta i record con data vuota
+      if (!rawData || rawData.length === 0) return;
+      // Salta eco da exams (carica SOLO da echos table)
+      if (exam.type === 'eco') {
+        return;
+      }
 
-        const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
-        // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
-        checks[key] = rawData
-          .filter(item => {
-            // Rimuovi emoji verdi, stringhe vuote, e qualunque cosa non valida
-            if (!item) return false;
-            if (typeof item === 'string' && item.length === 0) return false;
-            if (item === '✅' || item === '✓' || item === '☑' || item === '☑️') return false; // Rimuovi emoji verdi
-            return true;
-          })
-          .map(item => {
-            if (typeof item === 'string') {
-              return { k: item, selected: true, completed: false };
-            }
-            return item;
-          });
-      });
-    }
+      const key = `${exam.type}_${exam.patient_id}_${exam.hour}`;
+      // Per prelievi, converti da vecchio formato (array di stringhe) al nuovo (array di oggetti)
+      checks[key] = rawData
+        .filter(item => {
+          // Rimuovi emoji verdi, stringhe vuote, e qualunque cosa non valida
+          if (!item) return false;
+          if (typeof item === 'string' && item.length === 0) return false;
+          if (item === '✅' || item === '✓' || item === '☑' || item === '☑️') return false; // Rimuovi emoji verdi
+          return true;
+        })
+        .map(item => {
+          if (typeof item === 'string') {
+            return { k: item, selected: true, completed: false };
+          }
+          return item;
+        });
+    });
 
     // Carica ecografie da tabella echos e le aggiunge a checks
-    const { data: echosData, error: echosError } = await db.from('echos').select('*').in('patient_id', ids);
-    if (!echosError && echosData) {
-      echosData.forEach(echo => {
-        const hour = new Date(echo.examined_at).getHours();
-        const key = `eco_${echo.patient_id}_${hour}`;
-        if (!checks[key]) checks[key] = [];
-        // Abbreviazione del tipo di eco
-        let abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase() || 'X';
-        if (!checks[key].includes(abbr)) {
-          checks[key].push(abbr);
-        }
-      });
-    }
+    const echosData = await loadEchosForPatients(ids);
+    echosData.forEach(echo => {
+      const hour = new Date(echo.examined_at).getHours();
+      const key = `eco_${echo.patient_id}_${hour}`;
+      if (!checks[key]) checks[key] = [];
+      // Abbreviazione del tipo di eco
+      let abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase() || 'X';
+      if (!checks[key].includes(abbr)) {
+        checks[key].push(abbr);
+      }
+    });
   } catch(e) { console.warn('loadTodayVitals error:', e); }
 
   // Drug schedule — per updateCellUI (prima riga = vitali + farmaco 0)
@@ -2015,7 +1993,7 @@ async function render() {
     const span     = Math.max(1, drugs.length);
     const ecoKey   = `${p.id}_eco`;
     const prevKey  = `${p.id}_prev`;
-    const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : '—';
+    const kg       = weightMap[p.id] != null ? `${weightMap[p.id]}` : (p.weight != null ? `${p.weight}` : '—');
     const rowClass = pi % 2 === 0 ? 'pat-even' : 'pat-odd';
 
     const totalSpan = 4;
@@ -2283,43 +2261,29 @@ window.addEventListener('resize', () => {
 });
 
 // ── Realtime sync vitals ──────────────────────────────────────────────────────
-let realtimeChannel = null;
+let realtimeUnsub = null;
 
 function startRealtime() {
-  if (realtimeChannel) db.removeChannel(realtimeChannel);
-
-  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-
-  realtimeChannel = db.channel('board-vitals')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vitals' }, ({ new: v }) => {
-      if (new Date(v.recorded_at) < todayStart) return;
-      const h = snapHour(new Date(v.recorded_at).getHours());
-      const k = cellKey(v.patient_id, h);
-      if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) {
-        vitalsMap[k] = v;
-        updateCellUI(k);
-        flashSync();
-      }
-    })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'vitals' }, ({ new: v }) => {
-      const h = snapHour(new Date(v.recorded_at).getHours());
-      const k = cellKey(v.patient_id, h);
-      if (vitalsMap[k]?.id === v.id || !vitalsMap[k]) {
-        vitalsMap[k] = v;
-        updateCellUI(k);
-        flashSync();
-      }
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'vitals' }, ({ old: v }) => {
-      const h = snapHour(new Date(v.recorded_at).getHours());
-      const k = cellKey(v.patient_id, h);
+  if (realtimeUnsub) realtimeUnsub();
+  const ids = patientsData.filter(p => p.status !== 'discharged').map(p => p.id);
+  if (!ids.length) return;
+  realtimeUnsub = subscribeVitals(ids, (type, v) => {
+    const h = snapHour(new Date(v.recorded_at).getHours());
+    const k = cellKey(v.patient_id, h);
+    if (type === 'removed') {
       if (vitalsMap[k]?.id === v.id) {
         delete vitalsMap[k];
         updateCellUI(k);
         flashSync();
       }
-    })
-    .subscribe();
+    } else {
+      if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) {
+        vitalsMap[k] = v;
+        updateCellUI(k);
+        flashSync();
+      }
+    }
+  });
 }
 
 function flashSync() {
@@ -2336,8 +2300,7 @@ async function softRefresh() {
   if (!ids.length) return;
   try {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const { data, error } = await db.from('vitals').select('*').in('patient_id', ids).gte('recorded_at', todayStart.toISOString());
-    if (error) return;
+    const data = await loadTodayVitals(ids);
     vitalsMap = {};
     data.forEach(v => {
       const h = snapHour(new Date(v.recorded_at).getHours());
@@ -2404,7 +2367,7 @@ async function render2() {
   attachNoteListeners(document.getElementById('board-root'));
 }
 
-render2().then(() => startRealtime());
+requireAuth(() => render2().then(() => startRealtime()));
 </script>
 <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
 </body>

@@ -8,6 +8,8 @@
   <title>VetCare</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,6 +24,7 @@
   <div class="topbar">
     <h1>VetCare — Ricoverati</h1>
     <a class="archive-btn" href="archive.html" title="Archivio">📁</a>
+    <button class="logout-btn" id="logout-btn" title="Esci">⏻</button>
   </div>
 
   <div class="page" id="root">
@@ -46,7 +49,7 @@
   </div>
 
   <script type="module">
-    import { loadPatients, deletePatient, daysSince, STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI } from './db.js';
+    import { loadPatients, deletePatient, daysSince, STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI, requireAuth, logout } from './db.js';
 
     const root = document.getElementById('root');
 
@@ -143,7 +146,12 @@
       }
     }
 
-    render();
+    requireAuth(() => render());
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await logout();
+      window.location.href = 'login.html';
+    });
 
     // ── Timer 10s ──
     let timerInterval = null;

@@ -207,7 +207,8 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { loadVital, updateVital, loadPatient, updatePatientFields } from './db.js';
+    import { loadVital, updateVital, loadPatient, updatePatientFields, requireAuth } from './db.js';
+    requireAuth();
 
     const params = new URLSearchParams(location.search);
     const vid = params.get('vid');

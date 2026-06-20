@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Accedi — VetCare</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+    }
+    .login-logo {
+      font-size: 52px;
+      margin-bottom: 8px;
+    }
+    .login-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text1);
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: 14px;
+      color: var(--text3);
+      margin-bottom: 36px;
+    }
+    .login-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.4);
+    }
+    .login-field {
+      margin-bottom: 16px;
+    }
+    .login-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text1);
+      font-size: 16px;
+      padding: 12px 14px;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color .15s;
+    }
+    .login-field input:focus {
+      border-color: var(--accent);
+    }
+    .login-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .login-btn:disabled {
+      opacity: .5;
+    }
+    .login-error {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #EF4444;
+      text-align: center;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-logo">🐾</div>
+    <div class="login-title">VetCare</div>
+    <div class="login-sub">Gestione ricoveri veterinari</div>
+
+    <div class="login-card">
+      <form id="login-form">
+        <div class="login-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="nome@esempio.com"
+            autocomplete="email" inputmode="email" required>
+        </div>
+        <div class="login-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="••••••••"
+            autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="login-btn" id="login-btn">Accedi</button>
+        <div class="login-error" id="login-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, onAuthStateChanged, signIn } from './db.js';
+
+    // Se già loggata, vai direttamente alla home
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = 'index.html';
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Accesso in corso...';
+      errEl.textContent = '';
+
+      try {
+        await signIn(email, password);
+        window.location.href = 'index.html';
+      } catch(err) {
+        let msg = 'Credenziali non valide. Riprova.';
+        if (err.code === 'auth/too-many-requests') msg = 'Troppi tentativi. Riprova tra qualche minuto.';
+        if (err.code === 'auth/network-request-failed') msg = 'Errore di rete. Controlla la connessione.';
+        errEl.textContent = msg;
+        btn.disabled = false;
+        btn.textContent = 'Accedi';
+      }
+    });
+  </script>
+</body>
+</html>

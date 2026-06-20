@@ -207,7 +207,8 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { addVital, updatePatientFields, loadPatient } from './db.js';
+    import { addVital, updatePatientFields, loadPatient, requireAuth } from './db.js';
+    requireAuth();
 
     const id = new URLSearchParams(location.search).get('id');
     if (!id) location.href = 'index.html';

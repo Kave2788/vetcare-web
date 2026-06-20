@@ -9,6 +9,21 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="style.css">
+  <style>
+    .readmit-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .readmit-btn:active { opacity: 0.8; }
+  </style>
 </head>
 <body>
   <div class="topbar">
@@ -22,8 +37,19 @@
 
   <div id="toast"></div>
 
+  <div id="overlay">
+    <div id="dialog">
+      <h3 id="dlg-title"></h3>
+      <p id="dlg-msg"></p>
+      <div class="dbtns">
+        <button class="btn" id="dlg-confirm">Riammetti</button>
+        <button class="btn btn-ghost" id="dlg-cancel">Annulla</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
-    import { loadPatients, daysSince, STATUS_LABEL, STATUS_COLOR, SPECIES_EMOJI } from './db.js';
+    import { loadPatients, updatePatientFields, daysSince, STATUS_COLOR, SPECIES_EMOJI, requireAuth } from './db.js';
 
     const root = document.getElementById('root');
 
@@ -32,6 +58,28 @@
       t.textContent = msg;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    let pendingReadmit = null;
+    document.getElementById('dlg-cancel').onclick = () => document.getElementById('overlay').classList.remove('show');
+    document.getElementById('dlg-confirm').onclick = async () => {
+      if (!pendingReadmit) return;
+      document.getElementById('overlay').classList.remove('show');
+      try {
+        await updatePatientFields(pendingReadmit.id, { status: 'stable' });
+        toast(`${pendingReadmit.name} riammesso`);
+        await render();
+      } catch { toast('Errore riammissione'); }
+      pendingReadmit = null;
+    };
+
+    function confirmReadmit(patient, e) {
+      e.preventDefault();
+      e.stopPropagation();
+      pendingReadmit = patient;
+      document.getElementById('dlg-title').textContent = 'Riammetti paziente';
+      document.getElementById('dlg-msg').textContent = `Riammettere ${patient.name} tra i ricoverati attivi?`;
+      document.getElementById('overlay').classList.add('show');
     }
 
     async function render() {
@@ -58,31 +106,39 @@
             const vitals = (p.vitals || []).length;
             const therapies = (p.therapies || []).length;
             return `
-              <a class="patient-card" href="patient.html?id=${p.id}" data-id="${p.id}">
-                <div class="strip" style="background:${STATUS_COLOR[p.status]}"></div>
-                <div class="body">
-                  <div class="top">
-                    <div class="emoji">${emoji}</div>
-                    <div class="info">
-                      <div class="name">${p.name}</div>
-                      <div class="sub">${p.species}${p.breed ? ' · ' + p.breed : ''}</div>
+              <div class="patient-card" style="display:block" data-id="${p.id}">
+                <a href="patient.html?id=${p.id}" style="display:flex;align-items:stretch;text-decoration:none;color:inherit">
+                  <div class="strip" style="background:${STATUS_COLOR[p.status]}"></div>
+                  <div class="body" style="flex:1">
+                    <div class="top">
+                      <div class="emoji">${emoji}</div>
+                      <div class="info">
+                        <div class="name">${p.name}</div>
+                        <div class="sub">${p.species}${p.breed ? ' · ' + p.breed : ''}</div>
+                      </div>
+                      <span class="badge discharged">Dimes.</span>
                     </div>
-                    <span class="badge discharged">Dimes.</span>
+                    <div class="bottom">
+                      <span class="meta">${daysText}</span>
+                      ${vitals > 0 || therapies > 0 ? `<span class="meta">· ${vitals} rilevaz${vitals === 1 ? 'ione' : 'ioni'} · ${therapies} terapie</span>` : ''}
+                    </div>
                   </div>
-                  <div class="bottom">
-                    <span class="meta">${daysText}</span>
-                    ${vitals > 0 || therapies > 0 ? `<span class="meta">· ${vitals} rilevaz${vitals === 1 ? 'ione' : 'ioni'} · ${therapies} terapie</span>` : ''}
-                  </div>
-                </div>
-              </a>`;
+                </a>
+                <button class="readmit-btn" data-id="${p.id}">Riammetti</button>
+              </div>`;
           }).join('<div style="height:10px"></div>');
+
+        root.querySelectorAll('.readmit-btn').forEach(btn => {
+          const patient = archived.find(p => p.id === btn.dataset.id);
+          btn.addEventListener('click', e => confirmReadmit(patient, e));
+        });
 
       } catch (e) {
         root.innerHTML = `<div class="empty"><div class="et">Errore di connessione</div><div class="eh">${e.message}</div></div>`;
       }
     }
 
-    render();
+    requireAuth(() => render());
   </script>
   <script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js");</script>
 </body>

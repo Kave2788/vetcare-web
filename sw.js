@@ -1,8 +1,10 @@
-const CACHE = 'vetcare-v62';
+const CACHE = 'vetcare-v64';
 const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
 const ASSETS = [
   basePath + '/',
+  basePath + '/login.html',
   basePath + '/index.html',
+  basePath + '/archive.html',
   basePath + '/patient.html',
   basePath + '/new-patient.html',
   basePath + '/edit-patient.html',
@@ -30,11 +32,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first per le richieste Supabase, cache-first per gli asset statici
-  if (e.request.url.includes('supabase.co') || e.request.url.includes('esm.sh')) {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  // Lascia che il browser gestisca CDN esterni con la sua cache HTTP nativa
+  const url = e.request.url;
+  if (url.includes('gstatic.com') || url.includes('googleapis.com') ||
+      url.includes('firebaseapp.com') || url.includes('firebaseio.com') ||
+      url.includes('esm.sh')) {
     return;
   }
+  // Cache-first per gli asset statici dell'app
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();

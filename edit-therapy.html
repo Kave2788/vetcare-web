@@ -172,7 +172,8 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { loadTherapies, updateTherapy, loadPatient, loadVitals } from './db.js';
+    import { loadTherapies, updateTherapy, loadPatient, loadVitals, requireAuth } from './db.js';
+    requireAuth();
 
     const params = new URLSearchParams(location.search);
     const pid = params.get('id');

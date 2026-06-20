@@ -94,7 +94,8 @@
   <div id="toast"></div>
 
   <script type="module">
-    import { addPatient } from './db.js';
+    import { addPatient, requireAuth } from './db.js';
+    requireAuth();
 
     function toast(msg) {
       const t = document.getElementById('toast');
