@@ -1,4 +1,4 @@
-const CACHE = 'vetcare-v64';
+const CACHE = 'vetcare-v65';
 const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
 const ASSETS = [
   basePath + '/',
@@ -18,7 +18,10 @@ const ASSETS = [
   basePath + '/db.js',
   basePath + '/board.html',
   basePath + '/vetcare_medicines.json',
-  basePath + '/diets.json'
+  basePath + '/diets.json',
+  basePath + '/firebase/firebase-app.js',
+  basePath + '/firebase/firebase-firestore.js',
+  basePath + '/firebase/firebase-auth.js'
 ];
 
 self.addEventListener('install', e => {
@@ -32,14 +35,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Lascia che il browser gestisca CDN esterni con la sua cache HTTP nativa
+  // Lascia passare le chiamate Firestore/Auth (dati live, non cachati dal SW)
   const url = e.request.url;
-  if (url.includes('gstatic.com') || url.includes('googleapis.com') ||
-      url.includes('firebaseapp.com') || url.includes('firebaseio.com') ||
-      url.includes('esm.sh')) {
+  if (url.includes('googleapis.com') || url.includes('firebaseapp.com') ||
+      url.includes('firebaseio.com')) {
     return;
   }
-  // Cache-first per gli asset statici dell'app
+  // Cache-first per tutti gli asset statici (inclusi i file Firebase locali)
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();
