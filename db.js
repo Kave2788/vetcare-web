@@ -7,7 +7,7 @@ import {
 } from './firebase/firebase-firestore.js';
 import {
   getAuth, signInWithEmailAndPassword, signOut,
-  onAuthStateChanged, setPersistence, browserLocalPersistence
+  onAuthStateChanged
 } from './firebase/firebase-auth.js';
 
 // ── Firebase config ───────────────────────────────────────────────────────────
@@ -28,8 +28,6 @@ export const auth = getAuth(app);
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export async function signIn(email, password) {
-  // Imposta persistenza prima del login — garantisce sessione in IndexedDB
-  await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
   return result.user;
 }
