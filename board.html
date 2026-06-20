@@ -646,7 +646,7 @@
 <script type="module">
 import {
   requireAuth,
-  loadPatients, loadTodayVitals, loadLatestWeights, addVital, updateVital, deleteVital,
+  loadPatients, loadTodayVitals, addVital, updateVital, deleteVital,
   addTherapy, deleteTherapy, loadEchos, loadEchosForPatients, deleteEcho, addEcho,
   loadBoardNotes, saveBoardNote, updatePatientFields,
   loadDrugAdministrations, saveDrugAdministration, deleteDrugAdministration,
@@ -1899,20 +1899,27 @@ async function render() {
   try {
     const ids = active.map(p => p.id);
     const today = todayKey();
-    const [tv, wm, adminData, notesData] = await Promise.all([
+    const [tv, adminData, notesData, examsData, echosData] = await Promise.all([
       loadTodayVitals(ids),
-      loadLatestWeights(ids),
       loadDrugAdministrations(ids, today),
-      loadBoardNotes(ids, today)
+      loadBoardNotes(ids, today),
+      loadExams(ids, today),
+      loadEchosForPatients(ids)
     ]);
 
-    weightMap = wm;
+    // Pesi: usa il vitale più recente di oggi che ha il campo peso
+    weightMap = {};
+    const latestVitalAt = {}; // patient_id → recorded_at più recente con peso
     notesMap = {};
     (notesData || []).forEach(n => { notesMap[n.patient_id] = n.content; });
     tv.forEach(v => {
       const h = snapHour(new Date(v.recorded_at).getHours());
       const k = cellKey(v.patient_id, h);
       if (!vitalsMap[k] || v.recorded_at > vitalsMap[k].recorded_at) vitalsMap[k] = v;
+      if (v.weight != null && (latestVitalAt[v.patient_id] == null || v.recorded_at > latestVitalAt[v.patient_id])) {
+        weightMap[v.patient_id] = v.weight;
+        latestVitalAt[v.patient_id] = v.recorded_at;
+      }
     });
 
     // Popola doneSet con i farmaci amministrati
@@ -1921,8 +1928,16 @@ async function render() {
       doneSet.add(key);
     });
 
+    // Carica ecografie da tabella echos e le aggiunge a checks
+    echosData.forEach(echo => {
+      const hour = new Date(echo.examined_at).getHours();
+      const key = `eco_${echo.patient_id}_${hour}`;
+      if (!checks[key]) checks[key] = [];
+      let abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase() || 'X';
+      if (!checks[key].includes(abbr)) checks[key].push(abbr);
+    });
+
     // Carica esami (eco/prelievi)
-    const examsData = await loadExams(ids, today);
     examsData.forEach(exam => {
       const rawData = exam.data || [];
       // Salta i record con data vuota
@@ -1950,18 +1965,6 @@ async function render() {
         });
     });
 
-    // Carica ecografie da tabella echos e le aggiunge a checks
-    const echosData = await loadEchosForPatients(ids);
-    echosData.forEach(echo => {
-      const hour = new Date(echo.examined_at).getHours();
-      const key = `eco_${echo.patient_id}_${hour}`;
-      if (!checks[key]) checks[key] = [];
-      // Abbreviazione del tipo di eco
-      let abbr = ECO_INITIALS_MAP[echo.type?.toLowerCase()] || ECO_INITIALS_MAP[echo.type] || echo.type?.charAt(0).toUpperCase() || 'X';
-      if (!checks[key].includes(abbr)) {
-        checks[key].push(abbr);
-      }
-    });
   } catch(e) { console.warn('loadTodayVitals error:', e); }
 
   // Drug schedule — per updateCellUI (prima riga = vitali + farmaco 0)

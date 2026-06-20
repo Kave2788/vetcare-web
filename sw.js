@@ -1,4 +1,4 @@
-const CACHE = 'vetcare-v67';
+const CACHE = 'vetcare-v68';
 const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
 
 const FIREBASE_CDN = [
