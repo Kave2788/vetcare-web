@@ -1,5 +1,12 @@
-const CACHE = 'vetcare-v66';
+const CACHE = 'vetcare-v67';
 const basePath = location.pathname.includes('/vetcare-web/') ? '/vetcare-web' : '';
+
+const FIREBASE_CDN = [
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js',
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js'
+];
+
 const ASSETS = [
   basePath + '/',
   basePath + '/login.html',
@@ -19,9 +26,7 @@ const ASSETS = [
   basePath + '/board.html',
   basePath + '/vetcare_medicines.json',
   basePath + '/diets.json',
-  basePath + '/firebase/firebase-app.js',
-  basePath + '/firebase/firebase-firestore.js',
-  basePath + '/firebase/firebase-auth.js'
+  ...FIREBASE_CDN
 ];
 
 self.addEventListener('install', e => {
@@ -35,13 +40,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Lascia passare le chiamate Firestore/Auth (dati live, non cachati dal SW)
+  // Lascia passare le chiamate dati Firestore/Auth (sempre live)
   const url = e.request.url;
   if (url.includes('googleapis.com') || url.includes('firebaseapp.com') ||
       url.includes('firebaseio.com')) {
     return;
   }
-  // Cache-first per tutti gli asset statici (inclusi i file Firebase locali)
+  // Cache-first per tutti gli asset (inclusi file Firebase CDN pre-cachati)
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();

@@ -1,14 +1,14 @@
-import { initializeApp, getApps, getApp } from './firebase/firebase-app.js';
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {
   getFirestore,
   collection, query, where,
   getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc,
   doc, onSnapshot
-} from './firebase/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import {
   getAuth, signInWithEmailAndPassword, signOut,
   onAuthStateChanged
-} from './firebase/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 // ── Firebase config ───────────────────────────────────────────────────────────
 // Sostituisci con i valori del tuo progetto Firebase (Project Settings → Your apps → Web app)
